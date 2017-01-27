@@ -29,18 +29,23 @@
 module powerbi.extensibility.visual.test {
     import VisualBuilderBase = powerbi.extensibility.utils.test.VisualBuilderBase;
     import getRandomNumber = powerbi.extensibility.utils.test.helpers.getRandomNumber;
+
     // LineDotChart1460463831201
     import VisualPlugin = powerbi.visuals.plugins.LineDotChart1460463831201;
     import VisualClass = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChart;
     import VisualSettings = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChartSettings;
 
-   export class LineDotChartBuilder extends VisualBuilderBase<VisualClass> {
+    export class LineDotChartBuilder extends VisualBuilderBase<VisualClass> {
         constructor(width: number, height: number) {
-            super(width, height);
+            super(width, height, VisualPlugin.name);
         }
 
         protected build(options: VisualConstructorOptions) {
             return new VisualClass(options);
+        }
+
+        public get visualInstance(): VisualClass {
+            return this.visual;
         }
 
         public get mainElement(): JQuery {
