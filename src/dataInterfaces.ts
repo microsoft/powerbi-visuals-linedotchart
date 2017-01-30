@@ -30,8 +30,13 @@ module powerbi.extensibility.visual {
     import IAxisProperties = powerbi.extensibility.utils.chart.axis.IAxisProperties;
     import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
 
+    export interface DateValue {
+        date?: Date;
+        value: number;
+    }
+
     export interface LineDotPoint extends SelectableDataPoint {
-        time: number | Date;
+        dateValue: DateValue;
         value: number;
         dot: number;
         sum: number;
@@ -45,12 +50,19 @@ module powerbi.extensibility.visual {
         dy?: string;
     }
 
+    export interface ColumnNames {
+        category: string;
+        values: string;
+    }
+
     export interface LineDotChartViewModel {
+        columnNames: ColumnNames;
         dotPoints: LineDotPoint[];
         settings: LineDotChartSettings;
         dateMetadataColumn: DataViewMetadataColumn;
         valuesMetadataColumn: DataViewMetadataColumn;
         dateColumnFormatter: IValueFormatter;
+        dataValueFormatter: IValueFormatter;
         isDateTime: boolean;
         minDate: number;
         maxDate: number;

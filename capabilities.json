@@ -32,13 +32,25 @@
       "categorical": {
         "categories": {
           "select": [
-            { "for": { "in": "Date" } }
+            {
+              "for": {
+                "in": "Date"
+              }
+            }
           ],
-          "dataReductionAlgorithm": { "top": { "count": 10000 } }
+          "dataReductionAlgorithm": {
+            "top": {
+              "count": 10000
+            }
+          }
         },
         "values": {
           "select": [
-            { "bind": { "to": "Values" } }
+            {
+              "bind": {
+                "to": "Values"
+              }
+            }
           ]
         }
       }
@@ -51,11 +63,19 @@
       "properties": {
         "fill": {
           "displayName": "Fill",
-          "type": { "fill": { "solid": { "color": true } } }
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
         },
         "lineThickness": {
           "displayName": "Thickness",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
@@ -64,15 +84,25 @@
       "properties": {
         "color": {
           "displayName": "Fill",
-          "type": { "fill": { "solid": { "color": true } } }
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
         },
         "dotSizeMin": {
           "displayName": "Min size",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         },
         "dotSizeMax": {
           "displayName": "Max size",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         }
       }
     },
@@ -81,7 +111,9 @@
       "properties": {
         "counterTitle": {
           "displayName": "Title",
-          "type": { "text": true }
+          "type": {
+            "text": true
+          }
         }
       }
     },
@@ -90,15 +122,21 @@
       "properties": {
         "isAnimated": {
           "displayName": "Animated",
-          "type": { "bool": true }
+          "type": {
+            "bool": true
+          }
         },
         "isStopped": {
           "displayName": "Stop on load",
-          "type": { "bool": true }
+          "type": {
+            "bool": true
+          }
         },
         "duration": {
           "displayName": "Time",
-          "type": { "numeric": true }
+          "type": {
+            "numeric": true
+          }
         }
       }
     }
