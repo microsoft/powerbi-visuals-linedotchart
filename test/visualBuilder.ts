@@ -31,13 +31,12 @@ module powerbi.extensibility.visual.test {
     import getRandomNumber = powerbi.extensibility.utils.test.helpers.getRandomNumber;
 
     // LineDotChart1460463831201
-    import VisualPlugin = powerbi.visuals.plugins.LineDotChart1460463831201;
     import VisualClass = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChart;
     import VisualSettings = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChartSettings;
 
     export class LineDotChartBuilder extends VisualBuilderBase<VisualClass> {
         constructor(width: number, height: number) {
-            super(width, height, VisualPlugin.name);
+            super(width, height, "LineDotChart1460463831201");
         }
 
         protected build(options: VisualConstructorOptions) {
