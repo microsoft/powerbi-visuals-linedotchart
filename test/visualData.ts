@@ -63,7 +63,13 @@ module powerbi.extensibility.visual.test {
             new Date(2016, 3, 1, 2, 43, 3));
         public valuesValue = helpers.getRandomNumbers(this.valuesDate.length, 0, 5361);
 
+        public valuesDateAsString: string[] = this.valuesDate.map(x => x.toISOString());
+
         public getDataView(columnNames?: string[]): powerbi.DataView {
+            return this.createDataView(false, columnNames);
+        }
+
+        private createDataView(isDateAsString: boolean, columnNames?: string[]): powerbi.DataView {
             return this.createCategoricalDataViewBuilder([
                 {
                     source: {
@@ -71,7 +77,7 @@ module powerbi.extensibility.visual.test {
                         type: ValueType.fromDescriptor({ dateTime: true }),
                         roles: { Date: true }
                     },
-                    values: this.valuesDate
+                    values: isDateAsString ? this.valuesDateAsString : this.valuesDate
                 }
             ], [
                     {
@@ -83,6 +89,10 @@ module powerbi.extensibility.visual.test {
                         values: this.valuesValue
                     }
                 ], columnNames).build();
+        }
+
+        public getDataViewForCategoricalValues(columnNames?: string[]): powerbi.DataView {
+            return this.createDataView(true, columnNames);
         }
     }
 }
