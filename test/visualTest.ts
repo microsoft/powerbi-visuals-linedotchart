@@ -44,11 +44,13 @@ namespace powerbi.extensibility.visual.test {
     import ColumnNames = powerbi.extensibility.visual.LineDotChart1460463831201.ColumnNames;
     import LineDotPoint = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotPoint;
     import LineDotChartViewModel = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChartViewModel;
+    import LineDotChartColumns = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChartColumns;
 
     describe("LineDotChartTests", () => {
         let visualBuilder: LineDotChartBuilder,
             defaultDataViewBuilder: LineDotChartData,
-            dataView: DataView;
+            dataView: DataView,
+            dataViewForCategoricalColumn: DataView;
 
         beforeEach(() => {
             visualBuilder = new LineDotChartBuilder(1000, 500);
@@ -203,6 +205,18 @@ namespace powerbi.extensibility.visual.test {
                     = visualBuilder.visualInstance.getTooltipDataItems(dataPoint);
 
                 expect(actualResult[1].value).toMatch(defaultFormattedValue);
+            });
+        });
+
+        describe("getCategoricalValues", () => {
+            beforeEach(() => {
+                dataViewForCategoricalColumn = defaultDataViewBuilder.getDataViewForCategoricalValues();
+            });
+
+            it("date values provided as string should be converted to Date type", () => {
+                const categoricalValues: LineDotChartColumns<any[]> = LineDotChartColumns.getCategoricalValues(dataViewForCategoricalColumn);
+
+                expect(_.isDate(categoricalValues.Date[0])).toBeTruthy();
             });
         });
     });

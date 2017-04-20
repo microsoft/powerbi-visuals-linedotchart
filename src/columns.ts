@@ -57,8 +57,21 @@ module powerbi.extensibility.visual {
             let values: DataViewValueColumns = categorical && categorical.values || <DataViewValueColumns>[];
             let series: any = categorical && values.source && this.getSeriesValues(dataView);
             return categorical && _.mapValues(new this<any[]>(), (n, i) =>
-                (<DataViewCategoricalColumn[]>_.toArray(categories)).concat(_.toArray(values))
-                    .filter(x => x.source.roles && x.source.roles[i]).map(x => x.values)[0]
+                (<DataViewCategoricalColumn[]>_
+                    .toArray(categories))
+                    .concat(_.toArray(values))
+                    .filter(x => x.source.roles && x.source.roles[i])
+                    .map(x => x.values.map(y => {
+                        if (_.isString(y)) {
+                            let date: Date = new Date(y);
+                            if (isNaN(date.getTime())) {
+                                return y;
+                            }
+
+                            return date;
+                        }
+                        return y;
+                    }))[0]
                 || values.source && values.source.roles && values.source.roles[i] && series);
         }
 
