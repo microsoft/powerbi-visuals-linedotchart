@@ -100,6 +100,30 @@ namespace powerbi.extensibility.visual.test {
             });
         });
 
+        describe("Animation off test", () => {
+            it("should not render lineClip", (done) => {
+                visualBuilder.viewport.width = 300;
+
+                dataView.metadata.objects = {
+                    misc: {
+                        isAnimated: false,
+                        duration: 20,
+                        isStopped: true
+                    },
+                    counteroptions: {
+                        counterTitle: "Counter: "
+                    }
+                };
+
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+                debugger;
+                helpers.renderTimeout(() => {
+                    expect(visualBuilder.mainElement.find("clipPath").get(0)).toBe(undefined);
+                    done();
+                });
+            });
+        });
+
         describe("Format settings test", () => {
             beforeEach(() => {
                 dataView.metadata.objects = {
