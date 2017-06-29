@@ -608,11 +608,7 @@ module powerbi.extensibility.visual {
                     .attr('width', line_right - line_left)
                     .attr("height", this.layout.viewportIn.height);
             } else {
-                clipPath
-                    .selectAll("rect")
-                    .interrupt()
-                    .attr('x', line_left)
-                    .attr('width', line_right - line_left);
+                linePathSelection.selectAll("clipPath").remove();
             }
         }
 
