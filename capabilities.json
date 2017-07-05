@@ -60,9 +60,11 @@
   "objects": {
     "lineoptions": {
       "displayName": "Line",
+      "displayNameKey": "Visual_Line",
       "properties": {
         "fill": {
           "displayName": "Fill",
+          "displayNameKey": "Visual_Fill",
           "type": {
             "fill": {
               "solid": {
@@ -73,6 +75,7 @@
         },
         "lineThickness": {
           "displayName": "Thickness",
+          "displayNameKey": "Visual_Thickness",
           "type": {
             "numeric": true
           }
@@ -81,9 +84,11 @@
     },
     "dotoptions": {
       "displayName": "Dot",
+      "displayNameKey": "Visual_Dot",
       "properties": {
         "color": {
           "displayName": "Fill",
+          "displayNameKey": "Visual_Fill",
           "type": {
             "fill": {
               "solid": {
@@ -94,12 +99,14 @@
         },
         "dotSizeMin": {
           "displayName": "Min size",
+          "displayNameKey": "Visual_MinSize",
           "type": {
             "numeric": true
           }
         },
         "dotSizeMax": {
           "displayName": "Max size",
+          "displayNameKey": "Visual_MaxSize",
           "type": {
             "numeric": true
           }
@@ -108,9 +115,11 @@
     },
     "counteroptions": {
       "displayName": "Counter",
+      "displayNameKey": "Visual_Counter",
       "properties": {
         "counterTitle": {
           "displayName": "Title",
+          "displayNameKey": "Visual_Title",
           "type": {
             "text": true
           }
@@ -119,21 +128,25 @@
     },
     "misc": {
       "displayName": "Animation",
+      "displayNameKey": "Visual_Animation",
       "properties": {
         "isAnimated": {
           "displayName": "Animated",
+          "displayNameKey": "Visual_Animated",
           "type": {
             "bool": true
           }
         },
         "isStopped": {
           "displayName": "Stop on load",
+          "displayNameKey": "Visual_StopOnLoad",
           "type": {
             "bool": true
           }
         },
         "duration": {
           "displayName": "Time",
+          "displayNameKey": "Visual_Time",
           "type": {
             "numeric": true
           }

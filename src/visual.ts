@@ -591,7 +591,8 @@ module powerbi.extensibility.visual {
                 .attr("id", LineDotChart.lineClip)
                 .append("rect")
                 .attr("x", LineDotChart.zeroX)
-                .attr("y", LineDotChart.zeroY);
+                .attr("y", LineDotChart.zeroY)
+                .attr("height", this.layout.viewportIn.height);
 
             let line_left: any = this.xAxisProperties.scale(_.first(this.data.dotPoints).dateValue.value);
             let line_right: any = this.xAxisProperties.scale(_.last(this.data.dotPoints).dateValue.value);
@@ -601,12 +602,12 @@ module powerbi.extensibility.visual {
                     .selectAll("rect")
                     .attr('x', line_left)
                     .attr('width', 0)
+                    .attr("height", this.layout.viewportIn.height)
                     .interrupt()
                     .transition()
                     .ease("linear")
                     .duration(this.animationDuration * LineDotChart.millisecondsInOneSecond)
-                    .attr('width', line_right - line_left)
-                    .attr("height", this.layout.viewportIn.height);
+                    .attr('width', line_right - line_left);
             } else {
                 linePathSelection.selectAll("clipPath").remove();
             }

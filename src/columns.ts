@@ -53,11 +53,11 @@ module powerbi.extensibility.visual {
 
         public static getCategoricalValues(dataView: DataView) {
             let categorical: DataViewCategorical = dataView && dataView.categorical;
-            let categories: DataViewCategoryColumn[] = categorical && categorical.categories || [];
+            let categories: (DataViewCategoryColumn | DataViewValueColumn)[] = categorical && categorical.categories || [];
             let values: DataViewValueColumns = categorical && categorical.values || <DataViewValueColumns>[];
             let series: any = categorical && values.source && this.getSeriesValues(dataView);
             return categorical && _.mapValues(new this<any[]>(), (n, i) =>
-                (<DataViewCategoricalColumn[]>_
+                (<(DataViewCategoryColumn | DataViewValueColumn)[]>_
                     .toArray(categories))
                     .concat(_.toArray(values))
                     .filter(x => x.source.roles && x.source.roles[i])
