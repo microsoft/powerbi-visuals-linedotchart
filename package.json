@@ -1,13 +1,13 @@
 {
   "name": "powerbi-visuals-linedotchart",
   "description": "LineDot Chart",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": {
     "name": "Microsoft",
     "email": "pbicvsupport@microsoft.com"
   },
   "scripts": {
-    "postinstall": "typings install && pbiviz update 1.4.0",
+    "postinstall": "typings install && pbiviz update 1.7.0",
     "typings": "typings",
     "pbiviz": "pbiviz",
     "start": "pbiviz start",
@@ -41,7 +41,7 @@
     "karma-typescript-preprocessor": "0.3.0",
     "lodash": "4.16.2",
     "moment": "2.15.1",
-    "powerbi-visuals-tools": "1.4.3",
+    "powerbi-visuals-tools": "1.7.1",
     "powerbi-visuals-utils-chartutils": "0.3.0",
     "powerbi-visuals-utils-dataviewutils": "1.0.1",
     "powerbi-visuals-utils-testutils": "0.2.2",
