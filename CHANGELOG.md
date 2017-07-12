@@ -1,5 +1,5 @@
 ## 1.0.3
-* Retrun jQuery reference
+* Return jQuery reference
 
 ## 1.0.2
 * Updrage to API 1.7.0
