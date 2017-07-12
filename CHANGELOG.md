@@ -1,3 +1,6 @@
+## 1.0.3
+* Retrun jQuery reference
+
 ## 1.0.2
 * Updrage to API 1.7.0
 * Fix bug: "Incorrect behavior in Focus mode"
