@@ -25,7 +25,7 @@
         {
           "Date": {
             "min": 0,
-            "max": 4
+            "max": 1
           },
           "Values": {
             "min": 0,
@@ -61,6 +61,11 @@
             {
               "bind": {
                 "to": "Values"
+              }
+            },
+             {
+              "bind": {
+                "to": "Counter"
               }
             }
           ]
@@ -132,7 +137,7 @@
         }
       }
     },
-    "axisoptions": {
+    "axisOptions": {
       "displayName": "Axes properties",
       "displayNameKey": "Visual_AxisProperties",
       "properties": {

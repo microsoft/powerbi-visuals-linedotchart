@@ -42,6 +42,7 @@ module powerbi.extensibility.visual {
         sum: number;
         highlight?: boolean;
         opacity: number;
+        counter: any;
     }
 
     export interface Legend {

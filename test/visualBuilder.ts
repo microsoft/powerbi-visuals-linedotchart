@@ -69,6 +69,12 @@ module powerbi.extensibility.visual.test {
                 .children("circle.point");
         }
 
+        public get axes() {
+            return this.mainElement
+                .children("g")
+                .children("g.axis text");
+        }
+
         public get animationPlay(): JQuery {
             return this.mainElement
                 .find("g.lineDotChart__playBtn");

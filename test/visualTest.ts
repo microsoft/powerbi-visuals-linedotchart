@@ -100,6 +100,34 @@ namespace powerbi.extensibility.visual.test {
             });
         });
 
+        describe("Axes test", () => {
+            it("set color", () => {
+                let color: string = getRandomHexColor();
+
+                dataView.metadata.objects = {
+                    axesOptions: {
+                        show: true,
+                        color: colorHelper.getSolidColorStructuralObject(color)
+                    }
+                };
+                visualBuilder.visualInstance.setAxisColor(color);
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+                visualBuilder.axes.toArray().map($).forEach(e =>
+                    colorHelper.assertColorsMatch(e.attr('fill'), color));
+            });
+        });
+
+        describe("Clear test", () => {
+            it("clear all", (done) => {
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+                helpers.renderTimeout(() => {
+                    visualBuilder.visualInstance.clear();
+                    expect(visualBuilder.mainElement.find("circle").get(0)).toBe(undefined);
+                    done();
+                });
+            });
+        });
+
         describe("Animation off test", () => {
             it("should not render lineClip", (done) => {
                 visualBuilder.viewport.width = 300;
@@ -116,7 +144,6 @@ namespace powerbi.extensibility.visual.test {
                 };
 
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                debugger;
                 helpers.renderTimeout(() => {
                     expect(visualBuilder.mainElement.find("clipPath").get(0)).toBe(undefined);
                     done();
@@ -154,6 +181,17 @@ namespace powerbi.extensibility.visual.test {
                     visualBuilder.updateFlushAllD3Transitions(dataView);
                     visualBuilder.dots.toArray().map($).forEach(e =>
                         colorHelper.assertColorsMatch(e.attr('fill'), color));
+                });
+                it("opacity", () => {
+                    let color: string = getRandomHexColor();
+                    dataView.metadata.objects = {
+                        dotoptions: {
+                            color: colorHelper.getSolidColorStructuralObject(color),
+                            percentile: 50
+                        }
+                    };
+                    visualBuilder.updateFlushAllD3Transitions(dataView);
+                    visualBuilder.dots.toArray().map($).forEach(e => colorHelper.assertColorsMatch(e.attr('fill'), color) && colorHelper.assertColorsMatch(e.style('opacity'), color));
                 });
             });
 
