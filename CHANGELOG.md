@@ -1,3 +1,8 @@
+## 1.1.0
+* Add Dot opacity property
+* Add axes color property
+* Add new basket "Counter"
+
 ## 1.0.3
 * Return jQuery reference
 

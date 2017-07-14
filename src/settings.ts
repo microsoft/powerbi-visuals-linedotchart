@@ -28,10 +28,17 @@ module powerbi.extensibility.visual {
     import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
 
     export class LineDotChartSettings extends DataViewObjectsParser {
+        public isCounterDateTime: boolean = false;
+        public axisOptions: AxisSettings = new AxisSettings();
         public lineoptions: LineSettings = new LineSettings();
         public dotoptions: DotSettings = new DotSettings();
         public counteroptions: CounterSettings = new CounterSettings();
         public misc: MiscSettings = new MiscSettings();
+    }
+
+    export class AxisSettings {
+        public show: boolean = true;
+        public color: string = "black";
     }
 
     export class LineSettings {
@@ -43,6 +50,8 @@ module powerbi.extensibility.visual {
         public color: string = "#005c55";
         public dotSizeMin: number = 4;
         public dotSizeMax: number = 38;
+        // Opacity
+        public percentile: number = 100;
     }
 
     export class CounterSettings {

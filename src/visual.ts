@@ -45,6 +45,7 @@ module powerbi.extensibility.visual {
     import IColorPalette = powerbi.extensibility.IColorPalette;
     import valueType = utils.type.ValueType;
     import DataViewObjectsParser = utils.dataview.DataViewObjectsParser;
+    import PrimitiveValue = powerbi.PrimitiveValue;
 
     // powerbi.extensibility.utils.tooltip
     import TooltipEventArgs = powerbi.extensibility.utils.tooltip.TooltipEventArgs;
@@ -104,7 +105,7 @@ module powerbi.extensibility.visual {
         private get settings(): LineDotChartSettings {
             return this.data && this.data.settings;
         }
-
+        private static axesDefaultColor: string = "black";
         private static viewportMargins = {
             top: 10,
             right: 30,
@@ -134,33 +135,33 @@ module powerbi.extensibility.visual {
 
             this.root = d3.select(options.element)
                 .append('svg')
-                .classed(LineDotChart.Identity.class, true);
+                .classed(LineDotChart.Identity.className, true);
 
             this.main = this.root.append('g');
 
             this.axes = this.main
                 .append('g')
-                .classed(LineDotChart.Axes.class, true);
+                .classed(LineDotChart.Axes.className, true);
 
             this.axisX = this.axes
                 .append('g')
-                .classed(LineDotChart.Axis.class, true);
+                .classed(LineDotChart.Axis.className, true);
 
             this.axisY = this.axes
                 .append('g')
-                .classed(LineDotChart.Axis.class, true);
+                .classed(LineDotChart.Axis.className, true);
 
             this.axisY2 = this.axes
                 .append('g')
-                .classed(LineDotChart.Axis.class, true);
+                .classed(LineDotChart.Axis.className, true);
 
             this.legends = this.main
                 .append('g')
-                .classed(LineDotChart.Legends.class, true);
+                .classed(LineDotChart.Legends.className, true);
 
             this.line = this.main
                 .append('g')
-                .classed(LineDotChart.Line.class, true);
+                .classed(LineDotChart.Line.className, true);
 
             this.colors = options.host.colorPalette;
         }
@@ -169,7 +170,6 @@ module powerbi.extensibility.visual {
             if (!options || !options.dataViews || !options.dataViews[0]) {
                 return;
             }
-
             this.layout.viewport = options.viewport;
             let data: LineDotChartViewModel = LineDotChart.converter(options.dataViews[0], this.hostService);
             if (!data || _.isEmpty(data.dotPoints)) {
@@ -203,10 +203,10 @@ module powerbi.extensibility.visual {
                 this.settings.misc.isAnimated = false;
             }
 
-            this.axes.selectAll(LineDotChart.Axis.selector).selectAll("*").remove();
-            this.main.selectAll(LineDotChart.Legends.selector).selectAll("*").remove();
-            this.main.selectAll(LineDotChart.Line.selector).selectAll("*").remove();
-            this.main.selectAll(LineDotChart.Legend.selector).selectAll("*").remove();
+            this.axes.selectAll(LineDotChart.Axis.selectorName).selectAll("*").remove();
+            this.main.selectAll(LineDotChart.Legends.selectorName).selectAll("*").remove();
+            this.main.selectAll(LineDotChart.Line.selectorName).selectAll("*").remove();
+            this.main.selectAll(LineDotChart.Legend.selectorName).selectAll("*").remove();
             this.line.selectAll(LineDotChart.textSelector).remove();
         }
 
@@ -256,6 +256,13 @@ module powerbi.extensibility.visual {
                 || _.isEmpty(categorical.Values[0].values)) {
                 return null;
             }
+            let counterValues: PrimitiveValue[] = null;
+
+            for (let i = 0; i < dataView.categorical.values.length; i++) {
+                if (dataView.categorical.values[i].source.roles['Counter']) {
+                    counterValues = dataView.categorical.values[i].values;
+                }
+            }
 
             const valuesColumn: DataViewValueColumn = categorical.Values[0],
                 categoryType: valueType = AxisHelper.getCategoryValueType(categorical.Date.source, true);
@@ -267,6 +274,11 @@ module powerbi.extensibility.visual {
             const isDateTime: boolean = AxisHelper.isDateTime(categoryType),
                 categoricalValues: LineDotChartColumns<any[]> = LineDotChartColumns.getCategoricalValues(dataView),
                 settings: LineDotChartSettings = this.parseSettings(dataView);
+
+            if (counterValues && counterValues.length > 0) {
+                let fValue: any = counterValues[0];
+                settings.isCounterDateTime = fValue.getDate ? true : false;
+            }
 
             const dateValues: DateValue[] = [],
                 valueValues: number[] = [];
@@ -330,7 +342,9 @@ module powerbi.extensibility.visual {
                     sum: sumOfValues,
                     selected: false,
                     identity: selector,
-                    highlight: hasHighlights && !!(valuesColumn.highlights[valueIndex])
+                    highlight: hasHighlights && !!(valuesColumn.highlights[valueIndex]),
+                    opacity: settings.dotoptions.percentile / 100,
+                    counter: counterValues ? counterValues[valueIndex] : null
                 });
             }
 
@@ -465,6 +479,7 @@ module powerbi.extensibility.visual {
             this.axisX.attr('transform', SVGUtil.translate(0, this.layout.viewportIn.height - LineDotChart.LegendSize));
             this.axisY2.attr('transform', SVGUtil.translate(this.layout.viewportIn.width - LineDotChart.LegendSize - LineDotChart.AxisSize, 0));
         }
+
         private static tickText: string = '.tick text';
         private static dotPointsText: string = "g.path, g.dot-points";
         private static dotPathText: string = "g.path";
@@ -472,7 +487,6 @@ module powerbi.extensibility.visual {
             this.stopAnimation();
             this.renderLegends();
             this.drawPlaybackButtons();
-
             this.axisX.call(this.xAxisProperties.axis);
             this.axisY.call(this.yAxisProperties.axis);
             this.axisY2.call(this.yAxis2Properties.axis);
@@ -483,23 +497,37 @@ module powerbi.extensibility.visual {
                 TextMeasurementService.svgEllipsis);
 
             if (this.settings.misc.isAnimated && this.settings.misc.isStopped) {
-                this.main.selectAll(LineDotChart.Line.selector).selectAll(LineDotChart.dotPointsText).remove();
+                this.main.selectAll(LineDotChart.Line.selectorName).selectAll(LineDotChart.dotPointsText).remove();
                 this.line.selectAll(LineDotChart.textSelector).remove();
 
                 return;
             }
 
+            if (this.settings.axisOptions.show === true) {
+                this.setAxisColor(this.settings.axisOptions.color);
+            } else {
+                this.setAxisColor(LineDotChart.axesDefaultColor);
+            }
             let linePathSelection: d3.selection.Update<LineDotPoint[]> = this.line
                 .selectAll(LineDotChart.dotPathText)
                 .data([this.data.dotPoints]);
-
-            this.drawLine(linePathSelection);
-            this.drawClipPath(linePathSelection);
-
             linePathSelection
                 .exit().remove();
-
+            this.drawLine(linePathSelection);
+            this.drawClipPath(linePathSelection);
             this.drawDots();
+        }
+
+        public setAxisColor(color: string): void {
+            this.axisX.selectAll('line').style('stroke', function (d, i) { return color; });
+            this.axisX.selectAll('path').style('stroke', function (d, i) { return color; });
+            this.axisX.selectAll('text').style('fill', function (d, i) { return color; });
+            this.axisY.selectAll('line').style('stroke', function (d, i) { return color; });
+            this.axisY.selectAll('path').style('stroke', function (d, i) { return color; });
+            this.axisY.selectAll('text').style('fill', function (d, i) { return color; });
+            this.axisY2.selectAll('line').style('stroke', function (d, i) { return color; });
+            this.axisY2.selectAll('path').style('stroke', function (d, i) { return color; });
+            this.axisY2.selectAll('text').style('fill', function (d, i) { return color; });
         }
 
         private static lineDotChartPlayBtn: string = "lineDotChart__playBtn";
@@ -533,7 +561,7 @@ module powerbi.extensibility.visual {
 
             playBtnGroup
                 .append("path")
-                .classed(LineDotChart.StopButton.class, true)
+                .classed(LineDotChart.StopButton.className, true)
                 .classed(LineDotChart.playBtnGroupPathTranslate, true)
                 .attr("d", LineDotChart.playBtnGroupLineValues)
                 .attr("transform-origin", "center")
@@ -541,7 +569,7 @@ module powerbi.extensibility.visual {
 
             playBtnGroup
                 .append("rect")
-                .classed(LineDotChart.StopButton.class, true)
+                .classed(LineDotChart.StopButton.className, true)
                 .classed(LineDotChart.playBtnGroupRectTranslate, true)
                 .attr("width", LineDotChart.playBtnGroupRectWidth)
                 .attr("height", LineDotChart.playBtnGroupRectHeight)
@@ -549,7 +577,7 @@ module powerbi.extensibility.visual {
 
             playBtn.selectAll("circle").attr("opacity", () => this.settings.misc.isAnimated ? 1 : 0);
             playBtn.selectAll(".play").attr("opacity", () => this.settings.misc.isAnimated && this.settings.misc.isStopped ? 1 : 0);
-            playBtn.selectAll(LineDotChart.StopButton.selector).attr("opacity", () => this.settings.misc.isAnimated && !this.settings.misc.isStopped ? 1 : 0);
+            playBtn.selectAll(LineDotChart.StopButton.selectorName).attr("opacity", () => this.settings.misc.isAnimated && !this.settings.misc.isStopped ? 1 : 0);
 
             playBtn.exit().remove();
         }
@@ -645,7 +673,7 @@ module powerbi.extensibility.visual {
             dotsSelection
                 .attr('fill', this.settings.dotoptions.color)
                 .style("opacity", (d: LineDotPoint) => {
-                    return lineDotChartUtils.getFillOpacity(d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights);
+                    return lineDotChartUtils.getFillOpacity(d, d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights);
                 })
                 .attr('r', (d: LineDotPoint) =>
                     this.settings.dotoptions.dotSizeMin + d.dot * (this.settings.dotoptions.dotSizeMax - this.settings.dotoptions.dotSizeMin));
@@ -675,7 +703,12 @@ module powerbi.extensibility.visual {
                     })
                     .transition()
                     .each("start", (d: LineDotPoint, i: number) => {
-                        let text = this.settings.counteroptions.counterTitle + ' ' + (i + 1);
+                        let text = this.settings.counteroptions.counterTitle + ' ';
+                        if (d.counter) {
+                            text += this.settings.isCounterDateTime ? this.data.dateColumnFormatter.format(d.counter) : d.counter;
+                        } else {
+                            text += (i + 1);
+                        }
                         this.updateLineText(lineText, text);
                     })
                     .duration(point_time)
@@ -823,7 +856,7 @@ module powerbi.extensibility.visual {
         private renderLegends(): void {
             let legends: Legend[] = this.generateAxisLabels();
             let legendSelection: d3.selection.Update<any> = this.legends
-                .selectAll(LineDotChart.Legend.selector)
+                .selectAll(LineDotChart.Legend.selectorName)
                 .data(legends);
 
             legendSelection
@@ -837,7 +870,7 @@ module powerbi.extensibility.visual {
                 .attr("dy", (item: Legend) => item.dy)
                 .attr("transform", (item: Legend) => item.transform)
                 .text((item: Legend) => item.text)
-                .classed(LineDotChart.Legend.class, true);
+                .classed(LineDotChart.Legend.className, true);
 
             legendSelection
                 .exit()
@@ -847,13 +880,13 @@ module powerbi.extensibility.visual {
 
     export module lineDotChartUtils {
         export let DimmedOpacity: number = 0.4;
-        export let DefaultOpacity: number = 1.0;
 
-        export function getFillOpacity(selected: boolean, highlight: boolean, hasSelection: boolean, hasPartialHighlights: boolean): number {
+        export function getFillOpacity(dot: LineDotPoint, selected: boolean, highlight: boolean, hasSelection: boolean, hasPartialHighlights: boolean): number {
             if ((hasPartialHighlights && !highlight) || (hasSelection && !selected)) {
-                return DimmedOpacity;
+                let opacity: number = dot.opacity - DimmedOpacity;
+                return opacity < 0.1 ? 0.1 : opacity;
             }
-            return DefaultOpacity;
+            return dot.opacity;
         }
     }
 }

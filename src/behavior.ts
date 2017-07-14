@@ -56,7 +56,7 @@ module powerbi.extensibility.visual {
             let hasHighlights: boolean = this.hasHighlights;
 
             this.selection.style("opacity", (d: LineDotPoint) => {
-                return lineDotChartUtils.getFillOpacity(d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights);
+                return lineDotChartUtils.getFillOpacity(d, d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights);
             });
         }
     }
