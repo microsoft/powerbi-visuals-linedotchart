@@ -277,7 +277,7 @@ module powerbi.extensibility.visual {
 
             if (counterValues && counterValues.length > 0) {
                 let fValue: any = counterValues[0];
-                settings.isCounterDateTime = fValue.getDate ? true : false;
+                settings.isCounterDateTime.isCounterDateTime = fValue.getDate ? true : false;
             }
 
             const dateValues: DateValue[] = [],
@@ -705,7 +705,7 @@ module powerbi.extensibility.visual {
                     .each("start", (d: LineDotPoint, i: number) => {
                         let text = this.settings.counteroptions.counterTitle + ' ';
                         if (d.counter) {
-                            text += this.settings.isCounterDateTime ? this.data.dateColumnFormatter.format(d.counter) : d.counter;
+                            text += this.settings.isCounterDateTime.isCounterDateTime ? this.data.dateColumnFormatter.format(d.counter) : d.counter;
                         } else {
                             text += (i + 1);
                         }
