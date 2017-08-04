@@ -1,3 +1,6 @@
+## 1.1.1
+* Fixed blank window issue in Internet Explorer
+
 ## 1.1.0
 * Add Dot opacity property
 * Add axes color property

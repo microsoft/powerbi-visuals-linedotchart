@@ -28,7 +28,7 @@ module powerbi.extensibility.visual {
     import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
 
     export class LineDotChartSettings extends DataViewObjectsParser {
-        public isCounterDateTime: boolean = false;
+        public isCounterDateTime: CounterDateTime = new CounterDateTime();
         public axisOptions: AxisSettings = new AxisSettings();
         public lineoptions: LineSettings = new LineSettings();
         public dotoptions: DotSettings = new DotSettings();
@@ -62,5 +62,9 @@ module powerbi.extensibility.visual {
         public isAnimated: boolean = true;
         public isStopped: boolean = true;
         public duration: number = 20;
+    }
+
+    export class CounterDateTime {
+        public isCounterDateTime: boolean = true;
     }
 }
