@@ -1,4 +1,4 @@
-## 1.1.1
+## 1.1.2
 * Fixed blank window issue in Internet Explorer
 
 ## 1.1.0
