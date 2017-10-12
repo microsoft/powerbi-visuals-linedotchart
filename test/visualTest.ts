@@ -34,11 +34,15 @@ namespace powerbi.extensibility.visual.test {
     import RgbColor = powerbi.extensibility.utils.test.helpers.color.RgbColor;
     import MockISelectionId = powerbi.extensibility.utils.test.mocks.MockISelectionId;
     import createSelectionId = powerbi.extensibility.utils.test.mocks.createSelectionId;
-    import fromPointToPixel = powerbi.extensibility.utils.type.PixelConverter.fromPointToPixel;
     import getRandomHexColor = powerbitests.customVisuals.getRandomHexColor;
 
     // powerbi.extensibility.utils.formatting
     import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
+
+    // powerbi.extensibility.utils.type
+    import convertToPx = powerbi.extensibility.utils.type.PixelConverter.toString;
+    import convertToPt = powerbi.extensibility.utils.type.PixelConverter.fromPoint;
+    import fromPointToPixel = powerbi.extensibility.utils.type.PixelConverter.fromPointToPixel;
 
     // LineDotChart1460463831201
     import ColumnNames = powerbi.extensibility.visual.LineDotChart1460463831201.ColumnNames;
@@ -101,19 +105,81 @@ namespace powerbi.extensibility.visual.test {
         });
 
         describe("Axes test", () => {
-            it("set color", () => {
+            it("set color and font-size", () => {
                 let color: string = getRandomHexColor();
+                let color2: string = getRandomHexColor();
+                let textSize: number = 14;
+                let expectedTextSize: string = "18.6667px";
 
                 dataView.metadata.objects = {
-                    axesOptions: {
+                    xAxis: {
                         show: true,
-                        color: colorHelper.getSolidColorStructuralObject(color)
+                        color: colorHelper.getSolidColorStructuralObject(color),
+                        textSize: textSize
+                    },
+                    yAxis: {
+                        show: true,
+                        color: colorHelper.getSolidColorStructuralObject(color),
+                        textSize: textSize
                     }
                 };
-                visualBuilder.visualInstance.setAxisColor(color);
+
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                visualBuilder.axes.toArray().map($).forEach(e =>
-                    colorHelper.assertColorsMatch(e.attr('fill'), color));
+                visualBuilder.visualInstance.applyAxisSettings();
+
+                expect(visualBuilder.tickText.length).toBeGreaterThan(0);
+
+                visualBuilder.tickText.toArray().map($).forEach(e => {
+                    expect(e.prop('style')['font-size']).toBe(expectedTextSize);
+                    colorHelper.assertColorsMatch(e.prop('style')['fill'], color);
+                });
+            });
+
+            it("disable the second Y axis", () => {
+                dataView.metadata.objects = {
+                    yAxis: {
+                        show: true,
+                        isDuplicated: false
+                    }
+                };
+
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+                visualBuilder.visualInstance.applyAxisSettings();
+
+                expect(visualBuilder.emptyAxis.length).toBe(1);
+            });
+
+            it("disable X and the second Y axes", () => {
+                dataView.metadata.objects = {
+                    xAxis: {
+                        show: false,
+                    },
+                    yAxis: {
+                        show: true,
+                        isDuplicated: false
+                    }
+                };
+
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+                visualBuilder.visualInstance.applyAxisSettings();
+
+                expect(visualBuilder.emptyAxis.length).toBe(2);
+            });
+
+            it("disable all axes", () => {
+                dataView.metadata.objects = {
+                    xAxis: {
+                        show: false,
+                    },
+                    yAxis: {
+                        show: false,
+                    }
+                };
+
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+                visualBuilder.visualInstance.applyAxisSettings();
+
+                expect(visualBuilder.emptyAxis.length).toBe(3);
             });
         });
 
@@ -279,6 +345,18 @@ namespace powerbi.extensibility.visual.test {
                 const categoricalValues: LineDotChartColumns<any[]> = LineDotChartColumns.getCategoricalValues(dataViewForCategoricalColumn);
 
                 expect(_.isDate(categoricalValues.Date[0])).toBeTruthy();
+            });
+
+            it("date values provided as string and being as custom strings must be displayed correctly", () => {
+                let expectedXlabel = "AlphaBetaOmegaGamma";
+
+                visualBuilder.updateFlushAllD3Transitions(defaultDataViewBuilder.createStringView());
+                visualBuilder.visualInstance.applyAxisSettings();
+
+                let ticks: any = visualBuilder.axis.first().children("g.tick");
+
+                expect(ticks.length).toBe(4);
+                expect(ticks.children("text").text()).toEqual(expectedXlabel);
             });
         });
     });

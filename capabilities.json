@@ -137,11 +137,13 @@
         }
       }
     },
-    "axisOptions": {
-      "displayName": "Axes properties",
-      "displayNameKey": "Visual_AxisProperties",
+    "xAxis": {
+      "displayName": "X-Axis",
+      "displayNameKey": "Visual_XAxis",
       "properties": {
         "show": {
+          "displayName": "Show",
+          "displayNameKey": "Visual_Show",
           "type": {
             "bool": true
           }
@@ -155,6 +157,51 @@
                 "color": true
               }
             }
+          }
+        },
+        "textSize": {
+          "displayName": "Text Size",
+          "displayNameKey": "Visual_TextSize",
+          "type": {
+              "numeric": true
+          }
+        }
+      }
+    },
+    "yAxis": {
+      "displayName": "Y-Axis",
+      "displayNameKey": "Visual_YAxis",
+      "properties": {
+        "show": {
+          "displayName": "Show",
+          "displayNameKey": "Visual_Show",
+          "type": {
+            "bool": true
+          }
+        },
+        "color": {
+          "displayName": "Color",
+          "displayNameKey": "Visual_Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "textSize": {
+          "displayName": "Text Size",
+          "displayNameKey": "Visual_TextSize",
+          "type": {
+              "numeric": true
+          }
+        },
+        "isDuplicated": {
+          "displayName": "Duplicated",
+          "displayNameKey": "Visual_Duplicated",
+          "type": {
+            "bool": true
           }
         }
       }
