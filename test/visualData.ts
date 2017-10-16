@@ -91,6 +91,28 @@ module powerbi.extensibility.visual.test {
                 ], columnNames).build();
         }
 
+        public createStringView(columnNames?: string[]): powerbi.DataView {
+            return this.createCategoricalDataViewBuilder([
+                {
+                    source: {
+                        displayName: LineDotChartData.ColumnDate,
+                        type: ValueType.fromDescriptor({ text: true }),
+                        roles: { Date: true }
+                    },
+                    values: ["Alpha", "Beta", "Omega", "Gamma"]
+                }
+            ], [
+                    {
+                        source: {
+                            displayName: "Values",
+                            type: ValueType.fromDescriptor({ integer: true }),
+                            roles: { Values: true }
+                        },
+                        values: [100, 200, 300, 400]
+                    }
+                ], columnNames).build();
+        }
+
         public getDataViewForCategoricalValues(columnNames?: string[]): powerbi.DataView {
             return this.createDataView(true, columnNames);
         }

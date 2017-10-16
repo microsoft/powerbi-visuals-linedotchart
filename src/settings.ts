@@ -29,16 +29,22 @@ module powerbi.extensibility.visual {
 
     export class LineDotChartSettings extends DataViewObjectsParser {
         public isCounterDateTime: CounterDateTime = new CounterDateTime();
-        public axisOptions: AxisSettings = new AxisSettings();
         public lineoptions: LineSettings = new LineSettings();
         public dotoptions: DotSettings = new DotSettings();
         public counteroptions: CounterSettings = new CounterSettings();
         public misc: MiscSettings = new MiscSettings();
+        public xAxis: AxisSettings = new AxisSettings();
+        public yAxis: YAxisSettings = new YAxisSettings();
     }
 
     export class AxisSettings {
         public show: boolean = true;
         public color: string = "black";
+        public textSize: number = 9;
+    }
+
+    export class YAxisSettings extends AxisSettings {
+        public isDuplicated: boolean = true;
     }
 
     export class LineSettings {

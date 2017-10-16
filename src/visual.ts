@@ -47,6 +47,14 @@ module powerbi.extensibility.visual {
     import DataViewObjectsParser = utils.dataview.DataViewObjectsParser;
     import PrimitiveValue = powerbi.PrimitiveValue;
 
+    // powerbi.extensibility.utils.type
+    import convertToPx = powerbi.extensibility.utils.type.PixelConverter.toString;
+    import convertToPt = powerbi.extensibility.utils.type.PixelConverter.fromPoint;
+    import fromPointToPixel = powerbi.extensibility.utils.type.PixelConverter.fromPointToPixel;
+
+    // powerbi.extensibility.utils.chart
+    import axisScale = powerbi.extensibility.utils.chart.axis.scale;
+
     // powerbi.extensibility.utils.tooltip
     import TooltipEventArgs = powerbi.extensibility.utils.tooltip.TooltipEventArgs;
     import ITooltipServiceWrapper = powerbi.extensibility.utils.tooltip.ITooltipServiceWrapper;
@@ -106,6 +114,7 @@ module powerbi.extensibility.visual {
             return this.data && this.data.settings;
         }
         private static axesDefaultColor: string = "black";
+        private static axesDefaultfontSize: number = 10.5;
         private static viewportMargins = {
             top: 10,
             right: 30,
@@ -232,6 +241,12 @@ module powerbi.extensibility.visual {
                 options);
         }
 
+        private clearElement(selection: d3.Selection<any>): void {
+            selection
+                .selectAll("*")
+                .remove();
+        }
+
         private static validateDataValue(value: number, defaultValues: MinMaxValue): number {
             if (value < defaultValues.min) {
                 return defaultValues.min;
@@ -256,6 +271,7 @@ module powerbi.extensibility.visual {
                 || _.isEmpty(categorical.Values[0].values)) {
                 return null;
             }
+
             let counterValues: PrimitiveValue[] = null;
 
             for (let i = 0; i < dataView.categorical.values.length; i++) {
@@ -267,12 +283,7 @@ module powerbi.extensibility.visual {
             const valuesColumn: DataViewValueColumn = categorical.Values[0],
                 categoryType: valueType = AxisHelper.getCategoryValueType(categorical.Date.source, true);
 
-            if (AxisHelper.isOrdinal(categoryType)) {
-                return null;
-            }
-
-            const isDateTime: boolean = AxisHelper.isDateTime(categoryType),
-                categoricalValues: LineDotChartColumns<any[]> = LineDotChartColumns.getCategoricalValues(dataView),
+            const categoricalValues: LineDotChartColumns<any[]> = LineDotChartColumns.getCategoricalValues(dataView),
                 settings: LineDotChartSettings = this.parseSettings(dataView);
 
             if (counterValues && counterValues.length > 0) {
@@ -280,53 +291,35 @@ module powerbi.extensibility.visual {
                 settings.isCounterDateTime.isCounterDateTime = fValue.getDate ? true : false;
             }
 
-            const dateValues: DateValue[] = [],
-                valueValues: number[] = [];
-
-            for (let i = 0, length = categoricalValues.Date.length; i < length; i++) {
-                if (_.isDate(categoricalValues.Date[i]) || _.isNumber(categoricalValues.Date[i])) {
-                    let value: number,
-                        date: Date;
-
-                    if (isDateTime) {
-                        date = categoricalValues.Date[i] as Date;
-                        value = date.getTime();
-                    } else {
-                        value = categoricalValues.Date[i];
-                    }
-
-                    dateValues.push({
-                        value,
-                        date
-                    });
-
-                    valueValues.push(categoricalValues.Values[i] || 0);
-                }
-            }
-
             let hasHighlights: boolean = !!(categorical.Values.length > 0 && valuesColumn.highlights);
-
-            const extentDate: [number, number] = d3.extent(
-                dateValues,
-                (dateValue: DateValue) => dateValue.value);
-
-            let minDate: number = extentDate[0],
-                maxDate: number = extentDate[1] + (extentDate[1] - extentDate[0]) * LineDotChart.dateMaxCutter;
 
             const dateColumnFormatter = valueFormatter.create({
                 format: valueFormatter.getFormatStringByColumn(categorical.Date.source, true) || categorical.Date.source.format
             });
 
-            let extentValues: [number, number] = d3.extent(valueValues),
-                minValue: number = extentValues[0],
-                maxValue: number = extentValues[1],
+            let extentValues: [number, number] = d3.extent(categoricalValues.Values),
+                yMinValue: number = extentValues[0],
+                yMaxValue: number = extentValues[1],
                 dotPoints: LineDotPoint[] = [],
                 sumOfValues: number = 0;
 
-            for (let valueIndex: number = 0, length: number = dateValues.length; valueIndex < length; valueIndex++) {
-                const value: number = valueValues[valueIndex],
-                    dateValue: DateValue = dateValues[valueIndex];
+            const dateValues: DateValue[] = [],
+                isOrdinal: boolean = AxisHelper.isOrdinal(categoryType),
+                isDateTime: boolean = AxisHelper.isDateTime(categoryType);
 
+            for (let valueIndex: number = 0, length: number = categoricalValues.Date.length; valueIndex < length; valueIndex++) {
+                const value: number = categoricalValues.Values[valueIndex] || 0;
+                let dateValue: DateValue = new DateValue(categoricalValues.Date[valueIndex], null);
+
+                if (isDateTime) {
+                    dateValue.value = categoricalValues.Date[valueIndex].getTime();
+                } else if (!isOrdinal) {
+                    dateValue.value = categoricalValues.Date[valueIndex];
+                } else {
+                    dateValue.value = valueIndex;
+                }
+
+                dateValues.push(dateValue);
                 sumOfValues += value;
 
                 const selector: ISelectionId = visualHost.createSelectionIdBuilder()
@@ -336,8 +329,8 @@ module powerbi.extensibility.visual {
                 dotPoints.push({
                     dateValue,
                     value,
-                    dot: (maxValue - minValue)
-                        ? (value - minValue) / (maxValue - minValue)
+                    dot: (yMaxValue - yMinValue)
+                        ? (value - yMinValue) / (yMaxValue - yMinValue)
                         : 0,
                     sum: sumOfValues,
                     selected: false,
@@ -349,7 +342,7 @@ module powerbi.extensibility.visual {
             }
 
             // make some space for counter + 25%
-            sumOfValues = sumOfValues + (sumOfValues - minValue) * LineDotChart.makeSomeSpaceForCounter;
+            sumOfValues = sumOfValues + (sumOfValues - yMinValue) * LineDotChart.makeSomeSpaceForCounter;
 
             const columnNames: ColumnNames = {
                 category: LineDotChart.getDisplayName(categorical.Date),
@@ -360,17 +353,18 @@ module powerbi.extensibility.visual {
                 format: valueFormatter.getFormatStringByColumn(valuesColumn.source)
             });
 
+            const metadata: DataViewMetadataColumn = categorical.Date.source;
+
             return {
                 columnNames,
                 dotPoints,
                 settings,
                 dataValueFormatter,
                 dateColumnFormatter,
-                isDateTime,
-                minDate,
-                maxDate,
-                minValue,
-                maxValue,
+                isOrdinal,
+                dateValues,
+                yMinValue,
+                yMaxValue,
                 sumOfValues,
                 hasHighlights,
                 dateMetadataColumn: categorical.Date.source,
@@ -403,31 +397,43 @@ module powerbi.extensibility.visual {
             let effectiveWidth: number = Math.max(0, this.layout.viewportIn.width - LineDotChart.LegendSize - LineDotChart.AxisSize);
             let effectiveHeight: number = Math.max(0, this.layout.viewportIn.height - LineDotChart.LegendSize);
 
+            const extentDate: [number, number] = d3.extent(
+                this.data.dateValues,
+                (dateValue: DateValue) => dateValue.value);
+
+            let minDate: number = extentDate[0],
+                maxDate: number = extentDate[1] + (extentDate[1] - extentDate[0]) * LineDotChart.dateMaxCutter;
+
             this.xAxisProperties = AxisHelper.createAxis({
                 pixelSpan: effectiveWidth,
-                dataDomain: [this.data.minDate, this.data.maxDate],
+                dataDomain: !this.data.isOrdinal ? [minDate, maxDate] : this.data.dateValues.map((dateValue: DateValue, index: number) => { return dateValue.value; }),
                 metaDataColumn: this.data.dateMetadataColumn,
                 formatString: null,
                 outerPadding: LineDotChart.outerPadding,
+                useRangePoints: true,
                 isCategoryAxis: true,
-                isScalar: true,
+                isScalar: !this.data.isOrdinal,
                 isVertical: false,
                 forcedTickCount: Math.max(this.layout.viewport.width / LineDotChart.forcedTickSize, 0),
-                useTickIntervalForDisplayUnits: true,
-                getValueFn: (index: number, type: valueType) => {
-                    if (this.data.isDateTime) {
+                useTickIntervalForDisplayUnits: false,
+                shouldClamp: true,
+                getValueFn: (index: number, dataType: valueType): any => {
+                    if (dataType.dateTime) {
                         return this.data.dateColumnFormatter.format(new Date(index));
-                    } else {
-                        return index;
                     }
+                    else if (dataType.text) {
+                        return this.data.dateValues[index].label;
+                    }
+                    return index;
                 }
             });
             this.xAxisProperties.xLabelMaxWidth = Math.min(LineDotChart.xLabelMaxWidth, this.layout.viewportIn.width / LineDotChart.xLabelTickSize);
+
             this.xAxisProperties.formatter = this.data.dateColumnFormatter;
 
             this.yAxisProperties = AxisHelper.createAxis({
                 pixelSpan: effectiveHeight,
-                dataDomain: [this.data.minValue, this.data.sumOfValues],
+                dataDomain: [this.data.yMinValue, this.data.sumOfValues],
                 metaDataColumn: this.data.valuesMetadataColumn,
                 formatString: null,
                 outerPadding: LineDotChart.outerPadding,
@@ -439,7 +445,7 @@ module powerbi.extensibility.visual {
 
             this.yAxis2Properties = AxisHelper.createAxis({
                 pixelSpan: effectiveHeight,
-                dataDomain: [this.data.minValue, this.data.sumOfValues],
+                dataDomain: [this.data.yMinValue, this.data.sumOfValues],
                 metaDataColumn: this.data.valuesMetadataColumn,
                 formatString: null,
                 outerPadding: LineDotChart.outerPadding,
@@ -487,9 +493,25 @@ module powerbi.extensibility.visual {
             this.stopAnimation();
             this.renderLegends();
             this.drawPlaybackButtons();
-            this.axisX.call(this.xAxisProperties.axis);
-            this.axisY.call(this.yAxisProperties.axis);
-            this.axisY2.call(this.yAxis2Properties.axis);
+
+            if (this.settings.xAxis.show === true) {
+                this.axisX.call(this.xAxisProperties.axis);
+            } else {
+                this.clearElement(this.axisX);
+            }
+
+            if (this.settings.yAxis.show === true) {
+                this.axisY.call(this.yAxisProperties.axis);
+
+                if (this.settings.yAxis.isDuplicated) {
+                    this.axisY2.call(this.yAxis2Properties.axis);
+                } else {
+                    this.clearElement(this.axisY2);
+                }
+            } else {
+                this.clearElement(this.axisY);
+                this.clearElement(this.axisY2);
+            }
 
             this.axisX.selectAll(LineDotChart.tickText).call(
                 AxisHelper.LabelLayoutStrategy.clip,
@@ -503,11 +525,7 @@ module powerbi.extensibility.visual {
                 return;
             }
 
-            if (this.settings.axisOptions.show === true) {
-                this.setAxisColor(this.settings.axisOptions.color);
-            } else {
-                this.setAxisColor(LineDotChart.axesDefaultColor);
-            }
+            this.applyAxisSettings();
             let linePathSelection: d3.selection.Update<LineDotPoint[]> = this.line
                 .selectAll(LineDotChart.dotPathText)
                 .data([this.data.dotPoints]);
@@ -515,19 +533,37 @@ module powerbi.extensibility.visual {
                 .exit().remove();
             this.drawLine(linePathSelection);
             this.drawClipPath(linePathSelection);
+
             this.drawDots();
         }
 
-        public setAxisColor(color: string): void {
-            this.axisX.selectAll('line').style('stroke', function (d, i) { return color; });
-            this.axisX.selectAll('path').style('stroke', function (d, i) { return color; });
-            this.axisX.selectAll('text').style('fill', function (d, i) { return color; });
-            this.axisY.selectAll('line').style('stroke', function (d, i) { return color; });
-            this.axisY.selectAll('path').style('stroke', function (d, i) { return color; });
-            this.axisY.selectAll('text').style('fill', function (d, i) { return color; });
-            this.axisY2.selectAll('line').style('stroke', function (d, i) { return color; });
-            this.axisY2.selectAll('path').style('stroke', function (d, i) { return color; });
-            this.axisY2.selectAll('text').style('fill', function (d, i) { return color; });
+        public applyAxisSettings(): void {
+            let xColor: string = LineDotChart.axesDefaultColor,
+                yColor: string = LineDotChart.axesDefaultColor,
+                xFontSize: string = convertToPt(LineDotChart.axesDefaultfontSize),
+                yFontSize: string = convertToPt(LineDotChart.axesDefaultfontSize);
+
+            if (this.settings.xAxis.show === true) {
+                xColor = this.settings.xAxis.color;
+                xFontSize = convertToPt(this.settings.xAxis.textSize);
+                this.axisX.selectAll('line').style('stroke', function (d, i) { return xColor; });
+                this.axisX.selectAll('path').style('stroke', function (d, i) { return xColor; });
+                this.axisX.selectAll('text').style('fill', function (d, i) { return xColor; }).style("font-size", xFontSize);
+            }
+
+            if (this.settings.yAxis.show === true) {
+                yColor = this.settings.yAxis.color;
+                yFontSize = convertToPt(this.settings.yAxis.textSize);
+                this.axisY.selectAll('line').style('stroke', function (d, i) { return yColor; });
+                this.axisY.selectAll('path').style('stroke', function (d, i) { return yColor; });
+                this.axisY.selectAll('text').style('fill', function (d, i) { return yColor; }).style("font-size", yFontSize);
+
+                if (this.settings.yAxis.isDuplicated) {
+                    this.axisY2.selectAll('line').style('stroke', function (d, i) { return yColor; });
+                    this.axisY2.selectAll('path').style('stroke', function (d, i) { return yColor; });
+                    this.axisY2.selectAll('text').style('fill', function (d, i) { return yColor; }).style("font-size", yFontSize);
+                }
+            }
         }
 
         private static lineDotChartPlayBtn: string = "lineDotChart__playBtn";
@@ -651,7 +687,6 @@ module powerbi.extensibility.visual {
 
             let hasHighlights: boolean = this.data.hasHighlights;
             let hasSelection: boolean = this.interactivityService && this.interactivityService.hasSelection();
-
             // Draw the individual data points that will be shown on hover with a tooltip
             let lineTipSelection: d3.selection.Update<LineDotPoint[]> = this.line.selectAll('g.' + LineDotChart.dotPointsClass)
                 .data([this.data.dotPoints]);
@@ -833,7 +868,7 @@ module powerbi.extensibility.visual {
                 return [];
             }
 
-            const unformattedDate: Date | number = dataPoint.dateValue.date
+            const unformattedDate: string | Date | number = dataPoint.dateValue.label
                 || dataPoint.dateValue.value;
 
             const formattedDate: string = this.data.dateColumnFormatter.format(unformattedDate),

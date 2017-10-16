@@ -30,9 +30,14 @@ module powerbi.extensibility.visual {
     import IAxisProperties = powerbi.extensibility.utils.chart.axis.IAxisProperties;
     import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
 
-    export interface DateValue {
-        date?: Date;
+    export class DateValue {
+        label: string;
         value: number;
+
+        constructor(label: string, value: number) {
+            this.label = label;
+            this.value = value;
+        }
     }
 
     export interface LineDotPoint extends SelectableDataPoint {
@@ -65,11 +70,10 @@ module powerbi.extensibility.visual {
         valuesMetadataColumn: DataViewMetadataColumn;
         dateColumnFormatter: IValueFormatter;
         dataValueFormatter: IValueFormatter;
-        isDateTime: boolean;
-        minDate: number;
-        maxDate: number;
-        minValue: number;
-        maxValue: number;
+        dateValues: DateValue[];
+        isOrdinal: boolean;
+        yMinValue: number;
+        yMaxValue: number;
         sumOfValues: number;
         hasHighlights: boolean;
     }

@@ -71,8 +71,26 @@ module powerbi.extensibility.visual.test {
 
         public get axes() {
             return this.mainElement
-                .children("g")
-                .children("g.axis text");
+            .children("g")
+            .children("g.axes");
+        }
+
+        public get axis() {
+            return this.axes
+            .children("g.axis");
+        }
+
+        public get emptyAxis() {
+            return this.axes.children("g.axis:empty");
+        }
+
+        public get ticks() {
+            return this.axis
+                .children("g.tick");
+        }
+
+        public get tickText() {
+            return this.ticks.children("text");
         }
 
         public get animationPlay(): JQuery {

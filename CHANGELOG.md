@@ -1,3 +1,12 @@
+## 1.2.1
+* UPD: Using the version 1.5.1 of powerbi-visuals-utils-chartutils
+
+## 1.2.0
+* ADD: X-axis and Y-axis option groups that let to show or hide axes and set color with font size
+* REM: Axis properties option group was removed
+* ADD: Possibility to use string labels in X-axis
+* ADD: Using of a new version 1.5 of Chart utils
+
 ## 1.1.2
 * Fixed blank window issue in Internet Explorer
 
