@@ -61,7 +61,7 @@ module powerbi.extensibility.visual {
     }
 
     export class CounterSettings {
-        public counterTitle: string = "Total features";
+        public counterTitle: string = null;
     }
 
     export class MiscSettings {
