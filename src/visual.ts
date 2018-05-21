@@ -107,12 +107,14 @@ module powerbi.extensibility.visual {
         private interactivityService: IInteractivityService;
         private behavior: IInteractiveBehavior;
         private hostService: IVisualHost;
+        private localizationManager: ILocalizationManager;
 
         public data: LineDotChartViewModel;
 
         private get settings(): LineDotChartSettings {
             return this.data && this.data.settings;
         }
+        private static counterTitleDefaultKey: string = "Visual_CounterTitle";
         private static axesDefaultColor: string = "black";
         private static axesDefaultfontSize: number = 10.5;
         private static viewportMargins = {
@@ -134,6 +136,7 @@ module powerbi.extensibility.visual {
                 options.element);
 
             this.hostService = options.host;
+            this.localizationManager = this.hostService.createLocalizationManager();
 
             this.layout = new VisualLayout(null, LineDotChart.viewportMargins);
 
@@ -180,7 +183,7 @@ module powerbi.extensibility.visual {
                 return;
             }
             this.layout.viewport = options.viewport;
-            let data: LineDotChartViewModel = LineDotChart.converter(options.dataViews[0], this.hostService);
+            let data: LineDotChartViewModel = LineDotChart.converter(options.dataViews[0], this.hostService, this.localizationManager);
             if (!data || _.isEmpty(data.dotPoints)) {
                 this.clear();
                 return;
@@ -257,7 +260,7 @@ module powerbi.extensibility.visual {
         }
         private static dateMaxCutter: number = .05;
         private static makeSomeSpaceForCounter: number = .10;
-        private static converter(dataView: DataView, visualHost: IVisualHost): LineDotChartViewModel {
+        private static converter(dataView: DataView, visualHost: IVisualHost, localizationManager: ILocalizationManager): LineDotChartViewModel {
             let categorical: LineDotChartColumns<DataViewCategoryColumn & DataViewValueColumn[]>
                 = LineDotChartColumns.getCategoricalColumns(dataView);
 
@@ -284,8 +287,7 @@ module powerbi.extensibility.visual {
                 categoryType: valueType = AxisHelper.getCategoryValueType(categorical.Date.source, true);
 
             const categoricalValues: LineDotChartColumns<any[]> = LineDotChartColumns.getCategoricalValues(dataView),
-                settings: LineDotChartSettings = this.parseSettings(dataView);
-
+                settings: LineDotChartSettings = this.parseSettings(dataView, localizationManager);
             if (counterValues && counterValues.length > 0) {
                 let fValue: any = counterValues[0];
                 settings.isCounterDateTime.isCounterDateTime = fValue.getDate ? true : false;
@@ -294,7 +296,8 @@ module powerbi.extensibility.visual {
             let hasHighlights: boolean = !!(categorical.Values.length > 0 && valuesColumn.highlights);
 
             const dateColumnFormatter = valueFormatter.create({
-                format: valueFormatter.getFormatStringByColumn(categorical.Date.source, true) || categorical.Date.source.format
+                format: valueFormatter.getFormatStringByColumn(categorical.Date.source, true) || categorical.Date.source.format,
+                cultureSelector: visualHost.locale
             });
 
             let extentValues: [number, number] = d3.extent(categoricalValues.Values),
@@ -376,9 +379,12 @@ module powerbi.extensibility.visual {
             return (column && column.source && column.source.displayName) || "";
         }
 
-        private static parseSettings(dataView: DataView): LineDotChartSettings {
+        private static parseSettings(dataView: DataView, localizationManager: ILocalizationManager): LineDotChartSettings {
             let settings: LineDotChartSettings = LineDotChartSettings.parse<LineDotChartSettings>(dataView);
             let defaultRange: LineDotChartDefaultSettingsRange = this.defaultSettingsRange;
+            if (settings.counteroptions.counterTitle === null) {
+                settings.counteroptions.counterTitle = localizationManager.getDisplayName(LineDotChart.counterTitleDefaultKey);
+            }
             settings.dotoptions.dotSizeMin = this.validateDataValue(settings.dotoptions.dotSizeMin, defaultRange.dotSize);
             settings.dotoptions.dotSizeMax = this.validateDataValue(settings.dotoptions.dotSizeMax, {
                 min: settings.dotoptions.dotSizeMin,
@@ -871,8 +877,9 @@ module powerbi.extensibility.visual {
             const unformattedDate: string | Date | number = dataPoint.dateValue.label
                 || dataPoint.dateValue.value;
 
-            const formattedDate: string = this.data.dateColumnFormatter.format(unformattedDate),
-                formattedValue: string = this.data.dataValueFormatter.format(dataPoint.value);
+            const valueFormatterLocalized = valueFormatter.create({cultureSelector: this.hostService.locale}),
+                formattedDate: string = this.data.dateColumnFormatter.format(unformattedDate),
+                formattedValue: string = this.data.dataValueFormatter.format(valueFormatterLocalized.format(dataPoint.value));
 
             const columnNames: ColumnNames = this.data.columnNames;
 
