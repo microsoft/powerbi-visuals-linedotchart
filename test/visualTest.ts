@@ -360,6 +360,36 @@ namespace powerbi.extensibility.visual.test {
             });
         });
 
+        describe("rect animation", () => {
+            it("should return correct rect coordinates and width", () => {
+                const firstValue: number = 10,
+                    lastValue: number = 100;
+
+                const settings = visualBuilder.visualInstance.getRectAnimationSettings(firstValue, lastValue);
+
+                // for ascending order X value always the same
+                expect(settings.startX).toBe(firstValue);
+                expect(settings.endX).toBe(firstValue);
+
+                // width should be always possitive
+                expect(settings.endWidth).toBeGreaterThanOrEqual(0);
+            });
+
+            it("should return correct rect coordinates and width for reversed data", () => {
+                const firstValue: number = 100,
+                    lastValue: number = 10;
+
+                const settings = visualBuilder.visualInstance.getRectAnimationSettings(firstValue, lastValue);
+
+                // for descending order X value moves from right to left
+                expect(settings.startX).toBe(firstValue);
+                expect(settings.endX).toBe(lastValue);
+
+                // width should be always positive
+                expect(settings.endWidth).toBeGreaterThanOrEqual(0);
+            });
+        });
+
         describe("Capabilities tests", () => {
             it("all items having displayName should have displayNameKey property", () => {
                 jasmine.getJSONFixtures().fixturesPath = "base";
