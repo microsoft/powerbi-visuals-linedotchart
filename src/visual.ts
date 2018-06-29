@@ -65,6 +65,12 @@ module powerbi.extensibility.visual {
         Values?: T;
     }
 
+    export interface LineAnimationSettings {
+        startX: number;
+        endX: number;
+        endWidth: number;
+    }
+
     export class LineDotChart implements IVisual {
         private static Identity: ClassAndSelector = createClassAndSelector("lineDotChart");
         private static Axes: ClassAndSelector = createClassAndSelector("axes");
@@ -664,23 +670,45 @@ module powerbi.extensibility.visual {
                 .attr("y", LineDotChart.zeroY)
                 .attr("height", this.layout.viewportIn.height);
 
-            let line_left: any = this.xAxisProperties.scale(_.first(this.data.dotPoints).dateValue.value);
-            let line_right: any = this.xAxisProperties.scale(_.last(this.data.dotPoints).dateValue.value);
+            let line_left: any = this.xAxisProperties.scale(_.first(this.data.dotPoints).dateValue.value),
+                line_right: any = this.xAxisProperties.scale(_.last(this.data.dotPoints).dateValue.value);
+
+            const rectSettings: LineAnimationSettings = this.getRectAnimationSettings(line_left, line_right);
 
             if (this.settings.misc.isAnimated) {
                 clipPath
                     .selectAll("rect")
-                    .attr('x', line_left)
+                    .attr('x', rectSettings.startX)
                     .attr('width', 0)
                     .attr("height", this.layout.viewportIn.height)
                     .interrupt()
                     .transition()
                     .ease("linear")
                     .duration(this.animationDuration * LineDotChart.millisecondsInOneSecond)
-                    .attr('width', line_right - line_left);
+                    .attr('x', rectSettings.endX)
+                    .attr('width', rectSettings.endWidth);
             } else {
                 linePathSelection.selectAll("clipPath").remove();
             }
+        }
+
+        public getRectAnimationSettings(firstValue: number, secondValue: number): LineAnimationSettings {
+            const isReverted: boolean = secondValue - firstValue < 0;
+
+            if (isReverted) {
+                return {
+                    startX: firstValue,
+                    endX: secondValue,
+                    endWidth: firstValue - secondValue
+                };
+            }
+
+            // x always the same, in this case only width changes
+            return {
+                startX: firstValue,
+                endX: firstValue,
+                endWidth: secondValue - firstValue
+            };
         }
 
         private static pointTime: number = 300;
