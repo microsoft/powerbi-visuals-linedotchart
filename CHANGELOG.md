@@ -1,3 +1,6 @@
+## 1.4.1
+* Fixed chart animation for descending order of dates 
+
 ## 1.4.0
 * Added localization for all supported languages
 

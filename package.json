@@ -1,7 +1,7 @@
 {
   "name": "powerbi-visuals-linedotchart",
   "description": "LineDot Chart",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "author": {
     "name": "Microsoft",
     "email": "pbicvsupport@microsoft.com"
