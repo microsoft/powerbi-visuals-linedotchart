@@ -66,6 +66,9 @@
     }
   }],
   "supportsHighlight": true,
+  "sorting": {
+    "default": {}
+  },
   "objects": {
     "lineoptions": {
       "displayName": "Line",

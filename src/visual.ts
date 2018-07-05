@@ -375,7 +375,8 @@ module powerbi.extensibility.visual {
             };
 
             const dataValueFormatter: IValueFormatter = valueFormatter.create({
-                format: valueFormatter.getFormatStringByColumn(valuesColumn.source)
+                format: valueFormatter.getFormatStringByColumn(valuesColumn.source),
+                cultureSelector: visualHost.locale
             });
 
             return {
@@ -412,8 +413,28 @@ module powerbi.extensibility.visual {
                 this.data.dateValues,
                 (dateValue: DateValue) => dateValue.value);
 
-            const minDate: number = extentDate[0];
-            const maxDate: number = extentDate[1] + (extentDate[1] - extentDate[0]) * LineDotChart.dateMaxCutter;
+            const columnFormattingFn = (index: number, dataType: valueType): any => {
+                if (dataType.dateTime) {
+                    return this.data.dateColumnFormatter.format(new Date(index));
+                }
+                else if (dataType.text) {
+                    return this.data.dateValues[index].label;
+                }
+                return this.data.dateColumnFormatter.format(index);
+            }
+
+            const valueFormattingFn = (index: number, dataType: valueType): any => {
+                if (dataType.dateTime) {
+                    return this.data.dataValueFormatter.format(new Date(index));
+                }
+                else if (dataType.text) {
+                    return this.data.dateValues[index].label;
+                }
+                return this.data.dataValueFormatter.format(index);
+            }
+
+            let minDate: number = extentDate[0],
+                maxDate: number = extentDate[1] + (extentDate[1] - extentDate[0]) * LineDotChart.dateMaxCutter;
 
             this.xAxisProperties = AxisHelper.createAxis({
                 pixelSpan: effectiveWidth,
@@ -430,15 +451,7 @@ module powerbi.extensibility.visual {
                 forcedTickCount: Math.max(this.layout.viewport.width / LineDotChart.forcedTickSize, 0),
                 useTickIntervalForDisplayUnits: false,
                 shouldClamp: true,
-                getValueFn: (index: number, dataType: valueType): any => {
-                    if (dataType.dateTime) {
-                        return this.data.dateColumnFormatter.format(new Date(index));
-                    }
-                    else if (dataType.text) {
-                        return this.data.dateValues[index].label;
-                    }
-                    return index;
-                }
+                getValueFn: columnFormattingFn
             });
 
             this.xAxisProperties.xLabelMaxWidth = Math.min(
@@ -447,29 +460,44 @@ module powerbi.extensibility.visual {
             );
 
             this.xAxisProperties.formatter = this.data.dateColumnFormatter;
+            let yMin = this.data.yMinValue,
+                yMax = this.data.yMaxValue;
+            if (yMax == yMin) {
+                if ((Math.floor(yMin) == yMin) && yMin !== 0) {
+                    yMin = yMin - 1;
+                    yMax = yMax + 1;
+                } else {
+                    yMin = yMin - LineDotChart.dateMaxCutter;
+                    yMax = yMax + LineDotChart.dateMaxCutter;
+                }
+            } else {
+                yMax = yMax + (yMax - yMin) * LineDotChart.makeSomeSpaceForCounter;
+            }
 
             this.yAxisProperties = AxisHelper.createAxis({
                 pixelSpan: effectiveHeight,
-                dataDomain: [this.data.yMinValue, this.data.sumOfValues],
+                dataDomain: [yMin, yMax],
                 metaDataColumn: this.data.valuesMetadataColumn,
                 formatString: null,
                 outerPadding: LineDotChart.outerPadding,
                 isCategoryAxis: false,
                 isScalar: true,
                 isVertical: true,
-                useTickIntervalForDisplayUnits: true
+                useTickIntervalForDisplayUnits: true,
+                getValueFn: valueFormattingFn
             });
 
             this.yAxis2Properties = AxisHelper.createAxis({
                 pixelSpan: effectiveHeight,
-                dataDomain: [this.data.yMinValue, this.data.sumOfValues],
+                dataDomain: [yMin, yMax],
                 metaDataColumn: this.data.valuesMetadataColumn,
                 formatString: null,
                 outerPadding: LineDotChart.outerPadding,
                 isCategoryAxis: false,
                 isScalar: true,
                 isVertical: true,
-                useTickIntervalForDisplayUnits: true
+                useTickIntervalForDisplayUnits: true,
+                getValueFn: valueFormattingFn
             });
 
             this.yAxis2Properties.axis.orient("right");
@@ -772,7 +800,7 @@ module powerbi.extensibility.visual {
                     return this.xAxisProperties.scale(dataPoint.dateValue.value);
                 })
                 .y((dataPoint: LineDotPoint) => {
-                    return this.yAxisProperties.scale(dataPoint.sum);
+                    return this.yAxisProperties.scale(dataPoint.value);
                 });
 
             pathPlot
@@ -931,7 +959,7 @@ module powerbi.extensibility.visual {
                     .attr("transform", (dataPoint: LineDotPoint) => {
                         return SVGUtil.translateAndScale(
                             this.xAxisProperties.scale(dataPoint.dateValue.value),
-                            this.yAxisProperties.scale(dataPoint.sum),
+                            this.yAxisProperties.scale(dataPoint.value),
                             LineDotChart.pointScaleValue);
                     })
                     .transition()
@@ -958,9 +986,8 @@ module powerbi.extensibility.visual {
                     .attr("transform", (dataPoint: LineDotPoint) => {
                         return SVGUtil.translateAndScale(
                             this.xAxisProperties.scale(dataPoint.dateValue.value),
-                            this.yAxisProperties.scale(dataPoint.sum),
-                            LineDotChart.pointTransformScaleValue
-                        );
+                            this.yAxisProperties.scale(dataPoint.value),
+                            LineDotChart.pointTransformScaleValue);
                     })
                     .transition()
                     .duration(point_time)
@@ -971,9 +998,8 @@ module powerbi.extensibility.visual {
                     .attr("transform", (dataPoint: LineDotPoint) => {
                         return SVGUtil.translateAndScale(
                             this.xAxisProperties.scale(dataPoint.dateValue.value),
-                            this.yAxisProperties.scale(dataPoint.sum),
-                            1
-                        );
+                            this.yAxisProperties.scale(dataPoint.value),
+                            1);
                     });
             } else {
                 dotsSelection
@@ -981,9 +1007,8 @@ module powerbi.extensibility.visual {
                     .attr("transform", (dataPoint: LineDotPoint) => {
                         return SVGUtil.translateAndScale(
                             this.xAxisProperties.scale(dataPoint.dateValue.value),
-                            this.yAxisProperties.scale(dataPoint.sum),
-                            1
-                        );
+                            this.yAxisProperties.scale(dataPoint.value),
+                            1);
                     });
 
                 this.line
@@ -1079,9 +1104,8 @@ module powerbi.extensibility.visual {
 
             const unformattedDate: string | number = dataPoint.dateValue.label || dataPoint.dateValue.value;
 
-            const valueFormatterLocalized = valueFormatter.create({ cultureSelector: this.hostService.locale });
-            const formattedDate: string = this.data.dateColumnFormatter.format(unformattedDate);
-            const formattedValue: string = this.data.dataValueFormatter.format(valueFormatterLocalized.format(dataPoint.value));
+            const formattedDate: string = this.data.dateColumnFormatter.format(unformattedDate),
+                formattedValue: string = this.data.dataValueFormatter.format((dataPoint.value));
 
             const columnNames: ColumnNames = this.data.columnNames;
 
