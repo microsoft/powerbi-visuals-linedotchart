@@ -194,8 +194,13 @@ module powerbi.extensibility.visual {
                 return;
             }
 
+<<<<<<< HEAD
             this.data = data;
 
+=======
+            this.data = data;   
+            
+>>>>>>> fix for items non changed after formatting
             if (this.interactivityService) {
                 this.interactivityService.applySelectionStateToData(this.data.dotPoints);
             }
@@ -374,10 +379,13 @@ module powerbi.extensibility.visual {
                 values: LineDotChart.getDisplayName(valuesColumn)
             };
 
+            console.log(valueFormatter.getFormatStringByColumn(valuesColumn.source));
             const dataValueFormatter: IValueFormatter = valueFormatter.create({
-                format: valueFormatter.getFormatStringByColumn(valuesColumn.source),
+                format:  valueFormatter.getFormatStringByColumn(valuesColumn.source, true) || "#",
                 cultureSelector: visualHost.locale
             });
+            console.log(dataValueFormatter.format(234));
+            console.log(typeof(dataValueFormatter.format(234)));
 
             return {
                 columnNames,
@@ -430,7 +438,8 @@ module powerbi.extensibility.visual {
                 else if (dataType.text) {
                     return this.data.dateValues[index].label;
                 }
-                return this.data.dataValueFormatter.format(index);
+                let formatted: string = this.data.dataValueFormatter.format(index);
+                return formatted != index.toString() ? formatted : index;
             }
 
             let minDate: number = extentDate[0],
@@ -1105,7 +1114,7 @@ module powerbi.extensibility.visual {
             const unformattedDate: string | number = dataPoint.dateValue.label || dataPoint.dateValue.value;
 
             const formattedDate: string = this.data.dateColumnFormatter.format(unformattedDate),
-                formattedValue: string = this.data.dataValueFormatter.format((dataPoint.value));
+                formattedValue: string = this.data.dataValueFormatter.format(dataPoint.value);
 
             const columnNames: ColumnNames = this.data.columnNames;
 
