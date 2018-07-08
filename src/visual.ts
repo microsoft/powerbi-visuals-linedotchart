@@ -195,12 +195,17 @@ module powerbi.extensibility.visual {
             }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
             this.data = data;
 
 =======
             this.data = data;   
             
 >>>>>>> fix for items non changed after formatting
+=======
+            this.data = data;
+
+>>>>>>> deletions after lint
             if (this.interactivityService) {
                 this.interactivityService.applySelectionStateToData(this.data.dotPoints);
             }
@@ -379,13 +384,10 @@ module powerbi.extensibility.visual {
                 values: LineDotChart.getDisplayName(valuesColumn)
             };
 
-            console.log(valueFormatter.getFormatStringByColumn(valuesColumn.source));
             const dataValueFormatter: IValueFormatter = valueFormatter.create({
                 format:  valueFormatter.getFormatStringByColumn(valuesColumn.source, true) || "#",
                 cultureSelector: visualHost.locale
             });
-            console.log(dataValueFormatter.format(234));
-            console.log(typeof(dataValueFormatter.format(234)));
 
             return {
                 columnNames,
@@ -429,7 +431,11 @@ module powerbi.extensibility.visual {
                     return this.data.dateValues[index].label;
                 }
                 return this.data.dateColumnFormatter.format(index);
+<<<<<<< HEAD
             }
+=======
+            };
+>>>>>>> deletions after lint
 
             const valueFormattingFn = (index: number, dataType: valueType): any => {
                 if (dataType.dateTime) {
@@ -439,8 +445,9 @@ module powerbi.extensibility.visual {
                     return this.data.dateValues[index].label;
                 }
                 let formatted: string = this.data.dataValueFormatter.format(index);
-                return formatted != index.toString() ? formatted : index;
-            }
+
+                return formatted !== index.toString() ? formatted : index;
+            };
 
             let minDate: number = extentDate[0],
                 maxDate: number = extentDate[1] + (extentDate[1] - extentDate[0]) * LineDotChart.dateMaxCutter;
@@ -471,8 +478,8 @@ module powerbi.extensibility.visual {
             this.xAxisProperties.formatter = this.data.dateColumnFormatter;
             let yMin = this.data.yMinValue,
                 yMax = this.data.yMaxValue;
-            if (yMax == yMin) {
-                if ((Math.floor(yMin) == yMin) && yMin !== 0) {
+            if (yMax === yMin) {
+                if ((Math.floor(yMin) === yMin) && yMin !== 0) {
                     yMin = yMin - 1;
                     yMax = yMax + 1;
                 } else {
