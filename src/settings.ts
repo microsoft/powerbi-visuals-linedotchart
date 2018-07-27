@@ -27,7 +27,7 @@
 module powerbi.extensibility.visual {
     import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
 
-    export class LineDotChartSettings extends DataViewObjectsParser {
+    export class Settings extends DataViewObjectsParser {
         public isCounterDateTime: CounterDateTime = new CounterDateTime();
         public lineoptions: LineSettings = new LineSettings();
         public dotoptions: DotSettings = new DotSettings();
@@ -35,6 +35,53 @@ module powerbi.extensibility.visual {
         public misc: MiscSettings = new MiscSettings();
         public xAxis: AxisSettings = new AxisSettings();
         public yAxis: YAxisSettings = new YAxisSettings();
+
+        public static parseSettings(
+            dataView: DataView,
+            localizationManager: ILocalizationManager,
+        ): Settings {
+            const settings: Settings = Settings.parse<Settings>(dataView);
+
+            if (!settings.counteroptions.counterTitle) {
+                settings.counteroptions.counterTitle = localizationManager.getDisplayName("Visual_CounterTitle");
+            }
+
+            settings.dotoptions.dotSizeMin = this.getValidValue(
+                settings.dotoptions.dotSizeMin,
+                settings.dotoptions.minDotSize,
+                settings.dotoptions.maxDotSize,
+            );
+
+            settings.dotoptions.dotSizeMax = this.getValidValue(
+                settings.dotoptions.dotSizeMax,
+                settings.dotoptions.dotSizeMin,
+                settings.dotoptions.maxDotSize,
+            );
+
+            settings.lineoptions.lineThickness = this.getValidValue(
+                settings.lineoptions.lineThickness,
+                settings.lineoptions.minLineThickness,
+                settings.lineoptions.maxLineThickness,
+            );
+
+            settings.misc.duration = this.getValidValue(
+                settings.misc.duration,
+                settings.misc.minDuration,
+                settings.misc.maxDuration,
+            );
+
+            return settings;
+        }
+
+        private static getValidValue(value: number, min: number, max: number): number {
+            if (value < min) {
+                return min;
+            } else if (value > max) {
+                return max;
+            }
+
+            return value;
+        }
     }
 
     export class AxisSettings {
@@ -48,11 +95,17 @@ module powerbi.extensibility.visual {
     }
 
     export class LineSettings {
+        public minLineThickness: number = 0;
+        public maxLineThickness: number = 50;
+
         public fill: string = "rgb(102, 212, 204)";
         public lineThickness: number = 3;
     }
 
     export class DotSettings {
+        public minDotSize: number = 0;
+        public maxDotSize: number = 50;
+
         public color: string = "#005c55";
         public dotSizeMin: number = 4;
         public dotSizeMax: number = 38;
@@ -61,10 +114,21 @@ module powerbi.extensibility.visual {
     }
 
     export class CounterSettings {
+        public show: boolean = true;
         public counterTitle: string = null;
+
+        public get counterTitleText(): string {
+            return this.show
+                ? this.counterTitle
+                : "";
+        }
     }
 
     export class MiscSettings {
+        public minDuration: number =0;
+        public maxDuration: number =1000;
+
+
         public isAnimated: boolean = true;
         public isStopped: boolean = true;
         public duration: number = 20;

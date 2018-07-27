@@ -17,6 +17,7 @@
     "node_modules/powerbi-visuals-utils-chartutils/lib/index.d.ts",
     "node_modules/powerbi-visuals-utils-dataviewutils/lib/index.d.ts",
     "node_modules/powerbi-visuals-utils-tooltiputils/lib/index.d.ts",
+    "node_modules/powerbi-visuals-utils-colorutils/lib/index.d.ts",
     "node_modules/powerbi-models/dist/models-noexports.d.ts",
     "src/dataInterfaces.ts",
     "src/settings.ts",
