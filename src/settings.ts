@@ -69,12 +69,6 @@ module powerbi.extensibility.visual {
         public counterTitle: string = null;
         public color: string = "#000000";
         public textSize: number = 24;
-
-        public get counterTitleText(): string {
-            return this.show
-                ? this.counterTitle
-                : "";
-        }
     }
 
     export class MiscSettings {

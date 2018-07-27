@@ -934,17 +934,21 @@ module powerbi.extensibility.visual {
                     })
                     .transition()
                     .each("start", (d: LineDotPoint, i: number) => {
-                        let text: string = `${this.settings.counteroptions.counterTitleText} `;
+                        if (this.settings.counteroptions.show) {
+                            let text: string = `${this.settings.counteroptions.counterTitle} `;
 
-                        if (d.counter) {
-                            text += this.settings.isCounterDateTime.isCounterDateTime
-                                ? this.data.dateColumnFormatter.format(d.counter)
-                                : d.counter;
+                            if (d.counter) {
+                                text += this.settings.isCounterDateTime.isCounterDateTime
+                                    ? this.data.dateColumnFormatter.format(d.counter)
+                                    : d.counter;
+                            } else {
+                                text += (i + 1);
+                            }
+
+                            this.updateLineText(lineText, text);
                         } else {
-                            text += (i + 1);
+                            this.updateLineText(lineText, "");
                         }
-
-                        this.updateLineText(lineText, text);
                     })
                     .duration(point_time)
                     .delay((_, i: number) => this.pointDelay(this.data.dotPoints, i, this.animationDuration))

@@ -28,11 +28,9 @@
 
 module powerbi.extensibility.visual.test {
     import VisualBuilderBase = powerbi.extensibility.utils.test.VisualBuilderBase;
-    import getRandomNumber = powerbi.extensibility.utils.test.helpers.getRandomNumber;
 
     // LineDotChart1460463831201
     import VisualClass = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChart;
-    import VisualSettings = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChartSettings;
 
     export class LineDotChartBuilder extends VisualBuilderBase<VisualClass> {
         constructor(width: number, height: number) {
