@@ -27,22 +27,18 @@
 /// <reference path="_references.ts"/>
 
 namespace powerbi.extensibility.visual.test {
-    import LineDotChartData = powerbi.extensibility.visual.test.LineDotChartData;
-    import LineDotChartBuilder = powerbi.extensibility.visual.test.LineDotChartBuilder;
+    // powerbi.extensibility.utils.test
     import helpers = powerbi.extensibility.utils.test.helpers;
     import colorHelper = powerbi.extensibility.utils.test.helpers.color;
-    import RgbColor = powerbi.extensibility.utils.test.helpers.color.RgbColor;
-    import MockISelectionId = powerbi.extensibility.utils.test.mocks.MockISelectionId;
-    import createSelectionId = powerbi.extensibility.utils.test.mocks.createSelectionId;
-    import getRandomHexColor = powerbitests.customVisuals.getRandomHexColor;
+
+    // powerbi.extensibility.visual.test
+    import LineDotChartData = powerbi.extensibility.visual.test.LineDotChartData;
+    import areColorsEqual = powerbi.extensibility.visual.test.helpers.areColorsEqual;
+    import LineDotChartBuilder = powerbi.extensibility.visual.test.LineDotChartBuilder;
+    import getRandomHexColor = powerbi.extensibility.visual.test.helpers.getRandomHexColor;
 
     // powerbi.extensibility.utils.formatting
     import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
-
-    // powerbi.extensibility.utils.type
-    import convertToPx = powerbi.extensibility.utils.type.PixelConverter.toString;
-    import convertToPt = powerbi.extensibility.utils.type.PixelConverter.fromPoint;
-    import fromPointToPixel = powerbi.extensibility.utils.type.PixelConverter.fromPointToPixel;
 
     // LineDotChart1460463831201
     import ColumnNames = powerbi.extensibility.visual.LineDotChart1460463831201.ColumnNames;
@@ -312,7 +308,7 @@ namespace powerbi.extensibility.visual.test {
             it("the date should be formatted", () => {
                 const dataPoint: LineDotPoint = {
                     dateValue: {
-                        date: new Date(2008, 1, 1)
+                        date: new Date(2008, 1, 1),
                     }
                 } as LineDotPoint;
 
@@ -411,6 +407,56 @@ namespace powerbi.extensibility.visual.test {
                 };
 
                 objectsChecker(jsonData);
+            });
+        });
+
+        describe("Accessibility", () => {
+            describe("High contrast mode", () => {
+                const backgroundColor: string = "#000000";
+                const foregroundColor: string = "#ffff00";
+
+                beforeEach(() => {
+                    visualBuilder.visualHost.colorPalette.isHighContrast = true;
+
+                    visualBuilder.visualHost.colorPalette.background = { value: backgroundColor };
+                    visualBuilder.visualHost.colorPalette.foreground = { value: foregroundColor };
+                });
+
+                it("should not use fill style", (done) => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
+                        const dots: JQuery[] = visualBuilder.dots.toArray().map($);
+
+                        expect(isColorAppliedToElements(dots, null, "fill"));
+
+                        done();
+                    });
+                });
+
+                it("should use stroke style", (done) => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
+                        const dots: JQuery[] = visualBuilder.dots.toArray().map($);
+
+                        expect(isColorAppliedToElements(dots, foregroundColor, "stroke"));
+
+                        done();
+                    });
+                });
+
+                function isColorAppliedToElements(
+                    elements: JQuery[],
+                    color?: string,
+                    colorStyleName: string = "fill"
+                ): boolean {
+                    return elements.some((element: JQuery) => {
+                        const currentColor: string = element.css(colorStyleName);
+
+                        if (!currentColor || !color) {
+                            return currentColor === color;
+                        }
+
+                        return areColorsEqual(currentColor, color);
+                    });
+                }
             });
         });
     });

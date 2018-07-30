@@ -11,4 +11,4 @@ Use the LineDot chart to engage your audience when presenting data. The size of 
 
 Use the counter to show a running total as the chart animates. Format options are provided for Lines, Dots, and Animation.
 
-See also [LineDot Chart at Microsoft Office store](https://store.office.com/en-us/app.aspx?assetid=WA104380766&sourcecorrid=e631dfc3-2bda-4830-84a7-9fb39892648f&searchapppos=0&ui=en-US&rs=en-US&ad=US&appredirect=false)
+See also [LineDot Chart at AppSource](https://appsource.microsoft.com/en-us/product/power-bi-visuals/WA104380766)

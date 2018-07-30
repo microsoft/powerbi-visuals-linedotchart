@@ -25,19 +25,14 @@
  */
 
 module powerbi.extensibility.visual {
-    import SelectableDataPoint = powerbi.extensibility.utils.interactivity.SelectableDataPoint;
-    import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
-    import IAxisProperties = powerbi.extensibility.utils.chart.axis.IAxisProperties;
+    // powerbi.extensibility.utils.formatting
     import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
 
-    export class DateValue {
-        label: string;
-        value: number;
+    // powerbi.extensibility.utils.interactivity
+    import SelectableDataPoint = powerbi.extensibility.utils.interactivity.SelectableDataPoint;
 
-        constructor(label: string, value: number) {
-            this.label = label;
-            this.value = value;
-        }
+    export class DateValue {
+        constructor(public label: string, public value: number) { }
     }
 
     export interface LineDotPoint extends SelectableDataPoint {
@@ -65,7 +60,7 @@ module powerbi.extensibility.visual {
     export interface LineDotChartViewModel {
         columnNames: ColumnNames;
         dotPoints: LineDotPoint[];
-        settings: LineDotChartSettings;
+        settings: Settings;
         dateMetadataColumn: DataViewMetadataColumn;
         valuesMetadataColumn: DataViewMetadataColumn;
         dateColumnFormatter: IValueFormatter;
@@ -76,17 +71,6 @@ module powerbi.extensibility.visual {
         yMaxValue: number;
         sumOfValues: number;
         hasHighlights: boolean;
-    }
-
-    export interface MinMaxValue {
-        min: number;
-        max: number;
-    }
-
-    export interface LineDotChartDefaultSettingsRange {
-        dotSize: MinMaxValue;
-        lineThickness: MinMaxValue;
-        animationDuration: MinMaxValue;
     }
 }
 

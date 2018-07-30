@@ -24,47 +24,77 @@
  *  THE SOFTWARE.
  */
 
-module powerbi.extensibility.visual {
-    import converterHelper = powerbi.extensibility.utils.dataview.converterHelper;
-    import IInteractiveBehavior = powerbi.extensibility.utils.interactivity.IInteractiveBehavior;
-    import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
+module powerbi.extensibility.visual.behavior {
+    // powerbi.extensibility.utils.interactivity
     import ISelectionHandler = powerbi.extensibility.utils.interactivity.ISelectionHandler;
     import SelectableDataPoint = powerbi.extensibility.utils.interactivity.SelectableDataPoint;
+    import IInteractiveBehavior = powerbi.extensibility.utils.interactivity.IInteractiveBehavior;
+    import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
 
-    export class LineDotChartWebBehavior implements IInteractiveBehavior {
-        private selection: d3.Selection<any>;
-        private interactivityService: IInteractivityService;
-        private hasHighlights: boolean;
+    export const MinOpacity: number = 0.1;
+    export const DimmedOpacity: number = 0.4;
 
-        public bindEvents(options: LineDotChartBehaviorOptions, selectionHandler: ISelectionHandler): void {
-            let selection: d3.Selection<any> = this.selection = options.selection;
-            let clearCatcher: d3.Selection<any> = options.clearCatcher;
-            this.interactivityService = options.interactivityService;
-            this.hasHighlights = options.hasHighlights;
+    export function getFillOpacity(
+        dot: LineDotPoint,
+        selected: boolean,
+        highlight: boolean,
+        hasSelection: boolean,
+        hasPartialHighlights: boolean,
+    ): number {
+        if ((hasPartialHighlights && !highlight) || (hasSelection && !selected)) {
+            const opacity: number = dot.opacity - DimmedOpacity;
 
-            selection.on('click', function (d: SelectableDataPoint) {
-                selectionHandler.handleSelection(d, (d3.event as MouseEvent).ctrlKey);
-                (d3.event as MouseEvent).stopPropagation();
+            return opacity < MinOpacity ? MinOpacity : opacity;
+        }
+
+        return dot.opacity;
+    }
+
+    export interface BehaviorOptions {
+        selection: d3.Selection<SelectableDataPoint>;
+        clearCatcher: d3.Selection<any>;
+        hasHighlights: boolean;
+    }
+
+    export class Behavior implements IInteractiveBehavior {
+        private options: BehaviorOptions;
+
+        public bindEvents(options: BehaviorOptions, selectionHandler: ISelectionHandler): void {
+            const {
+                selection,
+                clearCatcher,
+            } = options;
+
+            this.options = options;
+
+            selection.on("click", (dataPoint: SelectableDataPoint) => {
+                const event: MouseEvent = d3.event as MouseEvent;
+
+                event.stopPropagation();
+
+                selectionHandler.handleSelection(dataPoint, event.ctrlKey);
             });
 
-            clearCatcher.on('click', function () {
+            clearCatcher.on("click", () => {
                 selectionHandler.handleClearSelection();
             });
         }
 
         public renderSelection(hasSelection: boolean): void {
-            let hasHighlights: boolean = this.hasHighlights;
+            const {
+                selection,
+                hasHighlights,
+            } = this.options;
 
-            this.selection.style("opacity", (d: LineDotPoint) => {
-                return lineDotChartUtils.getFillOpacity(d, d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights);
+            selection.style("opacity", (dotPoint: LineDotPoint) => {
+                return getFillOpacity(
+                    dotPoint,
+                    dotPoint.selected,
+                    dotPoint.highlight,
+                    !dotPoint.highlight && hasSelection,
+                    !dotPoint.selected && hasHighlights
+                );
             });
         }
-    }
-
-    export interface LineDotChartBehaviorOptions {
-        selection: d3.Selection<any>;
-        clearCatcher: d3.Selection<any>;
-        interactivityService: IInteractivityService;
-        hasHighlights: boolean;
     }
 }

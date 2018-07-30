@@ -60,7 +60,9 @@ module powerbi.extensibility.visual.test {
         public valuesDate: Date[] = getRandomUniqueSortedDates(
             50,
             new Date(2014, 9, 12, 3, 9, 50),
-            new Date(2016, 3, 1, 2, 43, 3));
+            new Date(2016, 3, 1, 2, 43, 3)
+        );
+
         public valuesValue = helpers.getRandomNumbers(this.valuesDate.length, 0, 5361);
 
         public valuesDateAsString: string[] = this.valuesDate.map(x => x.toISOString());
