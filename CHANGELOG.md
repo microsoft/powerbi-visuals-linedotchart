@@ -1,6 +1,7 @@
 ## 1.5.0
 * High contrast mode
 * API 1.13.0
+* Fixes Edge/IE11 SVG issues
 
 ## 1.4.1
 * Fixed chart animation for descending order of dates 
