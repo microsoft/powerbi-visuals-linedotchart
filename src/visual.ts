@@ -622,14 +622,10 @@ module powerbi.extensibility.visual {
         }
 
         private static lineDotChartPlayBtn: string = "lineDotChart__playBtn";
-        private static lineDotChartPlayBtnTranslate: ClassAndSelector = createClassAndSelector("lineDotChartPlayBtnTranslate");
 
         private static gLineDotChartPayBtn: string = "g.lineDotChart__playBtn";
         private static playBtnGroupDiameter: number = 34;
         private static playBtnGroupLineValues: string = "M0 2l10 6-10 6z";
-        private static playBtnGroupPlayTranslate: string = "playBtnGroupPlayTranslate";
-        private static playBtnGroupPathTranslate: string = "playBtnGroupPathTranslate";
-        private static playBtnGroupRectTranslate: string = "playBtnGroupRectTranslate";
         private static playBtnGroupRectWidth: string = "2";
         private static playBtnGroupRectHeight: string = "12";
         private static StopButton: ClassAndSelector = createClassAndSelector("stop");
@@ -645,8 +641,8 @@ module powerbi.extensibility.visual {
             const playBtnGroup: d3.Selection<string> = playBtn
                 .enter()
                 .append("g")
-                .classed(LineDotChart.lineDotChartPlayBtn, true)
-                .classed(LineDotChart.lineDotChartPlayBtnTranslate.className, true);
+                .attr("transform", "translate(40, 20)")
+                .classed(LineDotChart.lineDotChartPlayBtn, true);
 
             playBtnGroup.style("opacity", this.settings.play.opacity);
 
@@ -679,8 +675,10 @@ module powerbi.extensibility.visual {
                 .enter()
                 .append("path")
                 .classed("play", true)
-                .classed(LineDotChart.playBtnGroupPlayTranslate, true)
-                .attr("d", LineDotChart.playBtnGroupLineValues)
+                .attr({
+                    "d": LineDotChart.playBtnGroupLineValues,
+                    "transform": "translate(-4, -8)",
+                })
                 .style("pointer-events", "none");
 
             firstPathSelection.style("fill", this.settings.play.innerColor);
@@ -697,10 +695,12 @@ module powerbi.extensibility.visual {
                 .enter()
                 .append("path")
                 .classed(LineDotChart.StopButton.className, true)
-                .classed(LineDotChart.playBtnGroupPathTranslate, true)
-                .attr("d", LineDotChart.playBtnGroupLineValues)
-                .attr("transform-origin", "center")
-                .attr("pointer-events", "none");
+                .attr({
+                    "d": LineDotChart.playBtnGroupLineValues,
+                    "pointer-events": "none",
+                    "transform-origin": "top left",
+                    "transform": "translate(6, 8) rotate(180)"
+                });
 
             secondPathSelection.style("fill", this.settings.play.innerColor);
 
@@ -716,10 +716,12 @@ module powerbi.extensibility.visual {
                 .enter()
                 .append("rect")
                 .classed(LineDotChart.StopButton.className, true)
-                .classed(LineDotChart.playBtnGroupRectTranslate, true)
-                .attr("width", LineDotChart.playBtnGroupRectWidth)
-                .attr("height", LineDotChart.playBtnGroupRectHeight)
-                .attr("pointer-events", "none");
+                .attr({
+                    "width": LineDotChart.playBtnGroupRectWidth,
+                    "height": LineDotChart.playBtnGroupRectHeight,
+                    "pointer-events": "none",
+                    "transform": "translate(-7, -6)",
+                });
 
             rectSelection.style("fill", this.settings.play.innerColor);
 
@@ -889,10 +891,10 @@ module powerbi.extensibility.visual {
                             !dotPoint.selected && hasHighlights
                         );
                     },
-                    "r": (dotPoint: LineDotPoint) => {
-                        return this.settings.dotoptions.dotSizeMin
-                            + dotPoint.dot * (this.settings.dotoptions.dotSizeMax - this.settings.dotoptions.dotSizeMin);
-                    }
+                })
+                .attr("r", (dotPoint: LineDotPoint) => {
+                    return this.settings.dotoptions.dotSizeMin
+                        + dotPoint.dot * (this.settings.dotoptions.dotSizeMax - this.settings.dotoptions.dotSizeMin);
                 });
 
             if (this.settings.misc.isAnimated) {
