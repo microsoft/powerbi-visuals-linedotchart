@@ -1,3 +1,6 @@
+## 1.5.1
+* Fixed wrong chart's scale yAxis rendering
+* Fixed bug with not displayed lines and reverse order animation, when data is sorted descending
 ## 1.5.0
 * High contrast mode
 * API 1.13.0

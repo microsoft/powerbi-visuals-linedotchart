@@ -413,7 +413,7 @@ module powerbi.extensibility.visual {
                 this.data.dateValues,
                 (dateValue: DateValue) => dateValue.value);
 
-            const columnFormattingFn = (index: number, dataType: valueType): any => {
+            function columnFormattingFn(index: number, dataType: valueType): any {
                 if (dataType.dateTime) {
                     return this.data.dateColumnFormatter.format(new Date(index));
                 }
@@ -423,7 +423,7 @@ module powerbi.extensibility.visual {
                 return this.data.dateColumnFormatter.format(index);
             };
 
-            const valueFormattingFn = (index: number, dataType: valueType): any => {
+            function valueFormattingFn(index: number, dataType: valueType): any {
                 if (dataType.dateTime) {
                     return this.data.dataValueFormatter.format(new Date(index));
                 }
@@ -453,7 +453,7 @@ module powerbi.extensibility.visual {
                 forcedTickCount: Math.max(this.layout.viewport.width / LineDotChart.forcedTickSize, 0),
                 useTickIntervalForDisplayUnits: false,
                 shouldClamp: true,
-                getValueFn: columnFormattingFn
+                getValueFn: columnFormattingFn.bind(this)
             });
 
             this.xAxisProperties.xLabelMaxWidth = Math.min(
@@ -462,8 +462,11 @@ module powerbi.extensibility.visual {
             );
 
             this.xAxisProperties.formatter = this.data.dateColumnFormatter;
-            let yMin = this.data.yMinValue,
-                yMax = this.data.yMaxValue;
+            let yMin = this.data.yMinValue;
+            let yMax = this.data.yMaxValue;
+            // Expanding a scope by increasing yMin and yMax to render y-axes
+            // - if all data values are the same (yMin = yMax) we increasing them all, for floats - increasing by const float, for integers - by 1;
+            // - if the data has diffrent minimum and maximum values we increasing only yMax
             if (yMax === yMin) {
                 if ((Math.floor(yMin) === yMin) && yMin !== 0) {
                     yMin = yMin - 1;
@@ -486,7 +489,7 @@ module powerbi.extensibility.visual {
                 isScalar: true,
                 isVertical: true,
                 useTickIntervalForDisplayUnits: true,
-                getValueFn: valueFormattingFn
+                getValueFn: valueFormattingFn.bind(this)
             });
 
             this.yAxis2Properties = AxisHelper.createAxis({
@@ -499,7 +502,7 @@ module powerbi.extensibility.visual {
                 isScalar: true,
                 isVertical: true,
                 useTickIntervalForDisplayUnits: true,
-                getValueFn: valueFormattingFn
+                getValueFn: valueFormattingFn.bind(this)
             });
 
             this.yAxis2Properties.axis.orient("right");
@@ -1106,8 +1109,8 @@ module powerbi.extensibility.visual {
 
             const unformattedDate: string | number = dataPoint.dateValue.label || dataPoint.dateValue.value;
 
-            const formattedDate: string = this.data.dateColumnFormatter.format(unformattedDate),
-                formattedValue: string = this.data.dataValueFormatter.format(dataPoint.value);
+            const formattedDate: string = this.data.dateColumnFormatter.format(unformattedDate);
+            const formattedValue: string = this.data.dataValueFormatter.format(dataPoint.value);
 
             const columnNames: ColumnNames = this.data.columnNames;
 
