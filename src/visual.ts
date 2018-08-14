@@ -194,18 +194,8 @@ module powerbi.extensibility.visual {
                 return;
             }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
             this.data = data;
 
-=======
-            this.data = data;   
-            
->>>>>>> fix for items non changed after formatting
-=======
-            this.data = data;
-
->>>>>>> deletions after lint
             if (this.interactivityService) {
                 this.interactivityService.applySelectionStateToData(this.data.dotPoints);
             }
@@ -385,7 +375,7 @@ module powerbi.extensibility.visual {
             };
 
             const dataValueFormatter: IValueFormatter = valueFormatter.create({
-                format:  valueFormatter.getFormatStringByColumn(valuesColumn.source, true) || "#",
+                format: valueFormatter.getFormatStringByColumn(valuesColumn.source, true) || "#",
                 cultureSelector: visualHost.locale
             });
 
@@ -431,11 +421,7 @@ module powerbi.extensibility.visual {
                     return this.data.dateValues[index].label;
                 }
                 return this.data.dateColumnFormatter.format(index);
-<<<<<<< HEAD
-            }
-=======
             };
->>>>>>> deletions after lint
 
             const valueFormattingFn = (index: number, dataType: valueType): any => {
                 if (dataType.dateTime) {
