@@ -27,6 +27,9 @@
 /// <reference path="_references.ts" />
 
 module powerbi.extensibility.visual.test {
+    // powerbi
+    import DataView = powerbi.DataView;
+
     // powerbi.extensibility.utils.type
     import ValueType = powerbi.extensibility.utils.type.ValueType;
 
@@ -56,67 +59,90 @@ module powerbi.extensibility.visual.test {
     export class LineDotChartData extends TestDataViewBuilder {
         public static ColumnDate: string = "Date";
         public static ColumnValue: string = "Value";
+        public static DefaultFormat: string = "#";
+        public static PercentFormat: string = "0%;-0%;0%";
+        public static PriceFormat: string = "\$#,0.000;(\$#,0.000);\$#,0.000";
 
         public valuesDate: Date[] = getRandomUniqueSortedDates(
             50,
             new Date(2014, 9, 12, 3, 9, 50),
             new Date(2016, 3, 1, 2, 43, 3)
         );
-
         public valuesValue = helpers.getRandomNumbers(this.valuesDate.length, 0, 5361);
-
         public valuesDateAsString: string[] = this.valuesDate.map(x => x.toISOString());
 
-        public getDataView(columnNames?: string[]): powerbi.DataView {
-            return this.createDataView(false, columnNames);
+        public getDataView(columnNames?: string[]): DataView {
+            return this.getFormattedDataView(
+                ValueType.fromDescriptor({ dateTime: true }),
+                ValueType.fromDescriptor({ integer: true }),
+                this.valuesDate,
+                this.valuesValue,
+                columnNames
+            );
         }
 
-        private createDataView(isDateAsString: boolean, columnNames?: string[]): powerbi.DataView {
+        public getDataViewWithDifferentFormats(columnNames?: string[]): DataView {
+            return this.getFormattedDataView(
+                ValueType.fromDescriptor({ numeric: true }),
+                ValueType.fromDescriptor({ integer: true }),
+                this.valuesValue,
+                this.valuesValue,
+                columnNames,
+                LineDotChartData.PriceFormat,
+                LineDotChartData.PercentFormat
+            );
+        }
+
+        private getFormattedDataView(
+            valueTypeDescriptor1: ValueTypeDescriptor,
+            valueTypeDescriptor2: ValueTypeDescriptor,
+            values1: string[] | Date[] | number[],
+            values2: string[] | Date[] | number[],
+            columnNames?: string[],
+            format1: string = LineDotChartData.DefaultFormat,
+            format2: string = LineDotChartData.DefaultFormat,
+        ): DataView {
             return this.createCategoricalDataViewBuilder([
                 {
                     source: {
                         displayName: LineDotChartData.ColumnDate,
-                        type: ValueType.fromDescriptor({ dateTime: true }),
-                        roles: { Date: true }
+                        type: valueTypeDescriptor1,
+                        roles: { Date: true },
+                        format: format1
                     },
-                    values: isDateAsString ? this.valuesDateAsString : this.valuesDate
+                    values: values1
                 }
             ], [
                     {
                         source: {
-                            displayName: "Values",
-                            type: ValueType.fromDescriptor({ integer: true }),
-                            roles: { Values: true }
+                            displayName: LineDotChartData.ColumnValue,
+                            type: valueTypeDescriptor2,
+                            roles: { Values: true },
+                            format: format2
                         },
-                        values: this.valuesValue
+                        values: values2
                     }
                 ], columnNames).build();
         }
 
         public createStringView(columnNames?: string[]): powerbi.DataView {
-            return this.createCategoricalDataViewBuilder([
-                {
-                    source: {
-                        displayName: LineDotChartData.ColumnDate,
-                        type: ValueType.fromDescriptor({ text: true }),
-                        roles: { Date: true }
-                    },
-                    values: ["Alpha", "Beta", "Omega", "Gamma"]
-                }
-            ], [
-                    {
-                        source: {
-                            displayName: "Values",
-                            type: ValueType.fromDescriptor({ integer: true }),
-                            roles: { Values: true }
-                        },
-                        values: [100, 200, 300, 400]
-                    }
-                ], columnNames).build();
+            return this.getFormattedDataView(
+                ValueType.fromDescriptor({ text: true }),
+                ValueType.fromDescriptor({ integer: true }),
+                ["Alpha", "Beta", "Omega", "Gamma"],
+                [100, 200, 300, 400],
+                columnNames
+            );
         }
 
         public getDataViewForCategoricalValues(columnNames?: string[]): powerbi.DataView {
-            return this.createDataView(true, columnNames);
+            return this.getFormattedDataView(
+                ValueType.fromDescriptor({ dateTime: true }),
+                ValueType.fromDescriptor({ integer: true }),
+                this.valuesDateAsString,
+                this.valuesValue,
+                columnNames
+            );
         }
     }
 }
