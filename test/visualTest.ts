@@ -505,5 +505,44 @@ namespace powerbi.extensibility.visual.test {
                 expect(actualResult[1].value).toBe(defaultFormattedValue);
             });
         });
+
+        describe("Y axis right scaling test", () => {
+            let dots: JQuery[];
+            let ticks: JQuery[];
+            let yTicksText: JQuery[];
+
+            beforeEach(() => {
+                const orderedDates: Date[] = [
+                    new Date(2013, 1, 1),
+                    new Date(2014, 1, 1),
+                    new Date(2015, 1, 1),
+                    new Date(2016, 1, 1),
+                    new Date(2017, 1, 1)
+                ];
+                const orderedNumbers: number[] = [11, 24, 28, 37, 45];
+                dataView = defaultDataViewBuilder.getDataView(undefined, orderedDates, orderedNumbers);
+                visualBuilder.update(dataView);
+
+                dots = visualBuilder.dots.toArray().map($);
+                ticks = visualBuilder.ticks.toArray().map($);
+
+                let xTicks = visualBuilder.xAxisTick.toArray().length;
+                yTicksText = visualBuilder.tickText.toArray().map($);//delete x and right y 
+            });
+
+            it("should graphic be correctly scaled on y axis", () => {
+                const dotPoints: LineDotPoint[] = visualBuilder.visualInstance.data.dotPoints;
+
+                let previosYTickIndex = 0;
+                dotPoints.forEach((dotPoint: LineDotPoint) => {
+                    let lowAxisValue: number = parseInt(yTicksText[previosYTickIndex].substring(0, -1));
+                    let highAxisValue: number = parseInt(yTicksText[previosYTickIndex + 1].substring(0, -1));
+
+                    expect(dotPoint.value).toBeLessThanOrEqual(highAxisValue);
+                    expect(dotPoint.value).toBeGreaterThanOrEqual(lowAxisValue);
+                    previosYTickIndex++;
+                });
+            });
+        });
     });
 }

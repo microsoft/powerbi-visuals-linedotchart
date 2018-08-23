@@ -72,12 +72,12 @@ module powerbi.extensibility.visual.test {
         public valuesForPercentFormat = helpers.getRandomNumbers(this.valuesDate.length, 0, 100);
         public valuesDateAsString: string[] = this.valuesDate.map(x => x.toISOString());
 
-        public getDataView(columnNames?: string[]): DataView {
+        public getDataView(columnNames?: string[], valuesDate?: string[] | Date[] | number[], valuesValue?: string[] | Date[] | number[]): DataView {
             return this.getFormattedDataView(
                 ValueType.fromDescriptor({ dateTime: true }),
                 ValueType.fromDescriptor({ integer: true }),
-                this.valuesDate,
-                this.valuesValue,
+                valuesDate ? valuesDate : this.valuesDate,
+                valuesValue ? valuesValue : this.valuesValue,
                 columnNames
             );
         }
