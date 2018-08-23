@@ -461,13 +461,30 @@ namespace powerbi.extensibility.visual.test {
         });
 
         describe("Different formats data representation test", () => {
+            let tickText: JQuery[];
+
             beforeEach(() => {
                 dataView = defaultDataViewBuilder.getDataViewWithDifferentFormats();
                 visualBuilder.update(dataView);
+                tickText = visualBuilder.tickText.toArray().map($);
             });
 
-            it("should representate data in required format on axes", () => {
+            it("should representate data in required format on axes", (done) => {
+                const xTicksCountForCurrentDataset: number = 7;
+                const percentRegex: string = "^\\d+(\.?\\d+)?%$";
+                const priceRegex: string = "$";
 
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    tickText.forEach((tick, index) => {
+                        let text = tickText[index].text();
+                        if (index < xTicksCountForCurrentDataset) {
+                            expect(text).toMatch(priceRegex);
+                        } else {
+                            expect(text).toMatch(percentRegex);
+                        }
+                    });
+                    done();
+                });
             });
 
             it("should representate data in required format in tooltip", () => {

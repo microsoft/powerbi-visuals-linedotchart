@@ -69,6 +69,7 @@ module powerbi.extensibility.visual.test {
             new Date(2016, 3, 1, 2, 43, 3)
         );
         public valuesValue = helpers.getRandomNumbers(this.valuesDate.length, 0, 5361);
+        public valuesForPercentFormat = helpers.getRandomNumbers(this.valuesDate.length, 0, 100);
         public valuesDateAsString: string[] = this.valuesDate.map(x => x.toISOString());
 
         public getDataView(columnNames?: string[]): DataView {
@@ -86,7 +87,7 @@ module powerbi.extensibility.visual.test {
                 ValueType.fromDescriptor({ numeric: true }),
                 ValueType.fromDescriptor({ integer: true }),
                 this.valuesValue,
-                this.valuesValue,
+                this.valuesForPercentFormat,
                 columnNames,
                 LineDotChartData.PriceFormat,
                 LineDotChartData.PercentFormat

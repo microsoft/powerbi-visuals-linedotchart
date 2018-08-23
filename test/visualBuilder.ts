@@ -69,13 +69,13 @@ module powerbi.extensibility.visual.test {
 
         public get axes() {
             return this.mainElement
-            .children("g")
-            .children("g.axes");
+                .children("g")
+                .children("g.axes");
         }
 
         public get axis() {
             return this.axes
-            .children("g.axis");
+                .children("g.axis");
         }
 
         public get emptyAxis() {
