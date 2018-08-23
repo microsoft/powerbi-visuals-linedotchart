@@ -459,5 +459,34 @@ namespace powerbi.extensibility.visual.test {
                 }
             });
         });
+
+        describe("Different formats data representation test", () => {
+            beforeEach(() => {
+                dataView = defaultDataViewBuilder.getDataViewWithDifferentFormats();
+                visualBuilder.update(dataView);
+            });
+
+            it("should representate data in required format on axes", () => {
+
+            });
+
+            it("should representate data in required format in tooltip", () => {
+                const defaultFormattedColumnValue: string = visualBuilder.visualInstance.data.dateColumnFormatter.format(13);
+                const defaultFormattedValue: string = visualBuilder.visualInstance.data.dataValueFormatter.format(17);
+
+                const dataPoint: LineDotPoint = {
+                    dateValue: {
+                        value: 13
+                    },
+                    value: 17
+                } as LineDotPoint;
+
+                const actualResult: VisualTooltipDataItem[]
+                    = visualBuilder.visualInstance.getTooltipDataItems(dataPoint);
+
+                expect(actualResult[0].value).toBe(defaultFormattedColumnValue);
+                expect(actualResult[1].value).toBe(defaultFormattedValue);
+            });
+        });
     });
 }
