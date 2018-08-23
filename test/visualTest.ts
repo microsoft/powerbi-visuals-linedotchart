@@ -462,22 +462,23 @@ namespace powerbi.extensibility.visual.test {
 
         describe("Different formats data representation test", () => {
             let tickText: JQuery[];
+            let xTicksCount: number;
 
             beforeEach(() => {
                 dataView = defaultDataViewBuilder.getDataViewWithDifferentFormats();
                 visualBuilder.update(dataView);
                 tickText = visualBuilder.tickText.toArray().map($);
+                xTicksCount = visualBuilder.xAxisTickText.toArray().length;
             });
 
             it("should representate data in required format on axes", (done) => {
-                const xTicksCountForCurrentDataset: number = 7;
                 const percentRegex: string = "^\\d+(\.?\\d+)?%$";
                 const priceRegex: string = "$";
 
                 visualBuilder.updateRenderTimeout(dataView, () => {
                     tickText.forEach((tick, index) => {
                         let text = tickText[index].text();
-                        if (index < xTicksCountForCurrentDataset) {
+                        if (index < xTicksCount) {
                             expect(text).toMatch(priceRegex);
                         } else {
                             expect(text).toMatch(percentRegex);
@@ -507,9 +508,8 @@ namespace powerbi.extensibility.visual.test {
         });
 
         describe("Y axis right scaling test", () => {
-            let dots: JQuery[];
-            let ticks: JQuery[];
-            let yTicksText: JQuery[];
+            let yTicksText: JQuery[] = [];
+            let allTicksText: JQuery[];
 
             beforeEach(() => {
                 const orderedDates: Date[] = [
@@ -519,28 +519,36 @@ namespace powerbi.extensibility.visual.test {
                     new Date(2016, 1, 1),
                     new Date(2017, 1, 1)
                 ];
-                const orderedNumbers: number[] = [11, 24, 28, 37, 45];
+                const orderedNumbers: number[] = [11, 18, 23, 29, 31];
                 dataView = defaultDataViewBuilder.getDataView(undefined, orderedDates, orderedNumbers);
                 visualBuilder.update(dataView);
 
-                dots = visualBuilder.dots.toArray().map($);
-                ticks = visualBuilder.ticks.toArray().map($);
-
-                let xTicks = visualBuilder.xAxisTick.toArray().length;
-                yTicksText = visualBuilder.tickText.toArray().map($);//delete x and right y 
+                let xTicksCount = visualBuilder.xAxisTick.toArray().length;
+                allTicksText = visualBuilder.tickText.toArray().map($);
+                const yTicksCount: number = (allTicksText.length - xTicksCount) / 2;
+                allTicksText.forEach((tick, index) => {
+                    if (index >= xTicksCount && index <= yTicksCount + xTicksCount - 1) {
+                        yTicksText.push(tick);
+                    }
+                });
             });
 
-            it("should graphic be correctly scaled on y axis", () => {
+            it("should graphic be correctly scaled on y axis", (done) => {
                 const dotPoints: LineDotPoint[] = visualBuilder.visualInstance.data.dotPoints;
 
                 let previosYTickIndex = 0;
-                dotPoints.forEach((dotPoint: LineDotPoint) => {
-                    let lowAxisValue: number = parseInt(yTicksText[previosYTickIndex].substring(0, -1));
-                    let highAxisValue: number = parseInt(yTicksText[previosYTickIndex + 1].substring(0, -1));
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    dotPoints.forEach((dotPoint: LineDotPoint) => {
+                        let lowAxisValue: number = parseInt(yTicksText[previosYTickIndex].text());
+                        expect(dotPoint.value).toBeGreaterThanOrEqual(lowAxisValue);
 
-                    expect(dotPoint.value).toBeLessThanOrEqual(highAxisValue);
-                    expect(dotPoint.value).toBeGreaterThanOrEqual(lowAxisValue);
-                    previosYTickIndex++;
+                        if (previosYTickIndex + 1 < yTicksText.length) {
+                            let highAxisValue: number = parseInt(yTicksText[previosYTickIndex + 1].text());
+                            expect(dotPoint.value).toBeGreaterThanOrEqual(lowAxisValue);
+                        }
+                        previosYTickIndex++;
+                    });
+                    done();
                 });
             });
         });
