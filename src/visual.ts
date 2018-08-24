@@ -119,6 +119,33 @@ module powerbi.extensibility.visual {
             height: 150
         };
 
+
+        public static columnFormattingFn(data: LineDotChartViewModel) {
+            return function (index: number, dataType: valueType): any {
+                if (dataType.dateTime) {
+                    return data.dateColumnFormatter.format(new Date(index));
+                }
+                else if (dataType.text) {
+                    return data.dateValues[index].label;
+                }
+                return data.dateColumnFormatter.format(index);
+            }
+        }
+
+        public static valueFormattingFn(data: LineDotChartViewModel) {
+            return function (index: number, dataType: valueType): any {
+                if (dataType.dateTime) {
+                    return data.dataValueFormatter.format(new Date(index));
+                }
+                else if (dataType.text) {
+                    return data.dateValues[index].label;
+                }
+                let formatted: string = data.dataValueFormatter.format(index);
+
+                return formatted !== index.toString() ? formatted : index;
+            };
+        }
+
         private tooltipServiceWrapper: ITooltipServiceWrapper;
 
         private colorHelper: ColorHelper;
@@ -413,27 +440,7 @@ module powerbi.extensibility.visual {
                 this.data.dateValues,
                 (dateValue: DateValue) => dateValue.value);
 
-            function columnFormattingFn(index: number, dataType: valueType): any {
-                if (dataType.dateTime) {
-                    return this.data.dateColumnFormatter.format(new Date(index));
-                }
-                else if (dataType.text) {
-                    return this.data.dateValues[index].label;
-                }
-                return this.data.dateColumnFormatter.format(index);
-            };
 
-            function valueFormattingFn(index: number, dataType: valueType): any {
-                if (dataType.dateTime) {
-                    return this.data.dataValueFormatter.format(new Date(index));
-                }
-                else if (dataType.text) {
-                    return this.data.dateValues[index].label;
-                }
-                let formatted: string = this.data.dataValueFormatter.format(index);
-
-                return formatted !== index.toString() ? formatted : index;
-            };
 
             let minDate: number = extentDate[0],
                 maxDate: number = extentDate[1] + (extentDate[1] - extentDate[0]) * LineDotChart.dateMaxCutter;
@@ -453,7 +460,7 @@ module powerbi.extensibility.visual {
                 forcedTickCount: Math.max(this.layout.viewport.width / LineDotChart.forcedTickSize, 0),
                 useTickIntervalForDisplayUnits: false,
                 shouldClamp: true,
-                getValueFn: columnFormattingFn.bind(this)
+                getValueFn: LineDotChart.columnFormattingFn(this.data)
             });
 
             this.xAxisProperties.xLabelMaxWidth = Math.min(
@@ -489,7 +496,7 @@ module powerbi.extensibility.visual {
                 isScalar: true,
                 isVertical: true,
                 useTickIntervalForDisplayUnits: true,
-                getValueFn: valueFormattingFn.bind(this)
+                getValueFn: LineDotChart.valueFormattingFn(this.data)
             });
 
             this.yAxis2Properties = AxisHelper.createAxis({
@@ -502,7 +509,7 @@ module powerbi.extensibility.visual {
                 isScalar: true,
                 isVertical: true,
                 useTickIntervalForDisplayUnits: true,
-                getValueFn: valueFormattingFn.bind(this)
+                getValueFn: LineDotChart.valueFormattingFn(this.data)
             });
 
             this.yAxis2Properties.axis.orient("right");

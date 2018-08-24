@@ -45,6 +45,7 @@ namespace powerbi.extensibility.visual.test {
     import LineDotPoint = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotPoint;
     import LineDotChartViewModel = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChartViewModel;
     import LineDotChartColumns = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChartColumns;
+    import LineDotChart = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChart;
 
     describe("LineDotChartTests", () => {
         let visualBuilder: LineDotChartBuilder,
@@ -460,10 +461,59 @@ namespace powerbi.extensibility.visual.test {
             });
         });
 
+        describe("should formatting functions work correctly", () => {
+            let data: any;
+            let columnFormattingFn: Function;
+            let valueFormattingFn: Function;
+
+            beforeEach(() => {
+                dataView = defaultDataViewBuilder.getDataViewWithDifferentFormats();
+                visualBuilder.update(dataView);
+
+                data = visualBuilder.visualInstance.data;
+                columnFormattingFn = LineDotChart.columnFormattingFn(data);
+                valueFormattingFn = LineDotChart.valueFormattingFn(data);
+            });
+
+            it("dateTime formatting", () => {
+                const timestamp: number = 108875;
+                const actualResultForColumn: string = columnFormattingFn(timestamp, { dateTime: true});
+                const actualResultForValue: string = valueFormattingFn(timestamp, { dateTime: true});
+
+                const expectedResultForColumn: string = data.dateColumnFormatter.format(new Date(timestamp));
+                const expectedResultForValue: string = data.dataValueFormatter.format(new Date(timestamp));
+
+                expect(actualResultForColumn).toBe(expectedResultForColumn);
+                expect(actualResultForValue).toBe(expectedResultForValue);
+            });
+
+            it("text formatting", () => {
+                const index: number = 17;
+                const actualResultForColumn: string = columnFormattingFn(index, { text: true});
+                const actualResultForValue: string = valueFormattingFn(index, { text: true});
+
+                const expectedResult: string = data.dateValues[index].label;
+                expect(actualResultForColumn).toBe(expectedResult);
+                expect(actualResultForValue).toBe(expectedResult);
+            });
+
+            it("numbers formatting", () => {
+                const index: number = 13;
+                const actualResultForColumn: string = columnFormattingFn(index, { number: true});
+                const expectedResultForColumn: string =  data.dateColumnFormatter.format(index);
+
+                const actualResultForValue: string = valueFormattingFn(index, { number: true});
+                const expectedResultForValue: string = data.dataValueFormatter.format(index);
+
+                expect(actualResultForColumn).toBe(expectedResultForColumn);
+                expect(actualResultForValue).toBe(expectedResultForValue);
+            });
+        });
+
         describe("Different formats data representation test", () => {
             let tickText: JQuery[];
             let xTicksCount: number;
-
+            
             beforeEach(() => {
                 dataView = defaultDataViewBuilder.getDataViewWithDifferentFormats();
                 visualBuilder.update(dataView);
