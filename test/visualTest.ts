@@ -477,8 +477,8 @@ namespace powerbi.extensibility.visual.test {
 
             it("dateTime formatting", () => {
                 const timestamp: number = 108875;
-                const actualResultForColumn: string = columnFormattingFn(timestamp, { dateTime: true});
-                const actualResultForValue: string = valueFormattingFn(timestamp, { dateTime: true});
+                const actualResultForColumn: string = columnFormattingFn(timestamp, { dateTime: true });
+                const actualResultForValue: string = valueFormattingFn(timestamp, { dateTime: true });
 
                 const expectedResultForColumn: string = data.dateColumnFormatter.format(new Date(timestamp));
                 const expectedResultForValue: string = data.dataValueFormatter.format(new Date(timestamp));
@@ -489,8 +489,8 @@ namespace powerbi.extensibility.visual.test {
 
             it("text formatting", () => {
                 const index: number = 17;
-                const actualResultForColumn: string = columnFormattingFn(index, { text: true});
-                const actualResultForValue: string = valueFormattingFn(index, { text: true});
+                const actualResultForColumn: string = columnFormattingFn(index, { text: true });
+                const actualResultForValue: string = valueFormattingFn(index, { text: true });
 
                 const expectedResult: string = data.dateValues[index].label;
                 expect(actualResultForColumn).toBe(expectedResult);
@@ -499,10 +499,10 @@ namespace powerbi.extensibility.visual.test {
 
             it("numbers formatting", () => {
                 const index: number = 13;
-                const actualResultForColumn: string = columnFormattingFn(index, { number: true});
-                const expectedResultForColumn: string =  data.dateColumnFormatter.format(index);
+                const actualResultForColumn: string = columnFormattingFn(index, { number: true });
+                const expectedResultForColumn: string = data.dateColumnFormatter.format(index);
 
-                const actualResultForValue: string = valueFormattingFn(index, { number: true});
+                const actualResultForValue: string = valueFormattingFn(index, { number: true });
                 const expectedResultForValue: string = data.dataValueFormatter.format(index);
 
                 expect(actualResultForColumn).toBe(expectedResultForColumn);
@@ -513,7 +513,7 @@ namespace powerbi.extensibility.visual.test {
         describe("Different formats data representation test", () => {
             let tickText: JQuery[];
             let xTicksCount: number;
-            
+
             beforeEach(() => {
                 dataView = defaultDataViewBuilder.getDataViewWithDifferentFormats();
                 visualBuilder.update(dataView);

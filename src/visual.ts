@@ -129,7 +129,7 @@ module powerbi.extensibility.visual {
                     return data.dateValues[index].label;
                 }
                 return data.dateColumnFormatter.format(index);
-            }
+            };
         }
 
         public static valueFormattingFn(data: LineDotChartViewModel) {
