@@ -462,7 +462,7 @@ namespace powerbi.extensibility.visual.test {
         });
 
         describe("should formatting functions work correctly", () => {
-            let data: any;
+            let data: LineDotChartViewModel;
             let columnFormattingFn: Function;
             let valueFormattingFn: Function;
 

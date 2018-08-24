@@ -119,7 +119,6 @@ module powerbi.extensibility.visual {
             height: 150
         };
 
-
         public static columnFormattingFn(data: LineDotChartViewModel) {
             return function (index: number, dataType: valueType): any {
                 if (dataType.dateTime) {
@@ -147,7 +146,6 @@ module powerbi.extensibility.visual {
         }
 
         private tooltipServiceWrapper: ITooltipServiceWrapper;
-
         private colorHelper: ColorHelper;
 
         constructor(options: VisualConstructorOptions) {
@@ -157,12 +155,10 @@ module powerbi.extensibility.visual {
             );
 
             this.colorHelper = new ColorHelper(options.host.colorPalette);
-
             this.hostService = options.host;
             this.localizationManager = this.hostService.createLocalizationManager();
 
             this.layout = new VisualLayout(null, LineDotChart.viewportMargins);
-
             this.layout.minViewport = LineDotChart.viewportDimensions;
 
             this.interactivityService = createInteractivityService(options.host);
@@ -439,8 +435,6 @@ module powerbi.extensibility.visual {
             const extentDate: [number, number] = d3.extent(
                 this.data.dateValues,
                 (dateValue: DateValue) => dateValue.value);
-
-
 
             let minDate: number = extentDate[0],
                 maxDate: number = extentDate[1] + (extentDate[1] - extentDate[0]) * LineDotChart.dateMaxCutter;
