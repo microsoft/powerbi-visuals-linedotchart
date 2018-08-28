@@ -602,5 +602,29 @@ namespace powerbi.extensibility.visual.test {
                 });
             });
         });
+
+        describe("playBack button transition y test", () => {
+            function setUserAgent(userAgent: string) {
+                window.navigator['__defineGetter__']('userAgent', () => userAgent);
+            }
+
+            it("test for Chrome", () => {
+                setUserAgent("Chrome");
+                const actualTransitionY: number = LineDotChart.getActivePlayBackButtonTranslateY();
+                expect(actualTransitionY).toBe(LineDotChart.standartTranslateY);
+            });
+
+            it("test for Edge", () => {
+                setUserAgent("Edge");
+                const actualTransitionY: number = LineDotChart.getActivePlayBackButtonTranslateY();
+                expect(actualTransitionY).toBe(LineDotChart.edgeAndIETranslateY);
+            });
+
+            it("test for IE", () => {
+                setUserAgent("MSIE");
+                const actualTransitionY: number = LineDotChart.getActivePlayBackButtonTranslateY();
+                expect(actualTransitionY).toBe(LineDotChart.edgeAndIETranslateY);
+            });
+        });
     });
 }

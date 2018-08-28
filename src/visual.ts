@@ -667,6 +667,17 @@ module powerbi.extensibility.visual {
         private firstPathSelector: ClassAndSelector = createClassAndSelector("firstPath");
         private secondPathSelector: ClassAndSelector = createClassAndSelector("secondPath");
 
+        public static edgeAndIETranslateY: number = 4;
+        public static standartTranslateY: number = 8;
+
+        public static getActivePlayBackButtonTranslateY() {
+            const userAgent = window.navigator.userAgent;
+            let translateY: number = (userAgent.indexOf("Edge") !== -1 || userAgent.indexOf("MSIE") !== -1) ?
+                LineDotChart.edgeAndIETranslateY : LineDotChart.standartTranslateY;
+
+            return translateY;
+        }
+
         private drawPlaybackButtons() {
             const playBtn: d3.selection.Update<string> = this.line
                 .selectAll(LineDotChart.gLineDotChartPayBtn)
@@ -725,11 +736,6 @@ module powerbi.extensibility.visual {
                 .selectAll(this.secondPathSelector.selectorName)
                 .data(d => [d]);
 
-            const edgeAndIETranslateY: number = 4;
-            const standartTranslateY: number = 8;
-            let translateY: number = (navigator.userAgent.indexOf("Edge") !== -1 || navigator.userAgent.indexOf("MSIE") !== -1) ?
-                edgeAndIETranslateY : standartTranslateY;
-
             secondPathSelection
                 .enter()
                 .append("path")
@@ -738,7 +744,7 @@ module powerbi.extensibility.visual {
                     "d": LineDotChart.playBtnGroupLineValues,
                     "pointer-events": "none",
                     "transform-origin": "top left",
-                    "transform": "translate(6, " + translateY + ") rotate(180)"
+                    "transform": "translate(6, " + LineDotChart.getActivePlayBackButtonTranslateY() + ") rotate(180)"
                 });
 
             secondPathSelection.style("fill", this.settings.play.innerColor);
