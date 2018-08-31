@@ -5,7 +5,7 @@
     "experimentalDecorators": true,
     "target": "ES5",
     "sourceMap": true,
-    "out": "./.tmp/build/visual.js",
+    "outDir": "./.tmp/build/visual.js",
     "declaration": true
   },
   "files": [

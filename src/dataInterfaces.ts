@@ -24,54 +24,59 @@
  *  THE SOFTWARE.
  */
 
-module powerbi.extensibility.visual {
-    // powerbi.extensibility.utils.formatting
-    import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
+import powerbi from "powerbi-visuals-tools"
 
-    // powerbi.extensibility.utils.interactivity
-    import SelectableDataPoint = powerbi.extensibility.utils.interactivity.SelectableDataPoint;
+import Settings = powerbi.Settings;
+import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 
-    export class DateValue {
-        constructor(public label: string, public value: number) { }
-    }
+// powerbi.extensibility.utils.formatting
+import { valueFormatter as vf } from "powerbi-visuals-utils-formattingutils";
+import SelectableDataPoint from "powerbi-visuals-utils-interactivityutils";
+import IValueFormatter = vf.IValueFormatter;
 
-    export interface LineDotPoint extends SelectableDataPoint {
-        dateValue: DateValue;
-        value: number;
-        dot: number;
-        sum: number;
-        highlight?: boolean;
-        opacity: number;
-        counter: any;
-    }
+// powerbi.extensibility.utils.interactivity
+import SelectableDataPoint = powerbi.extensibility.utils.interactivity.SelectableDataPoint;
 
-    export interface Legend {
-        text: string;
-        transform?: string;
-        dx?: string;
-        dy?: string;
-    }
+export class DateValue {
+    constructor(public label: string, public value: number) { }
+}
 
-    export interface ColumnNames {
-        category: string;
-        values: string;
-    }
+export interface LineDotPoint extends SelectableDataPoint {
+    dateValue: DateValue;
+    value: number;
+    dot: number;
+    sum: number;
+    highlight?: boolean;
+    opacity: number;
+    counter: any;
+}
 
-    export interface LineDotChartViewModel {
-        columnNames: ColumnNames;
-        dotPoints: LineDotPoint[];
-        settings: Settings;
-        dateMetadataColumn: DataViewMetadataColumn;
-        valuesMetadataColumn: DataViewMetadataColumn;
-        dateColumnFormatter: IValueFormatter;
-        dataValueFormatter: IValueFormatter;
-        dateValues: DateValue[];
-        isOrdinal: boolean;
-        yMinValue: number;
-        yMaxValue: number;
-        sumOfValues: number;
-        hasHighlights: boolean;
-    }
+export interface Legend {
+    text: string;
+    transform?: string;
+    dx?: string;
+    dy?: string;
+}
+
+export interface ColumnNames {
+    category: string;
+    values: string;
+}
+
+export interface LineDotChartViewModel {
+    columnNames: ColumnNames;
+    dotPoints: LineDotPoint[];
+    settings: Settings;
+    dateMetadataColumn: DataViewMetadataColumn;
+    valuesMetadataColumn: DataViewMetadataColumn;
+    dateColumnFormatter: IValueFormatter;
+    dataValueFormatter: IValueFormatter;
+    dateValues: DateValue[];
+    isOrdinal: boolean;
+    yMinValue: number;
+    yMaxValue: number;
+    sumOfValues: number;
+    hasHighlights: boolean;
 }
 
 
