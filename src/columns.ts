@@ -24,73 +24,78 @@
  *  THE SOFTWARE.
  */
 
-module powerbi.extensibility.visual {
-    // powerbi.extensibility.utils.dataview
-    import converterHelper = powerbi.extensibility.utils.dataview.converterHelper;
 
-    export class LineDotChartColumns<T> {
-        public static getCategoricalValues(dataView: DataView) {
-            const categorical: DataViewCategorical = dataView && dataView.categorical;
+import powerbi from "powerbi-visuals-api";
+import { converterHelper } from "powerbi-visuals-utils-dataviewutils";
+import DataViewCategorical = powerbi.DataViewCategorical;
+import DataViewCategoryColumn = powerbi.DataViewCategoricalColumn;
+import DataViewValueColumn = powerbi.DataViewValueColumn;
+import DataViewValueColumns = powerbi.DataViewValueColumns;
+import PrimitiveValue = powerbi.PrimitiveValue;
 
-            const categories: (DataViewCategoryColumn | DataViewValueColumn)[] = categorical && categorical.categories || [];
-            const values: DataViewValueColumns = categorical && categorical.values || <DataViewValueColumns>[];
+export class LineDotChartColumns<T> {
+    public static getCategoricalValues(dataView: DataView) {
+        const categorical: DataViewCategorical = dataView && dataView.categorical;
 
-            const series: any = categorical && values.source && this.getSeriesValues(dataView);
+        const categories: (DataViewCategoryColumn | DataViewValueColumn)[] = categorical && categorical.categories || [];
+        const values: DataViewValueColumns = categorical && categorical.values || <DataViewValueColumns>[];
 
-            return categorical && _.mapValues(new this<any[]>(), (n, i) =>
-                (<(DataViewCategoryColumn | DataViewValueColumn)[]>_
-                    .toArray(categories))
-                    .concat(_.toArray(values))
-                    .filter(x => x.source.roles && x.source.roles[i])
-                    .map(x => x.values.map(y => {
-                        if (_.isString(y)) {
-                            let date: Date = new Date(y);
-                            if (isNaN(date.getTime())) {
-                                return y;
-                            }
+        const series: any = categorical && values.source && this.getSeriesValues(dataView);
 
-                            return date;
+        return categorical && _.mapValues(new this<any[]>(), (n, i) =>
+            (<(DataViewCategoryColumn | DataViewValueColumn)[]>_
+                .toArray(categories))
+                .concat(_.toArray(values))
+                .filter(x => x.source.roles && x.source.roles[i])
+                .map(x => x.values.map(y => {
+                    if (_.isString(y)) {
+                        let date: Date = new Date(y);
+                        if (isNaN(date.getTime())) {
+                            return y;
                         }
-                        return y;
-                    }))[0]
-                || values.source && values.source.roles && values.source.roles[i] && series);
-        }
 
-        public static getSeriesValues(dataView: DataView): PrimitiveValue[] {
-            return dataView
-                && dataView.categorical
-                && dataView.categorical.values
-                && dataView.categorical.values.map((value: DataViewValueColumn) => {
-                    return converterHelper.getSeriesName(value.source);
-                });
-        }
-
-        public static getCategoricalColumns(dataView: DataView) {
-            const categorical: DataViewCategorical = dataView && dataView.categorical;
-            const categories: DataViewCategoryColumn[] = categorical && categorical.categories || [];
-            const values: DataViewValueColumns = categorical && categorical.values || <DataViewValueColumns>[];
-
-            return categorical && _.mapValues(
-                new this<DataViewCategoryColumn & DataViewValueColumn[] & DataViewValueColumns>(),
-                (n, i) => {
-                    let result: any = categories.filter(x => x.source.roles && x.source.roles[i])[0];
-
-                    if (!result) {
-                        result = values.source && values.source.roles && values.source.roles[i] && values;
+                        return date;
                     }
-
-                    if (!result) {
-                        result = values.filter(x => x.source.roles && x.source.roles[i]);
-                        if (_.isEmpty(result)) {
-                            result = undefined;
-                        }
-                    }
-
-                    return result;
-                });
-        }
-
-        public Date: T = null;
-        public Values: T = null;
+                    return y;
+                }))[0]
+            || values.source && values.source.roles && values.source.roles[i] && series);
     }
+
+    public static getSeriesValues(dataView: DataView): PrimitiveValue[] {
+        return dataView
+            && dataView.categorical
+            && dataView.categorical.values
+            && dataView.categorical.values.map((value: DataViewValueColumn) => {
+                return converterHelper.getSeriesName(value.source);
+            });
+    }
+
+    public static getCategoricalColumns(dataView: DataView) {
+        const categorical: DataViewCategorical = dataView && dataView.categorical;
+        const categories: DataViewCategoryColumn[] = categorical && categorical.categories || [];
+        const values: DataViewValueColumns = categorical && categorical.values || <DataViewValueColumns>[];
+
+        return categorical && _.mapValues(
+            new this<DataViewCategoryColumn & DataViewValueColumn[] & DataViewValueColumns>(),
+            (n, i) => {
+                let result: any = categories.filter(x => x.source.roles && x.source.roles[i])[0];
+
+                if (!result) {
+                    result = values.source && values.source.roles && values.source.roles[i] && values;
+                }
+
+                if (!result) {
+                    result = values.filter(x => x.source.roles && x.source.roles[i]);
+                    if (_.isEmpty(result)) {
+                        result = undefined;
+                    }
+                }
+
+                return result;
+            });
+    }
+
+    public Date: T = null;
+    public Values: T = null;
 }
+

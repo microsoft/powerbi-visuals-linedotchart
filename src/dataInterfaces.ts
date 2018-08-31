@@ -31,11 +31,9 @@ import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 
 // powerbi.extensibility.utils.formatting
 import { valueFormatter as vf } from "powerbi-visuals-utils-formattingutils";
-import SelectableDataPoint from "powerbi-visuals-utils-interactivityutils";
+import { interactivityService } from "powerbi-visuals-utils-interactivityutils";
+import SelectableDataPoint = interactivityService.SelectableDataPoint;
 import IValueFormatter = vf.IValueFormatter;
-
-// powerbi.extensibility.utils.interactivity
-import SelectableDataPoint = powerbi.extensibility.utils.interactivity.SelectableDataPoint;
 
 export class DateValue {
     constructor(public label: string, public value: number) { }

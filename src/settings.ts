@@ -23,14 +23,11 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-import powerbi from "powerbi-visuals-tools";
+import powerbi from "powerbi-visuals-api";
 
-import ILocalizationManager = powerbi.ILocalizationManager;
-// powerbi.extensibility.utils.dataview
-import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
-
-// powerbi.extensibility.utils.color
-import ColorHelper = powerbi.extensibility.utils.color.ColorHelper;
+import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
+import { dataViewObjectsParser as DataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
+import { ColorHelper } from "powerbi-visuals-utils-colorutils";
 
 export class AxisSettings {
     public show: boolean = true;

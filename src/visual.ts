@@ -25,37 +25,43 @@
  */
 
 import * as d3 from "d3";
+import * as _ from "lodash";
 import powerbi from "powerbi-visuals-api";
 
-// powerbi.extensibility.utils.chart
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import { VisualLayout } from "./visualLayout";
+import IVisual = powerbi.extensibility.visual.IVisual;
+import IViewport = powerbi.IViewport;
+import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
+import ISelectionId = powerbi.visuals.ISelectionId;
+
 import { axis as AxisHelper, axisInterfaces } from "powerbi-visuals-utils-chartutils";
 import IAxisProperties = axisInterfaces.IAxisProperties;
 
-// powerbi.extensibility.utils.formatting
 import { valueFormatter as vf, textMeasurementService as TextMeasurementService } from "powerbi-visuals-utils-formattingutils";
 import IValueFormatter = vf.IValueFormatter;
 
-// powerbi.extensibility.utils.svg
-import SVGUtil = powerbi.extensibility.utils.svg;
-import ClassAndSelector = powerbi.extensibility.utils.svg.CssConstants.ClassAndSelector;
-import createClassAndSelector = powerbi.extensibility.utils.svg.CssConstants.createClassAndSelector;
+import * as SVGUtil from "powerbi-visuals-utils-svgutils";
+import ClassAndSelector = SVGUtil.CssConstants.ClassAndSelector;
+import createClassAndSelector = SVGUtil.CssConstants.createClassAndSelector;
 
-// powerbi.extensibility.utils.type
-import valueType = powerbi.extensibility.utils.type.ValueType;
-import PixelConverter = powerbi.extensibility.utils.type.PixelConverter;
-
-// powerbi.extensibility.utils.tooltip
-import TooltipEventArgs = powerbi.extensibility.utils.tooltip.TooltipEventArgs;
-import ITooltipServiceWrapper = powerbi.extensibility.utils.tooltip.ITooltipServiceWrapper;
-import createTooltipServiceWrapper = powerbi.extensibility.utils.tooltip.createTooltipServiceWrapper;
-
-// powerbi.extensibility.utils.interactivity
-import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
-import IInteractiveBehavior = powerbi.extensibility.utils.interactivity.IInteractiveBehavior;
-import createInteractivityService = powerbi.extensibility.utils.interactivity.createInteractivityService;
-
-// powerbi.extensibility.utils.color
-import ColorHelper from "powerbi-visuals-utils-colorutils";
+import { valueType, pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutils";
+import { TooltipEventArgs, ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
+import { interfaces, interactivityUtils, interactivityService } from "powerbi-visuals-utils-interactivityutils";
+import SelectableDataPoint = interactivityService.SelectableDataPoint;
+import IInteractiveBehavior = interactivityService.IInteractiveBehavior;
+import IInteractivityService = interactivityService.IInteractivityService;
+import { LineSettings } from "./settings"
+import {
+    Legend,
+    LineDotChartViewModel,
+    LineDotPoint,
+    DateValue,
+    ColumnNames
+} from "./dataInterfaces"
+import { Behavior, BehaviorOptions } from "./behavior";
+import { LineDotChartColumns } from "./columns";
+import { ColorHelper } from "powerbi-visuals-utils-colorutils";
 
 export interface LineDotChartDataRoles<T> {
     Date?: T;
