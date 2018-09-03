@@ -3,9 +3,10 @@
     "allowJs": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "target": "ES5",
+    "target": "ES6",
     "sourceMap": true,
-    "outDir": "./.tmp/build/visual.js",
+    "outDir": "./.tmp/build/",
+    "moduleResolution": "node",
     "declaration": true
   },
   "files": [

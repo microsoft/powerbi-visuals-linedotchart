@@ -24,38 +24,45 @@
  *  THE SOFTWARE.
  */
 
-'use strict';
+"use strict";
 
-const recursivePathToTests = 'test/**/*.ts';
-const srcRecursivePath = '.tmp/drop/visual.js';
-const srcCssRecursivePath = '.tmp/drop/visual.css';
-const srcOriginalRecursivePath = 'src/**/*.ts';
-const coverageFolder = 'coverage';
+const webpackConfig = require("./webpack.config.js");
+const tsconfig = require("./tsconfig.json");
 
-module.exports = (config) => {
-    config.set({
-        browsers: ['ChromeHeadless'],
+const testRecursivePath = "test/visualTest.ts";
+const srcOriginalRecursivePath = "src/**/*.ts";
+const srcRecursivePath = "lib/**/*.js";
+const coverageFolder = "coverage";
+process.env.CHROME_BIN = require("puppeteer").executablePath();
+
+import { Config, ConfigOptions } from "karma";
+
+module.exports = (config: Config) => {
+    config.set(<ConfigOptions>{
+        browserNoActivityTimeout: 100000,
+        browsers: ["ChromeHeadless"],
         colors: true,
-        frameworks: ['jasmine'],
+        frameworks: ["jasmine"],
         reporters: [
-            'progress',
-            'coverage',
-            'karma-remap-istanbul'
+            "progress",
+            "coverage",
+            "karma-remap-istanbul"
         ],
         singleRun: true,
+        plugins: [
+            "karma-remap-istanbul",
+            "karma-coverage",
+            "karma-typescript",
+            "karma-webpack",
+            "karma-jasmine",
+            "karma-sourcemap-loader",
+            "karma-chrome-launcher"
+        ],
         files: [
-            srcCssRecursivePath,
+            "node_modules/jquery/dist/jquery.min.js",
+            "node_modules/jasmine-jquery/lib/jasmine-jquery.js",
             srcRecursivePath,
-            'node_modules/powerbi-visuals-utils-testutils/lib/index.js',
-            'node_modules/jquery/dist/jquery.min.js',
-            'node_modules/jasmine-jquery/lib/jasmine-jquery.js',
-            {
-                pattern: './capabilities.json',
-                watched: false,
-                served: true,
-                included: false
-            },
-            recursivePathToTests,
+            testRecursivePath,
             {
                 pattern: srcOriginalRecursivePath,
                 included: false,
@@ -63,33 +70,32 @@ module.exports = (config) => {
             }
         ],
         preprocessors: {
-            [recursivePathToTests]: ['typescript'],
-            [srcRecursivePath]: ['sourcemap', 'coverage']
+            [testRecursivePath]: ["webpack"],
+            [srcRecursivePath]: ["webpack", "coverage"]
         },
         typescriptPreprocessor: {
-            options: {
-                sourceMap: false,
-                target: 'ES5',
-                removeComments: false,
-                concatenateOutput: false
-            }
+            options: tsconfig.compilerOptions
         },
         coverageReporter: {
             dir: coverageFolder,
-            reporters: [{
-                    type: 'html'
-                },
-                {
-                    type: 'lcov'
-                }
+            reporters: [
+                { type: "html" },
+                { type: "lcov" }
             ]
         },
         remapIstanbulReporter: {
             reports: {
-                lcovonly: coverageFolder + '/lcov.info',
+                lcovonly: coverageFolder + "/lcov.info",
                 html: coverageFolder,
-                'text-summary': null
+                "text-summary": null
             }
+        },
+        mime: {
+            "text/x-typescript": ["ts", "tsx"]
+        },
+        webpack: webpackConfig,
+        webpackMiddleware: {
+            stats: "errors-only"
         }
     });
 };

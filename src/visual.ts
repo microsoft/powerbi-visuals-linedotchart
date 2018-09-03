@@ -51,11 +51,13 @@ import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructor
 import { axis as AxisHelper, axisInterfaces } from "powerbi-visuals-utils-chartutils";
 import IAxisProperties = axisInterfaces.IAxisProperties;
 
-import { valueFormatter as vf, textMeasurementService as TextMeasurementService } from "powerbi-visuals-utils-formattingutils";
+import { valueFormatter as vf, textMeasurementService as tms } from "powerbi-visuals-utils-formattingutils";
+import TextMeasurementService = tms.textMeasurementService;
 import IValueFormatter = vf.IValueFormatter;
 import valueFormatter = vf.valueFormatter;
 
 import * as SVGUtil from "powerbi-visuals-utils-svgutils";
+import SVGManipulations = SVGUtil.manipulation;
 import ClassAndSelector = SVGUtil.CssConstants.ClassAndSelector;
 import createClassAndSelector = SVGUtil.CssConstants.createClassAndSelector;
 
@@ -82,6 +84,7 @@ import {
     DateValue,
     ColumnNames
 } from "./dataInterfaces"
+import { textMeasurementService } from "powerbi-visuals-utils-formattingutils/lib/textMeasurementService";
 
 export interface LineDotChartDataRoles<T> {
     Date?: T;
@@ -105,16 +108,14 @@ export class LineDotChart implements IVisual {
     private static LegendSize: number = 50;
     private static AxisSize: number = 30;
 
-
-
-    private root: d3.Selection<any>;
-    private main: d3.Selection<any>;
-    private axes: d3.Selection<any>;
-    private axisX: d3.Selection<any>;
-    private axisY: d3.Selection<any>;
-    private axisY2: d3.Selection<any>;
-    private legends: d3.Selection<any>;
-    private line: d3.Selection<any>;
+    private root: d3.Selection<any, any, any, any>;
+    private main: d3.Selection<any, any, any, any>;
+    private axes: d3.Selection<any, any, any, any>;
+    private axisX: d3.Selection<any, any, any, any>;
+    private axisY: d3.Selection<any, any, any, any>;
+    private axisY2: d3.Selection<any, any, any, any>;
+    private legends: d3.Selection<any, any, any, any>;
+    private line: d3.Selection<any, any, any, any>;
     private xAxisProperties: IAxisProperties;
     private yAxisProperties: IAxisProperties;
     private yAxis2Properties: IAxisProperties;
@@ -312,7 +313,7 @@ export class LineDotChart implements IVisual {
         );
     }
 
-    private clearElement(selection: d3.Selection<any>): void {
+    private clearElement(selection: d3.Selection<any, any, any, any>): void {
         selection
             .selectAll("*")
             .remove();
@@ -533,7 +534,8 @@ export class LineDotChart implements IVisual {
             getValueFn: LineDotChart.valueFormattingFn(this.data)
         });
 
-        this.yAxis2Properties.axis.orient("right");
+        //this.yAxis2Properties.axis.orient("right");
+        d3.axisRight();
     }
 
     private static rotateAngle: number = 270;
@@ -541,12 +543,12 @@ export class LineDotChart implements IVisual {
     private generateAxisLabels(): Legend[] {
         return [
             {
-                transform: SVGUtil.translate((this.layout.viewportIn.width) / 2, (this.layout.viewportIn.height)),
+                transform: SVGManipulations.translate((this.layout.viewportIn.width) / 2, (this.layout.viewportIn.height)),
                 text: "", // xAxisTitle
                 dx: "1em",
                 dy: "-1em"
             }, {
-                transform: SVGUtil.translateAndRotate(0, this.layout.viewportIn.height / 2, 0, 0, LineDotChart.rotateAngle),
+                transform: SVGManipulations.translateAndRotate(0, this.layout.viewportIn.height / 2, 0, 0, LineDotChart.rotateAngle),
                 text: "", // yAxisTitle
                 dx: "3em"
             }
@@ -561,32 +563,32 @@ export class LineDotChart implements IVisual {
 
         this.main.attr(
             "transform",
-            SVGUtil.translate(this.layout.margin.left, this.layout.margin.top)
+            SVGManipulations.translate(this.layout.margin.left, this.layout.margin.top)
         );
 
         this.legends.attr(
             "transform",
-            SVGUtil.translate(this.layout.margin.left, this.layout.margin.top)
+            SVGManipulations.translate(this.layout.margin.left, this.layout.margin.top)
         );
 
         this.line.attr(
             "transform",
-            SVGUtil.translate(this.layout.margin.left + LineDotChart.LegendSize, 0)
+            SVGManipulations.translate(this.layout.margin.left + LineDotChart.LegendSize, 0)
         );
 
         this.axes.attr(
             "transform",
-            SVGUtil.translate(this.layout.margin.left + LineDotChart.LegendSize, 0)
+            SVGManipulations.translate(this.layout.margin.left + LineDotChart.LegendSize, 0)
         );
 
         this.axisX.attr(
             "transform",
-            SVGUtil.translate(0, this.layout.viewportIn.height - LineDotChart.LegendSize)
+            SVGManipulations.translate(0, this.layout.viewportIn.height - LineDotChart.LegendSize)
         );
 
         this.axisY2.attr(
             "transform",
-            SVGUtil.translate(this.layout.viewportIn.width - LineDotChart.LegendSize - LineDotChart.AxisSize, 0)
+            SVGManipulations.translate(this.layout.viewportIn.width - LineDotChart.LegendSize - LineDotChart.AxisSize, 0)
         );
     }
 
@@ -710,7 +712,7 @@ export class LineDotChart implements IVisual {
             .selectAll(LineDotChart.gLineDotChartPayBtn)
             .data([""]);
 
-        const playBtnGroup: d3.Selection<string> = playBtn
+        const playBtnGroup: d3.Selection<any, string, any, any> = playBtn
             .enter()
             .append("g")
             .attr("transform", "translate(40, 20)")
@@ -1001,7 +1003,7 @@ export class LineDotChart implements IVisual {
             dotsSelection
                 .interrupt()
                 .attr("transform", (dataPoint: LineDotPoint) => {
-                    return SVGUtil.translateAndScale(
+                    return SVGManipulations.translateAndScale(
                         this.xAxisProperties.scale(dataPoint.dateValue.value),
                         this.yAxisProperties.scale(dataPoint.value),
                         LineDotChart.pointScaleValue);
@@ -1028,7 +1030,7 @@ export class LineDotChart implements IVisual {
                 .delay((_, i: number) => this.pointDelay(this.data.dotPoints, i, this.animationDuration))
                 .ease("linear")
                 .attr("transform", (dataPoint: LineDotPoint) => {
-                    return SVGUtil.translateAndScale(
+                    return SVGManipulations.translateAndScale(
                         this.xAxisProperties.scale(dataPoint.dateValue.value),
                         this.yAxisProperties.scale(dataPoint.value),
                         LineDotChart.pointTransformScaleValue);
@@ -1040,7 +1042,7 @@ export class LineDotChart implements IVisual {
                 })
                 .ease("elastic")
                 .attr("transform", (dataPoint: LineDotPoint) => {
-                    return SVGUtil.translateAndScale(
+                    return SVGManipulations.translateAndScale(
                         this.xAxisProperties.scale(dataPoint.dateValue.value),
                         this.yAxisProperties.scale(dataPoint.value),
                         1);
@@ -1049,7 +1051,7 @@ export class LineDotChart implements IVisual {
             dotsSelection
                 .interrupt()
                 .attr("transform", (dataPoint: LineDotPoint) => {
-                    return SVGUtil.translateAndScale(
+                    return SVGManipulations.translateAndScale(
                         this.xAxisProperties.scale(dataPoint.dateValue.value),
                         this.yAxisProperties.scale(dataPoint.value),
                         1);
@@ -1102,14 +1104,14 @@ export class LineDotChart implements IVisual {
             .duration(0)
             .delay(0);
 
-        d3.timer.flush();
+        d3.timerFlush();
     }
 
     private static textSelector: string = "text.text";
     private static widthMargin: number = 85;
     private static yPosition: number = 30;
 
-    private updateLineText(textSelector: d3.Selection<any>, text?: string): void {
+    private updateLineText(textSelector: d3.Selection<any, any, any, any>, text?: string): void {
         textSelector.text(d => text);
     }
 
