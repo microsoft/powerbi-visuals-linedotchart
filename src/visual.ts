@@ -533,8 +533,7 @@ export class LineDotChart implements IVisual {
             getValueFn: LineDotChart.valueFormattingFn(this.data)
         });
 
-        //this.yAxis2Properties.axis.orient("right");
-        d3.axisRight();
+        this.yAxis2Properties.axis.call(d3.axisRight(this.yAxis2Properties.scale));
     }
 
     private static rotateAngle: number = 270;
@@ -555,10 +554,9 @@ export class LineDotChart implements IVisual {
     }
 
     private resize(): void {
-        this.root.attr({
-            width: this.layout.viewport.width,
-            height: this.layout.viewport.height
-        });
+        this.root
+            .attr("width", this.layout.viewport.width)
+            .attr("height", this.layout.viewport.height);
 
         this.main.attr(
             "transform",
@@ -611,6 +609,7 @@ export class LineDotChart implements IVisual {
 
             if (this.settings.yAxis.isDuplicated) {
                 this.axisY2.call(this.yAxis2Properties.axis);
+                //this.axisY.call(d3.axisRight(this.yAxis2Properties.scale));
             } else {
                 this.clearElement(this.axisY2);
             }
@@ -640,7 +639,7 @@ export class LineDotChart implements IVisual {
 
         this.applyAxisSettings();
 
-        let linePathSelection: d3.selection.Update<LineDotPoint[]> = this.line
+        let linePathSelection: d3.Selection<any, LineDotPoint[], any, any> = this.line
             .selectAll(LineDotChart.dotPathText)
             .data([this.data.dotPoints]);
 
@@ -707,7 +706,7 @@ export class LineDotChart implements IVisual {
     }
 
     private drawPlaybackButtons() {
-        const playBtn: d3.selection.Update<string> = this.line
+        const playBtn: d3.Selection<any, string, any, any> = this.line
             .selectAll(LineDotChart.gLineDotChartPayBtn)
             .data([""]);
 
@@ -719,7 +718,7 @@ export class LineDotChart implements IVisual {
 
         playBtnGroup.style("opacity", this.settings.play.opacity);
 
-        const circleSelection: d3.selection.Update<any> = playBtnGroup
+        const circleSelection: d3.Selection<any, any, any, any> = playBtnGroup
             .selectAll("circle")
             .data(d => [d]);
 
@@ -729,18 +728,16 @@ export class LineDotChart implements IVisual {
             .attr("r", LineDotChart.playBtnGroupDiameter / 2)
             .on("click", () => this.setIsStopped(!this.settings.misc.isStopped));
 
-        circleSelection.style({
-            fill: this.settings.play.fill,
-            stroke: this.settings.play.stroke,
-            "stroke-width": PixelConverter.toString(this.settings.play.strokeWidth),
-            opacity: this.settings.play.opacity,
-        });
+        circleSelection.style("fill", this.settings.play.fill)
+            .style("stroke", this.settings.play.stroke)
+            .style("stroke-width", PixelConverter.toString(this.settings.play.strokeWidth))
+            .style("opacity", this.settings.play.opacity);
 
         circleSelection
             .exit()
             .remove();
 
-        const firstPathSelection: d3.selection.Update<any> = playBtnGroup
+        const firstPathSelection: d3.Selection<any, any, any, any> = playBtnGroup
             .selectAll(this.firstPathSelector.selectorName)
             .data(d => [d]);
 
@@ -748,10 +745,8 @@ export class LineDotChart implements IVisual {
             .enter()
             .append("path")
             .classed("play", true)
-            .attr({
-                "d": LineDotChart.playBtnGroupLineValues,
-                "transform": "translate(-4, -8)",
-            })
+            .attr("d", LineDotChart.playBtnGroupLineValues)
+            .attr("transform", "translate(-4, -8)")
             .style("pointer-events", "none");
 
         firstPathSelection.style("fill", this.settings.play.innerColor);
@@ -760,7 +755,7 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
-        const secondPathSelection: d3.selection.Update<any> = playBtnGroup
+        const secondPathSelection: d3.Selection<any, any, any, any> = playBtnGroup
             .selectAll(this.secondPathSelector.selectorName)
             .data(d => [d]);
 
@@ -768,12 +763,10 @@ export class LineDotChart implements IVisual {
             .enter()
             .append("path")
             .classed(LineDotChart.StopButton.className, true)
-            .attr({
-                "d": LineDotChart.playBtnGroupLineValues,
-                "pointer-events": "none",
-                "transform-origin": "top left",
-                "transform": "translate(6, " + LineDotChart.getActivePlayBackButtonTranslateY() + ") rotate(180)"
-            });
+            .attr("d", LineDotChart.playBtnGroupLineValues)
+            .attr("pointer-events", "none")
+            .attr("transform-origin", "top left")
+            .attr("transform", "translate(6, " + LineDotChart.getActivePlayBackButtonTranslateY() + ") rotate(180)");
 
         secondPathSelection.style("fill", this.settings.play.innerColor);
 
@@ -781,7 +774,7 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
-        const rectSelection: d3.selection.Update<any> = playBtnGroup
+        const rectSelection: d3.Selection<any, any, any, any> = playBtnGroup
             .selectAll("rect")
             .data(d => [d]);
 
@@ -789,12 +782,10 @@ export class LineDotChart implements IVisual {
             .enter()
             .append("rect")
             .classed(LineDotChart.StopButton.className, true)
-            .attr({
-                "width": LineDotChart.playBtnGroupRectWidth,
-                "height": LineDotChart.playBtnGroupRectHeight,
-                "pointer-events": "none",
-                "transform": "translate(-7, -6)",
-            });
+            .attr("width", LineDotChart.playBtnGroupRectWidth)
+            .attr("height", LineDotChart.playBtnGroupRectHeight)
+            .attr("pointer-events", "none")
+            .attr("transform", "translate(-7, -6)");
 
         rectSelection.style("fill", this.settings.play.innerColor);
 
@@ -824,13 +815,13 @@ export class LineDotChart implements IVisual {
     private static plotClassName: string = "plot";
     private static lineClip: string = "lineClip";
 
-    private drawLine(linePathSelection: d3.selection.Update<LineDotPoint[]>) {
+    private drawLine(linePathSelection: d3.Selection<any, LineDotPoint[], any, any>) {
         linePathSelection
             .enter()
             .append("g")
             .classed(LineDotChart.pathClassName, true);
 
-        const pathPlot: d3.selection.Update<LineDotPoint[]> = linePathSelection
+        const pathPlot: d3.Selection<any, LineDotPoint[], any, any> = linePathSelection
             .selectAll(LineDotChart.pathPlotClassName)
             .data(d => [d]);
 
@@ -840,7 +831,7 @@ export class LineDotChart implements IVisual {
             .classed(LineDotChart.plotClassName, true);
 
         // Draw the line
-        const drawLine: d3.svg.Line<LineDotPoint> = d3.svg.line<LineDotPoint>()
+        const drawLine: d3.Line<LineDotPoint> = d3.line<LineDotPoint>()
             .x((dataPoint: LineDotPoint) => {
                 return this.xAxisProperties.scale(dataPoint.dateValue.value);
             })
@@ -859,8 +850,8 @@ export class LineDotChart implements IVisual {
     private static zeroY: number = 0;
     private static millisecondsInOneSecond: number = 1000;
 
-    private drawClipPath(linePathSelection: d3.selection.Update<any>) {
-        const clipPath: d3.selection.Update<any> = linePathSelection
+    private drawClipPath(linePathSelection: d3.Selection<any, any, any, any>) {
+        const clipPath: d3.Selection<any, any, any, any> = linePathSelection
             .selectAll("clipPath")
             .data(d => [d]);
 
@@ -886,7 +877,7 @@ export class LineDotChart implements IVisual {
                 .attr("height", this.layout.viewportIn.height)
                 .interrupt()
                 .transition()
-                .ease("linear")
+                //.ease("linear")
                 .duration(this.animationDuration * LineDotChart.millisecondsInOneSecond)
                 .attr("x", rectSettings.endX)
                 .attr("width", rectSettings.endWidth);
@@ -929,7 +920,7 @@ export class LineDotChart implements IVisual {
         const hasSelection: boolean = this.interactivityService && this.interactivityService.hasSelection();
 
         // Draw the individual data points that will be shown on hover with a tooltip
-        const lineTipSelection: d3.selection.Update<LineDotPoint[]> = this.line
+        const lineTipSelection: d3.Selection<any, LineDotPoint[], any, any> = this.line
             .selectAll("g." + LineDotChart.dotPointsClass)
             .data([this.data.dotPoints]);
 
@@ -937,7 +928,7 @@ export class LineDotChart implements IVisual {
             .append("g")
             .classed(LineDotChart.dotPointsClass, true);
 
-        const dotsSelection: d3.selection.Update<LineDotPoint> = lineTipSelection
+        const dotsSelection: d3.Selection<any, LineDotPoint, any, any> = lineTipSelection
             .selectAll("circle." + LineDotChart.pointClassName)
             .data(d => d);
 
@@ -948,22 +939,20 @@ export class LineDotChart implements IVisual {
             .on("mouseout.point", this.hideDataPoint);
 
         dotsSelection
-            .style({
-                "fill": this.settings.dotoptions.color,
-                "stroke": this.settings.dotoptions.stroke,
-                "stroke-opacity": this.settings.dotoptions.strokeOpacity,
-                "stroke-width": this.settings.dotoptions.strokeWidth
-                    ? PixelConverter.toString(this.settings.dotoptions.strokeWidth)
-                    : null,
-                "opacity": (dotPoint: LineDotPoint) => {
-                    return getFillOpacity(
-                        dotPoint,
-                        dotPoint.selected,
-                        dotPoint.highlight,
-                        !dotPoint.highlight && hasSelection,
-                        !dotPoint.selected && hasHighlights
-                    );
-                },
+            .style("fill", this.settings.dotoptions.color)
+            .style("stroke", this.settings.dotoptions.stroke)
+            .style("stroke-opacity", this.settings.dotoptions.strokeOpacity)
+            .style("stroke-width", this.settings.dotoptions.strokeWidth
+                ? PixelConverter.toString(this.settings.dotoptions.strokeWidth)
+                : null)
+            .style("opacity", (dotPoint: LineDotPoint) => {
+                return getFillOpacity(
+                    dotPoint,
+                    dotPoint.selected,
+                    dotPoint.highlight,
+                    !dotPoint.highlight && hasSelection,
+                    !dotPoint.selected && hasHighlights
+                );
             })
             .attr("r", (dotPoint: LineDotPoint) => {
                 return this.settings.dotoptions.dotSizeMin
@@ -976,7 +965,7 @@ export class LineDotChart implements IVisual {
                 this.xAxisProperties.scale.range()[1] - this.xAxisProperties.scale.range()[0] - 60
             );
 
-            const lineText: d3.selection.Update<string> = this.line
+            const lineText: d3.Selection<any, string, any, any> = this.line
                 .selectAll(LineDotChart.textSelector)
                 .data([""]);
 
@@ -989,10 +978,8 @@ export class LineDotChart implements IVisual {
             lineText
                 .attr("x", this.layout.viewportIn.width - LineDotChart.widthMargin)
                 .attr("y", LineDotChart.yPosition)
-                .style({
-                    fill: this.settings.counteroptions.color,
-                    "font-size": PixelConverter.toString(PixelConverter.fromPointToPixel(this.settings.counteroptions.textSize)),
-                })
+                .style("fill", this.settings.counteroptions.color)
+                .style("font-size", PixelConverter.toString(PixelConverter.fromPointToPixel(this.settings.counteroptions.textSize)))
                 .call(selection => TextMeasurementService.svgEllipsis(<any>selection.node(), maxTextLength));
 
             lineText
@@ -1009,21 +996,21 @@ export class LineDotChart implements IVisual {
                 })
                 .transition()
                 .each("start", (d: LineDotPoint, i: number) => {
-                    if (this.settings.counteroptions.show) {
-                        let text: string = `${this.settings.counteroptions.counterTitle} `;
+                    // if (this.settings.counteroptions.show) {
+                    //     let text: string = `${this.settings.counteroptions.counterTitle} `;
 
-                        if (d.counter) {
-                            text += this.settings.isCounterDateTime.isCounterDateTime
-                                ? this.data.dateColumnFormatter.format(d.counter)
-                                : d.counter;
-                        } else {
-                            text += (i + 1);
-                        }
+                    //     if (d.counter) {
+                    //         text += this.settings.isCounterDateTime.isCounterDateTime
+                    //             ? this.data.dateColumnFormatter.format(d.counter)
+                    //             : d.counter;
+                    //     } else {
+                    //         text += (i + 1);
+                    //     }
 
-                        this.updateLineText(lineText, text);
-                    } else {
-                        this.updateLineText(lineText, "");
-                    }
+                    //     this.updateLineText(lineText, text);
+                    // } else {
+                    //     this.updateLineText(lineText, "");
+                    // }
                 })
                 .duration(point_time)
                 .delay((_, i: number) => this.pointDelay(this.data.dotPoints, i, this.animationDuration))
@@ -1167,7 +1154,7 @@ export class LineDotChart implements IVisual {
     }
 
     private renderLegends(): void {
-        const legendSelection: d3.selection.Update<Legend> = this.legends
+        const legendSelection: d3.Selection<any, Legend, any, any> = this.legends
             .selectAll(LineDotChart.Legend.selectorName)
             .data(this.generateAxisLabels());
 

@@ -25,6 +25,8 @@
 */
 
 import powerbi from "powerbi-visuals-api";
+import * as _ from "lodash";
+
 import IViewport = powerbi.IViewport;
 
 import { axisInterfaces } from "powerbi-visuals-utils-chartutils";

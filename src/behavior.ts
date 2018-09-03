@@ -53,8 +53,8 @@ export function getFillOpacity(
 }
 
 export interface BehaviorOptions {
-    selection: d3.Selection<SelectableDataPoint>;
-    clearCatcher: d3.Selection<any>;
+    selection: d3.Selection<any, SelectableDataPoint, any, any>;
+    clearCatcher: d3.Selection<any, any, any, any>;
     hasHighlights: boolean;
 }
 
