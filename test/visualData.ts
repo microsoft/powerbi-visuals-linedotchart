@@ -26,124 +26,122 @@
 
 /// <reference path="_references.ts" />
 
-module powerbi.extensibility.visual.test {
-    // powerbi
-    import DataView = powerbi.DataView;
+import powerbi from "powerbi-visuals-api";
 
-    // powerbi.extensibility.utils.type
-    import ValueType = powerbi.extensibility.utils.type.ValueType;
+import DataView = powerbi.DataView;
+import ValueTypeDescriptor = powerbi.ValueTypeDescriptor;
 
-    // powerbi.extensibility.utils.test
-    import getRandomNumber = powerbi.extensibility.utils.test.helpers.getRandomNumber;
-    import CustomizeColumnFn = powerbi.extensibility.utils.test.dataViewBuilder.CustomizeColumnFn;
-    import TestDataViewBuilder = powerbi.extensibility.utils.test.dataViewBuilder.TestDataViewBuilder;
-    import helpers = powerbi.extensibility.utils.test.helpers;
+import { valueType as valueTypeModule } from "powerbi-visuals-utils-typeutils";
+import ValueType = valueTypeModule.ValueType;
 
-    export function getRandomUniqueNumbers(count: number, min: number = 0, max: number = 1): number[] {
-        let result: number[] = [];
-        for (let i = 0; i < count; i++) {
-            result.push(getRandomNumber(min, max, result));
-        }
+import { getRandomNumber, getRandomNumbers, testDataViewBuilder } from "powerbi-visuals-utils-testutils";
+import CustomizeColumnFn = testDataViewBuilder.CustomizeColumnFn;
+import TestDataViewBuilder = testDataViewBuilder.TestDataViewBuilder;
 
-        return result;
+export function getRandomUniqueNumbers(count: number, min: number = 0, max: number = 1): number[] {
+    let result: number[] = [];
+    for (let i = 0; i < count; i++) {
+        result.push(getRandomNumber(min, max, result));
     }
 
-    export function getRandomUniqueDates(count: number, start: Date, end: Date): Date[] {
-        return getRandomUniqueNumbers(count, start.getTime(), end.getTime()).map(x => new Date(x));
-    }
+    return result;
+}
 
-    export function getRandomUniqueSortedDates(count: number, start: Date, end: Date): Date[] {
-        return getRandomUniqueDates(count, start, end).sort((a, b) => a.getTime() - b.getTime());
-    }
+export function getRandomUniqueDates(count: number, start: Date, end: Date): Date[] {
+    return getRandomUniqueNumbers(count, start.getTime(), end.getTime()).map(x => new Date(x));
+}
 
-    export class LineDotChartData extends TestDataViewBuilder {
-        public static ColumnDate: string = "Date";
-        public static ColumnValue: string = "Value";
-        public static DefaultFormat: string = "#";
-        public static PercentFormat: string = "0%;-0%;0%";
-        public static PriceFormat: string = "\$#,0.000;(\$#,0.000);\$#,0.000";
+export function getRandomUniqueSortedDates(count: number, start: Date, end: Date): Date[] {
+    return getRandomUniqueDates(count, start, end).sort((a, b) => a.getTime() - b.getTime());
+}
 
-        public valuesDate: Date[] = getRandomUniqueSortedDates(
-            50,
-            new Date(2014, 9, 12, 3, 9, 50),
-            new Date(2016, 3, 1, 2, 43, 3)
+export class LineDotChartData extends TestDataViewBuilder {
+    public static ColumnDate: string = "Date";
+    public static ColumnValue: string = "Value";
+    public static DefaultFormat: string = "#";
+    public static PercentFormat: string = "0%;-0%;0%";
+    public static PriceFormat: string = "\$#,0.000;(\$#,0.000);\$#,0.000";
+
+    public valuesDate: Date[] = getRandomUniqueSortedDates(
+        50,
+        new Date(2014, 9, 12, 3, 9, 50),
+        new Date(2016, 3, 1, 2, 43, 3)
+    );
+    public valuesValue = getRandomNumbers(this.valuesDate.length, 0, 5361);
+    public valuesForPercentFormat = getRandomNumbers(this.valuesDate.length, 0, 100);
+    public valuesDateAsString: string[] = this.valuesDate.map(x => x.toISOString());
+
+    public getDataView(columnNames?: string[], valuesDate?: string[] | Date[] | number[], valuesValue?: string[] | Date[] | number[]): DataView {
+        return this.getFormattedDataView(
+            ValueType.fromDescriptor({ dateTime: true }),
+            ValueType.fromDescriptor({ integer: true }),
+            valuesDate ? valuesDate : this.valuesDate,
+            valuesValue ? valuesValue : this.valuesValue,
+            columnNames
         );
-        public valuesValue = helpers.getRandomNumbers(this.valuesDate.length, 0, 5361);
-        public valuesForPercentFormat = helpers.getRandomNumbers(this.valuesDate.length, 0, 100);
-        public valuesDateAsString: string[] = this.valuesDate.map(x => x.toISOString());
+    }
 
-        public getDataView(columnNames?: string[], valuesDate?: string[] | Date[] | number[], valuesValue?: string[] | Date[] | number[]): DataView {
-            return this.getFormattedDataView(
-                ValueType.fromDescriptor({ dateTime: true }),
-                ValueType.fromDescriptor({ integer: true }),
-                valuesDate ? valuesDate : this.valuesDate,
-                valuesValue ? valuesValue : this.valuesValue,
-                columnNames
-            );
-        }
+    public getDataViewWithDifferentFormats(columnNames?: string[]): DataView {
+        return this.getFormattedDataView(
+            ValueType.fromDescriptor({ numeric: true }),
+            ValueType.fromDescriptor({ integer: true }),
+            this.valuesValue,
+            this.valuesForPercentFormat,
+            columnNames,
+            LineDotChartData.PriceFormat,
+            LineDotChartData.PercentFormat
+        );
+    }
 
-        public getDataViewWithDifferentFormats(columnNames?: string[]): DataView {
-            return this.getFormattedDataView(
-                ValueType.fromDescriptor({ numeric: true }),
-                ValueType.fromDescriptor({ integer: true }),
-                this.valuesValue,
-                this.valuesForPercentFormat,
-                columnNames,
-                LineDotChartData.PriceFormat,
-                LineDotChartData.PercentFormat
-            );
-        }
-
-        private getFormattedDataView(
-            valueTypeDescriptor1: ValueTypeDescriptor,
-            valueTypeDescriptor2: ValueTypeDescriptor,
-            values1: string[] | Date[] | number[],
-            values2: string[] | Date[] | number[],
-            columnNames?: string[],
-            format1: string = LineDotChartData.DefaultFormat,
-            format2: string = LineDotChartData.DefaultFormat,
-        ): DataView {
-            return this.createCategoricalDataViewBuilder([
+    private getFormattedDataView(
+        valueTypeDescriptor1: ValueTypeDescriptor,
+        valueTypeDescriptor2: ValueTypeDescriptor,
+        values1: string[] | Date[] | number[],
+        values2: string[] | Date[] | number[],
+        columnNames?: string[],
+        format1: string = LineDotChartData.DefaultFormat,
+        format2: string = LineDotChartData.DefaultFormat,
+    ): DataView {
+        return this.createCategoricalDataViewBuilder([
+            {
+                source: {
+                    displayName: LineDotChartData.ColumnDate,
+                    type: valueTypeDescriptor1,
+                    roles: { Date: true },
+                    format: format1
+                },
+                values: values1
+            }
+        ], [
                 {
                     source: {
-                        displayName: LineDotChartData.ColumnDate,
-                        type: valueTypeDescriptor1,
-                        roles: { Date: true },
-                        format: format1
+                        displayName: LineDotChartData.ColumnValue,
+                        type: valueTypeDescriptor2,
+                        roles: { Values: true },
+                        format: format2
                     },
-                    values: values1
+                    values: values2
                 }
-            ], [
-                    {
-                        source: {
-                            displayName: LineDotChartData.ColumnValue,
-                            type: valueTypeDescriptor2,
-                            roles: { Values: true },
-                            format: format2
-                        },
-                        values: values2
-                    }
-                ], columnNames).build();
-        }
+            ], columnNames).build();
+    }
 
-        public createStringView(columnNames?: string[]): powerbi.DataView {
-            return this.getFormattedDataView(
-                ValueType.fromDescriptor({ text: true }),
-                ValueType.fromDescriptor({ integer: true }),
-                ["Alpha", "Beta", "Omega", "Gamma"],
-                [100, 200, 300, 400],
-                columnNames
-            );
-        }
+    public createStringView(columnNames?: string[]): powerbi.DataView {
+        return this.getFormattedDataView(
+            ValueType.fromDescriptor({ text: true }),
+            ValueType.fromDescriptor({ integer: true }),
+            ["Alpha", "Beta", "Omega", "Gamma"],
+            [100, 200, 300, 400],
+            columnNames
+        );
+    }
 
-        public getDataViewForCategoricalValues(columnNames?: string[]): powerbi.DataView {
-            return this.getFormattedDataView(
-                ValueType.fromDescriptor({ dateTime: true }),
-                ValueType.fromDescriptor({ integer: true }),
-                this.valuesDateAsString,
-                this.valuesValue,
-                columnNames
-            );
-        }
+    public getDataViewForCategoricalValues(columnNames?: string[]): powerbi.DataView {
+        return this.getFormattedDataView(
+            ValueType.fromDescriptor({ dateTime: true }),
+            ValueType.fromDescriptor({ integer: true }),
+            this.valuesDateAsString,
+            this.valuesValue,
+            columnNames
+        );
     }
 }

@@ -29,7 +29,6 @@ import powerbi from "powerbi-visuals-tools"
 import Settings = powerbi.Settings;
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 
-// powerbi.extensibility.utils.formatting
 import { valueFormatter as vf } from "powerbi-visuals-utils-formattingutils";
 import { interactivityService } from "powerbi-visuals-utils-interactivityutils";
 import SelectableDataPoint = interactivityService.SelectableDataPoint;
