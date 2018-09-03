@@ -25,9 +25,11 @@
  */
 import powerbi from "powerbi-visuals-api";
 
+import DataView = powerbi.DataView;
 import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
-import { dataViewObjectsParser as DataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
 import { ColorHelper } from "powerbi-visuals-utils-colorutils";
+import { dataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
+import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
 
 export class AxisSettings {
     public show: boolean = true;

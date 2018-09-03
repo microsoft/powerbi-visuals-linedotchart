@@ -26,12 +26,17 @@
 
 
 import powerbi from "powerbi-visuals-api";
-import { converterHelper } from "powerbi-visuals-utils-dataviewutils";
+import * as _ from "lodash";
+
+import DataView = powerbi.DataView;
 import DataViewCategorical = powerbi.DataViewCategorical;
-import DataViewCategoryColumn = powerbi.DataViewCategoricalColumn;
+import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 import DataViewValueColumn = powerbi.DataViewValueColumn;
 import DataViewValueColumns = powerbi.DataViewValueColumns;
 import PrimitiveValue = powerbi.PrimitiveValue;
+
+import { converterHelper as ConverterHelperModule } from "powerbi-visuals-utils-dataviewutils";
+import converterHelper = ConverterHelperModule.converterHelper;
 
 export class LineDotChartColumns<T> {
     public static getCategoricalValues(dataView: DataView) {

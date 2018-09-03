@@ -27,7 +27,6 @@
 import powerbi from "powerbi-visuals-api";
 import IViewport = powerbi.IViewport;
 
-// powerbi.visuals
 import { axisInterfaces } from "powerbi-visuals-utils-chartutils";
 import IMargin = axisInterfaces.IMargin;
 

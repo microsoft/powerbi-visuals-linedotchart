@@ -28,30 +28,53 @@ import * as d3 from "d3";
 import * as _ from "lodash";
 import powerbi from "powerbi-visuals-api";
 
-import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-import { VisualLayout } from "./visualLayout";
-import IVisual = powerbi.extensibility.visual.IVisual;
+import DataView = powerbi.DataView;
+import DataViewValueColumn = powerbi.DataViewValueColumn;
+import DataViewCategoricalColumn = powerbi.DataViewCategoricalColumn;
+import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
+import PrimitiveValue = powerbi.PrimitiveValue;
 import IViewport = powerbi.IViewport;
+import VisualObjectInstancesToPersist = powerbi.VisualObjectInstancesToPersist;
+import VisualObjectInstance = powerbi.VisualObjectInstance;
+import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
+import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
+
 import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import IVisual = powerbi.extensibility.visual.IVisual;
 import ISelectionId = powerbi.visuals.ISelectionId;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
+import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
+import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
+
 
 import { axis as AxisHelper, axisInterfaces } from "powerbi-visuals-utils-chartutils";
 import IAxisProperties = axisInterfaces.IAxisProperties;
 
 import { valueFormatter as vf, textMeasurementService as TextMeasurementService } from "powerbi-visuals-utils-formattingutils";
 import IValueFormatter = vf.IValueFormatter;
+import valueFormatter = vf.valueFormatter;
 
 import * as SVGUtil from "powerbi-visuals-utils-svgutils";
 import ClassAndSelector = SVGUtil.CssConstants.ClassAndSelector;
 import createClassAndSelector = SVGUtil.CssConstants.createClassAndSelector;
 
-import { valueType, pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutils";
+import { valueType as valueTypeModule, pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutils";
+import valueType = valueTypeModule.ValueType;
+
 import { TooltipEventArgs, ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
+import { ColorHelper } from "powerbi-visuals-utils-colorutils";
+
 import { interfaces, interactivityUtils, interactivityService } from "powerbi-visuals-utils-interactivityutils";
+import createInteractivityService = interactivityService.createInteractivityService;
 import SelectableDataPoint = interactivityService.SelectableDataPoint;
 import IInteractiveBehavior = interactivityService.IInteractiveBehavior;
 import IInteractivityService = interactivityService.IInteractivityService;
-import { LineSettings } from "./settings"
+
+import { VisualLayout } from "./visualLayout";
+import { Behavior, BehaviorOptions, getFillOpacity } from "./behavior";
+import { LineDotChartColumns } from "./columns";
+import { LineSettings, Settings } from "./settings"
 import {
     Legend,
     LineDotChartViewModel,
@@ -59,9 +82,6 @@ import {
     DateValue,
     ColumnNames
 } from "./dataInterfaces"
-import { Behavior, BehaviorOptions } from "./behavior";
-import { LineDotChartColumns } from "./columns";
-import { ColorHelper } from "powerbi-visuals-utils-colorutils";
 
 export interface LineDotChartDataRoles<T> {
     Date?: T;
@@ -169,7 +189,7 @@ export class LineDotChart implements IVisual {
         this.layout.minViewport = LineDotChart.viewportDimensions;
 
         this.interactivityService = createInteractivityService(options.host);
-        this.behavior = new behavior.Behavior();
+        this.behavior = new Behavior();
 
         this.root = d3.select(options.element)
             .append("svg")
@@ -935,7 +955,7 @@ export class LineDotChart implements IVisual {
                     ? PixelConverter.toString(this.settings.dotoptions.strokeWidth)
                     : null,
                 "opacity": (dotPoint: LineDotPoint) => {
-                    return behavior.getFillOpacity(
+                    return getFillOpacity(
                         dotPoint,
                         dotPoint.selected,
                         dotPoint.highlight,
@@ -1055,7 +1075,7 @@ export class LineDotChart implements IVisual {
             .remove();
 
         if (this.interactivityService) {
-            const behaviorOptions: behavior.BehaviorOptions = {
+            const behaviorOptions: BehaviorOptions = {
                 selection: dotsSelection,
                 clearCatcher: this.root,
                 hasHighlights: hasHighlights,
