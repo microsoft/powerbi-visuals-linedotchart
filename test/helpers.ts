@@ -24,8 +24,6 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="_references.ts"/>
-
 import * as powerbi from "powerbi-visuals-api";
 import * as _ from "lodash";
 

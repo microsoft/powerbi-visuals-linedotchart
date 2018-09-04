@@ -942,6 +942,7 @@ export class LineDotChart implements IVisual {
 
         dotsSelection.enter()
             .append("circle")
+            .merge(dotsSelection)
             .classed(LineDotChart.pointClassName, true)
             .on("mouseover.point", this.showDataPoint)
             .on("mouseout.point", this.hideDataPoint);
