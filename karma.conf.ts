@@ -29,9 +29,9 @@
 const webpackConfig = require("./webpack.config.js");
 const tsconfig = require("./tsconfig.json");
 
-const testRecursivePath = "test/visualTest.ts";
+const testRecursivePath = "test/**/*.ts";
 const srcOriginalRecursivePath = "src/**/*.ts";
-const srcRecursivePath = "lib/**/*.js";
+const srcRecursivePath = ".tmp/drop/visual.js";
 const coverageFolder = "coverage";
 process.env.CHROME_BIN = require("puppeteer").executablePath();
 

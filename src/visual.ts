@@ -24,6 +24,8 @@
  *  THE SOFTWARE.
  */
 
+import "./../style/lineDotChart.less";
+
 import * as d3 from "d3";
 import * as _ from "lodash";
 import powerbi from "powerbi-visuals-api";
@@ -533,7 +535,7 @@ export class LineDotChart implements IVisual {
             getValueFn: LineDotChart.valueFormattingFn(this.data)
         });
 
-        this.yAxis2Properties.axis.call(d3.axisRight(this.yAxis2Properties.scale));
+        //this.yAxis2Properties.axis.call(d3.axisRight(this.yAxis2Properties.scale));
     }
 
     private static rotateAngle: number = 270;
@@ -609,7 +611,7 @@ export class LineDotChart implements IVisual {
 
             if (this.settings.yAxis.isDuplicated) {
                 this.axisY2.call(this.yAxis2Properties.axis);
-                //this.axisY.call(d3.axisRight(this.yAxis2Properties.scale));
+                //this.axisY2.call(d3.axisRight(this.yAxis2Properties.scale));
             } else {
                 this.clearElement(this.axisY2);
             }
@@ -713,6 +715,7 @@ export class LineDotChart implements IVisual {
         const playBtnGroup: d3.Selection<any, string, any, any> = playBtn
             .enter()
             .append("g")
+            .merge(playBtn)
             .attr("transform", "translate(40, 20)")
             .classed(LineDotChart.lineDotChartPlayBtn, true);
 
@@ -725,6 +728,7 @@ export class LineDotChart implements IVisual {
         circleSelection
             .enter()
             .append("circle")
+            .merge(circleSelection)
             .attr("r", LineDotChart.playBtnGroupDiameter / 2)
             .on("click", () => this.setIsStopped(!this.settings.misc.isStopped));
 
@@ -745,6 +749,7 @@ export class LineDotChart implements IVisual {
             .enter()
             .append("path")
             .classed("play", true)
+            .merge(firstPathSelection)
             .attr("d", LineDotChart.playBtnGroupLineValues)
             .attr("transform", "translate(-4, -8)")
             .style("pointer-events", "none");
@@ -763,10 +768,11 @@ export class LineDotChart implements IVisual {
             .enter()
             .append("path")
             .classed(LineDotChart.StopButton.className, true)
+            .merge(secondPathSelection)
             .attr("d", LineDotChart.playBtnGroupLineValues)
             .attr("pointer-events", "none")
             .attr("transform-origin", "top left")
-            .attr("transform", "translate(6, " + LineDotChart.getActivePlayBackButtonTranslateY() + ") rotate(180)");
+            .attr("transform", "translate(6, 8) rotate(180)");
 
         secondPathSelection.style("fill", this.settings.play.innerColor);
 
@@ -782,6 +788,7 @@ export class LineDotChart implements IVisual {
             .enter()
             .append("rect")
             .classed(LineDotChart.StopButton.className, true)
+            .merge(rectSelection)
             .attr("width", LineDotChart.playBtnGroupRectWidth)
             .attr("height", LineDotChart.playBtnGroupRectHeight)
             .attr("pointer-events", "none")
@@ -858,6 +865,7 @@ export class LineDotChart implements IVisual {
         clipPath
             .enter()
             .append("clipPath")
+            .merge(clipPath)
             .attr("id", LineDotChart.lineClip)
             .append("rect")
             .attr("x", LineDotChart.zeroX)
@@ -877,7 +885,7 @@ export class LineDotChart implements IVisual {
                 .attr("height", this.layout.viewportIn.height)
                 .interrupt()
                 .transition()
-                //.ease("linear")
+                .ease(d3.easeLinear)
                 .duration(this.animationDuration * LineDotChart.millisecondsInOneSecond)
                 .attr("x", rectSettings.endX)
                 .attr("width", rectSettings.endWidth);
@@ -972,6 +980,7 @@ export class LineDotChart implements IVisual {
             lineText
                 .enter()
                 .append("text")
+                .merge(lineText)
                 .attr("text-anchor", "end")
                 .classed("text", true);
 
@@ -995,26 +1004,26 @@ export class LineDotChart implements IVisual {
                         LineDotChart.pointScaleValue);
                 })
                 .transition()
-                .each("start", (d: LineDotPoint, i: number) => {
-                    // if (this.settings.counteroptions.show) {
-                    //     let text: string = `${this.settings.counteroptions.counterTitle} `;
+                .each((d: LineDotPoint, i: number) => {
+                    if (this.settings.counteroptions.show) {
+                        let text: string = `${this.settings.counteroptions.counterTitle} `;
 
-                    //     if (d.counter) {
-                    //         text += this.settings.isCounterDateTime.isCounterDateTime
-                    //             ? this.data.dateColumnFormatter.format(d.counter)
-                    //             : d.counter;
-                    //     } else {
-                    //         text += (i + 1);
-                    //     }
+                        if (d.counter) {
+                            text += this.settings.isCounterDateTime.isCounterDateTime
+                                ? this.data.dateColumnFormatter.format(d.counter)
+                                : d.counter;
+                        } else {
+                            text += (i + 1);
+                        }
 
-                    //     this.updateLineText(lineText, text);
-                    // } else {
-                    //     this.updateLineText(lineText, "");
-                    // }
+                        this.updateLineText(lineText, text);
+                    } else {
+                        this.updateLineText(lineText, "");
+                    }
                 })
                 .duration(point_time)
                 .delay((_, i: number) => this.pointDelay(this.data.dotPoints, i, this.animationDuration))
-                .ease("linear")
+                .ease(d3.easeLinear)
                 .attr("transform", (dataPoint: LineDotPoint) => {
                     return SVGManipulations.translateAndScale(
                         this.xAxisProperties.scale(dataPoint.dateValue.value),
@@ -1026,7 +1035,7 @@ export class LineDotChart implements IVisual {
                 .delay((_, i: number) => {
                     return this.pointDelay(this.data.dotPoints, i, this.animationDuration) + point_time;
                 })
-                .ease("elastic")
+                .ease(d3.easeElastic)
                 .attr("transform", (dataPoint: LineDotPoint) => {
                     return SVGManipulations.translateAndScale(
                         this.xAxisProperties.scale(dataPoint.dateValue.value),
@@ -1160,9 +1169,8 @@ export class LineDotChart implements IVisual {
 
         legendSelection
             .enter()
-            .append("svg:text");
-
-        legendSelection
+            .append("svg:text")
+            .merge(legendSelection)
             .attr("x", 0)
             .attr("y", 0)
             .attr("dx", (legend: Legend) => legend.dx)

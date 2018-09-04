@@ -27,6 +27,7 @@
 /// <reference path="_references.ts"/>
 
 import powerbi from "powerbi-visuals-api";
+import * as _ from "lodash";
 
 import DataView = powerbi.DataView;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
@@ -39,12 +40,9 @@ import { areColorsEqual, getRandomHexColor } from "./helpers";
 import { LineDotChartData } from "./visualData";
 import { LineDotChartBuilder } from "./visualBuilder";
 
-// LineDotChart1460463831201
-import ColumnNames = powerbi.extensibility.visual.LineDotChart1460463831201.ColumnNames;
-import LineDotPoint = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotPoint;
-import LineDotChartViewModel = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChartViewModel;
-import LineDotChartColumns = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChartColumns;
-import LineDotChart = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChart;
+import { LineDotChart } from "./../src/visual";
+import { ColumnNames, LineDotPoint, LineDotChartViewModel } from "./../src/dataInterfaces";
+import { LineDotChartColumns } from "./../src/columns";
 
 describe("LineDotChartTests", () => {
     let visualBuilder: LineDotChartBuilder,
@@ -110,12 +108,12 @@ describe("LineDotChartTests", () => {
             dataView.metadata.objects = {
                 xAxis: {
                     show: true,
-                    color: colorHelper.getSolidColorStructuralObject(color),
+                    color: getSolidColorStructuralObject(color),
                     textSize: textSize
                 },
                 yAxis: {
                     show: true,
-                    color: colorHelper.getSolidColorStructuralObject(color),
+                    color: getSolidColorStructuralObject(color),
                     textSize: textSize
                 }
             };
@@ -127,7 +125,7 @@ describe("LineDotChartTests", () => {
 
             visualBuilder.tickText.toArray().map($).forEach(e => {
                 expect(e.prop('style')['font-size']).toBe(expectedTextSize);
-                colorHelper.assertColorsMatch(e.prop('style')['fill'], color);
+                assertColorsMatch(e.prop('style')['fill'], color);
             });
         });
 
@@ -225,9 +223,9 @@ describe("LineDotChartTests", () => {
         describe("Line", () => {
             it("color", () => {
                 let color: string = getRandomHexColor();
-                (dataView.metadata.objects as any).lineoptions = { fill: colorHelper.getSolidColorStructuralObject(color) };
+                (dataView.metadata.objects as any).lineoptions = { fill: getSolidColorStructuralObject(color) };
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                colorHelper.assertColorsMatch(visualBuilder.linePath.css('stroke'), color);
+                assertColorsMatch(visualBuilder.linePath.css('stroke'), color);
             });
         });
 
@@ -237,23 +235,23 @@ describe("LineDotChartTests", () => {
 
                 dataView.metadata.objects = {
                     dotoptions: {
-                        color: colorHelper.getSolidColorStructuralObject(color)
+                        color: getSolidColorStructuralObject(color)
                     }
                 };
                 visualBuilder.updateFlushAllD3Transitions(dataView);
                 visualBuilder.dots.toArray().map($).forEach(e =>
-                    colorHelper.assertColorsMatch(e.attr('fill'), color));
+                    assertColorsMatch(e.attr('fill'), color));
             });
             it("opacity", () => {
                 let color: string = getRandomHexColor();
                 dataView.metadata.objects = {
                     dotoptions: {
-                        color: colorHelper.getSolidColorStructuralObject(color),
+                        color: getSolidColorStructuralObject(color),
                         percentile: 50
                     }
                 };
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                visualBuilder.dots.toArray().map($).forEach(e => colorHelper.assertColorsMatch(e.attr('fill'), color) && colorHelper.assertColorsMatch(e.style('opacity'), color));
+                visualBuilder.dots.toArray().map($).forEach(e => assertColorsMatch(e.attr('fill'), color) && assertColorsMatch(e.style('opacity'), color));
             });
         });
 
@@ -282,6 +280,19 @@ describe("LineDotChartTests", () => {
             values: "Power BI - values"
         };
 
+        // const baseDataPoint: LineDotChart = {
+        //     dateValue: {
+        //         date: new Date(2018, 1, 1)
+        //     },
+        //     value: 123,
+        //     dot: 1,
+        //     sum: 10988,
+        //     opacity: 1,
+        //     counter: "Counter",
+        //     selected: false,
+        //     identity: 1
+        // };
+
         const defaultFormattedValue: string = " - Power BI - formatted value";
 
         beforeEach(() => {
@@ -309,7 +320,16 @@ describe("LineDotChartTests", () => {
             const dataPoint: LineDotPoint = {
                 dateValue: {
                     date: new Date(2008, 1, 1),
-                }
+                    label: undefined,
+                    value: null
+                },
+                value: null,
+                dot: null,
+                sum: null,
+                opacity: 1,
+                counter: null,
+                selected: false,
+                identity: null
             } as LineDotPoint;
 
             const actualResult: VisualTooltipDataItem[]

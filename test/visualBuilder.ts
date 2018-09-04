@@ -31,8 +31,7 @@ import powerbi from "powerbi-visuals-api";
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import { VisualBuilderBase } from "powerbi-visuals-utils-testutils";
 
-// LineDotChart1460463831201
-import VisualClass = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChart;
+import { LineDotChart as VisualClass } from "./../src/visual";
 
 export class LineDotChartBuilder extends VisualBuilderBase<VisualClass> {
     constructor(width: number, height: number) {
