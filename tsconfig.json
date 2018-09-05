@@ -3,6 +3,7 @@
     "allowJs": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "module": "es6",
     "target": "ES6",
     "sourceMap": true,
     "outDir": "./.tmp/build/",
@@ -10,6 +11,6 @@
     "declaration": true
   },
   "files": [
-    "src/visual.ts"
+    "./src/visual.ts"
   ]
 }

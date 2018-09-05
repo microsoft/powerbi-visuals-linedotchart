@@ -26,12 +26,12 @@
 
 "use strict";
 
-const webpackConfig = require("./webpack.config.js");
-const tsconfig = require("./tsconfig.json");
+const webpackConfig = require("./test.webpack.config.js");
+const tsconfig = require("./test.tsconfig.json");
 
-const testRecursivePath = "test/**/*.ts";
+const testRecursivePath = "test/visualTest.ts";
 const srcOriginalRecursivePath = "src/**/*.ts";
-const srcRecursivePath = ".tmp/drop/visual.js";
+const srcRecursivePath = "lib/**/*.js";
 const coverageFolder = "coverage";
 process.env.CHROME_BIN = require("puppeteer").executablePath();
 
@@ -63,6 +63,12 @@ module.exports = (config: Config) => {
             "node_modules/jasmine-jquery/lib/jasmine-jquery.js",
             srcRecursivePath,
             testRecursivePath,
+            {
+                pattern: './capabilities.json',
+                watched: false,
+                served: true,
+                included: false
+            },
             {
                 pattern: srcOriginalRecursivePath,
                 included: false,
