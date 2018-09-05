@@ -534,8 +534,6 @@ export class LineDotChart implements IVisual {
             useTickIntervalForDisplayUnits: true,
             getValueFn: LineDotChart.valueFormattingFn(this.data)
         });
-
-        //this.yAxis2Properties.axis.call(d3.axisRight(this.yAxis2Properties.scale));
     }
 
     private static rotateAngle: number = 270;
@@ -610,8 +608,11 @@ export class LineDotChart implements IVisual {
             this.axisY.call(this.yAxisProperties.axis);
 
             if (this.settings.yAxis.isDuplicated) {
-                this.axisY2.call(this.yAxis2Properties.axis);
-                //this.axisY2.call(d3.axisRight(this.yAxis2Properties.scale));
+                const scale: any = this.yAxis2Properties.scale;
+                const ticksCount: number = this.yAxis2Properties.values.length;
+                const format: Function = this.yAxis2Properties.formatter.format;
+
+                this.axisY2.call(d3.axisRight(scale).tickArguments([ticksCount]).tickFormat(this.yAxis2Properties.formatter.format));
             } else {
                 this.clearElement(this.axisY2);
             }
@@ -943,6 +944,7 @@ export class LineDotChart implements IVisual {
     private static pointClassName: string = "point";
     private static pointScaleValue: number = 0;
     private static pointTransformScaleValue: number = 3.4;
+    private static pointDelayCoefficient: number = 1000;
 
     private drawDots() {
         const point_time: number = this.settings.misc.isAnimated && !this.settings.misc.isStopped
@@ -1047,7 +1049,6 @@ export class LineDotChart implements IVisual {
                         } else {
                             text += (i + 1);
                         }
-
                         this.updateLineText(lineTextMerged, text);
                     } else {
                         this.updateLineText(lineTextMerged, "");
@@ -1065,7 +1066,7 @@ export class LineDotChart implements IVisual {
                 .transition()
                 .duration(point_time)
                 .delay((_, i: number) => {
-                    return this.pointDelay(this.data.dotPoints, i, this.animationDuration) + point_time;
+                    return (this.pointDelay(this.data.dotPoints, i, this.animationDuration) + point_time) / LineDotChart.pointDelayCoefficient;
                 })
                 .ease(d3.easeElastic)
                 .attr("transform", (dataPoint: LineDotPoint) => {

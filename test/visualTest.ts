@@ -278,19 +278,6 @@ describe("LineDotChartTests", () => {
             values: "Power BI - values"
         };
 
-        // const baseDataPoint: LineDotChart = {
-        //     dateValue: {
-        //         date: new Date(2018, 1, 1)
-        //     },
-        //     value: 123,
-        //     dot: 1,
-        //     sum: 10988,
-        //     opacity: 1,
-        //     counter: "Counter",
-        //     selected: false,
-        //     identity: 1
-        // };
-
         const defaultFormattedValue: string = " - Power BI - formatted value";
 
         beforeEach(() => {
