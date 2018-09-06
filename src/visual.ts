@@ -1009,6 +1009,7 @@ export class LineDotChart implements IVisual {
             const lineTextMerged = lineText
                 .enter()
                 .append("text")
+                .merge(lineText);
 
             lineTextMerged
                 .attr("text-anchor", "end")
@@ -1035,7 +1036,6 @@ export class LineDotChart implements IVisual {
                 })
                 .transition()
                 .each((d: LineDotPoint, i: number) => {
-                    //debugger;
                     if (this.settings.counteroptions.show) {
                         let text: string = `${this.settings.counteroptions.counterTitle} `;
 
