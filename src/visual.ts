@@ -26,6 +26,8 @@
 
 import "./../style/lineDotChart.less";
 
+import "./globalize.ts";
+
 import * as d3 from "d3";
 import * as _ from "lodash";
 import powerbi from "powerbi-visuals-api";
@@ -62,8 +64,8 @@ import SVGManipulations = SVGUtil.manipulation;
 import ClassAndSelector = SVGUtil.CssConstants.ClassAndSelector;
 import createClassAndSelector = SVGUtil.CssConstants.createClassAndSelector;
 
-import { valueType as valueTypeModule, pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutils";
-import valueType = valueTypeModule.ValueType;
+import { valueType as vt, pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutils";
+import valueType = vt.ValueType;
 
 import { TooltipEventArgs, ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
 import { ColorHelper } from "powerbi-visuals-utils-colorutils";
@@ -650,10 +652,18 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
+        const lineTipSelection: d3.Selection<d3.BaseType, LineDotPoint[], any, any> = this.line
+            .selectAll("g." + LineDotChart.dotPointsClass)
+            .data([this.data.dotPoints]);
+
+        lineTipSelection
+            .exit()
+            .remove();
+
         let linePathSelectionMerged = this.drawLine(linePathSelection);
         this.drawClipPath(linePathSelectionMerged);
 
-        this.drawDots();
+        this.drawDots(lineTipSelection);
     }
 
     public applyAxisSettings(): void {
@@ -696,17 +706,6 @@ export class LineDotChart implements IVisual {
 
     private firstPathSelector: ClassAndSelector = createClassAndSelector("firstPath");
     private secondPathSelector: ClassAndSelector = createClassAndSelector("secondPath");
-
-    public static edgeAndIETranslateY: number = 4;
-    public static standartTranslateY: number = 8;
-
-    public static getActivePlayBackButtonTranslateY() {
-        const userAgent = window.navigator.userAgent;
-        let translateY: number = (userAgent.indexOf("Edge") !== -1 || userAgent.indexOf("MSIE") !== -1) ?
-            LineDotChart.edgeAndIETranslateY : LineDotChart.standartTranslateY;
-
-        return translateY;
-    }
 
     private drawPlaybackButtons() {
         const playBtn: d3.Selection<d3.BaseType, string, any, any> = this.line
@@ -946,7 +945,7 @@ export class LineDotChart implements IVisual {
     private static pointTransformScaleValue: number = 3.4;
     private static pointDelayCoefficient: number = 1000;
 
-    private drawDots() {
+    private drawDots(lineTipSelection) {
         const point_time: number = this.settings.misc.isAnimated && !this.settings.misc.isStopped
             ? LineDotChart.pointTime
             : 0;
@@ -955,9 +954,6 @@ export class LineDotChart implements IVisual {
         const hasSelection: boolean = this.interactivityService && this.interactivityService.hasSelection();
 
         // Draw the individual data points that will be shown on hover with a tooltip
-        const lineTipSelection: d3.Selection<d3.BaseType, LineDotPoint[], any, any> = this.line
-            .selectAll("g." + LineDotChart.dotPointsClass)
-            .data([this.data.dotPoints]);
 
         const lineTipSelectionMerged = lineTipSelection.enter()
             .append("g")
@@ -1039,6 +1035,7 @@ export class LineDotChart implements IVisual {
                 })
                 .transition()
                 .each((d: LineDotPoint, i: number) => {
+                    //debugger;
                     if (this.settings.counteroptions.show) {
                         let text: string = `${this.settings.counteroptions.counterTitle} `;
 
