@@ -119,6 +119,11 @@ module powerbi.extensibility.visual {
             height: 150
         };
 
+        private playBtnConstants = {
+            buttonPlay: "data:image/png;base64, PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PGcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0MCwgMjApIiBjbGFzcz0ibGluZURvdENoYXJ0X19wbGF5QnRuIj48Y2lyY2xlIHI9IjE3IiBvcGFjaXR5PSIxIiBzdHlsZT0iZmlsbDogd2hpdGU7IHN0cm9rZTogZ3JheTsgc3Ryb2tlLXdpZHRoOiAwLjVweDsiLz48cGF0aCBjbGFzcz0icGxheSIgZD0iTTAgMmwxMCA2LTEwIDZ6IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNCwgLTgpIiBvcGFjaXR5PSIwIiBzdHlsZT0icG9pbnRlci1ldmVudHM6IG5vbmU7IGZpbGw6IHJnYigwLCAwLCAwKTsiLz48cGF0aCBjbGFzcz0ic3RvcCIgZD0iTTAgMmwxMCA2LTEwIDZ6IiBwb2ludGVyLWV2ZW50cz0ibm9uZSIgdHJhbnNmb3JtLW9yaWdpbj0idG9wIGxlZnQiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDYsIDgpIHJvdGF0ZSgxODApIiBvcGFjaXR5PSIxIiBzdHlsZT0iZmlsbDogcmdiKDAsIDAsIDApOyIvPjxyZWN0IGNsYXNzPSJzdG9wIiB3aWR0aD0iMiIgaGVpZ2h0PSIxMiIgcG9pbnRlci1ldmVudHM9Im5vbmUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC03LCAtNikiIG9wYWNpdHk9IjEiIHN0eWxlPSJmaWxsOiByZ2IoMCwgMCwgMCk7Ii8+PC9nPg==",
+            buttonPause: "data:image/png;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PGcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0MCwgMjApIiBjbGFzcz0ibGluZURvdENoYXJ0X19wbGF5QnRuIj48Y2lyY2xlIHI9IjE3IiBvcGFjaXR5PSIxIiBzdHlsZT0iZmlsbDogd2hpdGU7IHN0cm9rZTogZ3JheTsgc3Ryb2tlLXdpZHRoOiAwLjVweDsiLz48cGF0aCBjbGFzcz0icGxheSIgZD0iTTAgMmwxMCA2LTEwIDZ6IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNCwgLTgpIiBvcGFjaXR5PSIxIiBzdHlsZT0icG9pbnRlci1ldmVudHM6IG5vbmU7IGZpbGw6IHJnYigwLCAwLCAwKTsiLz48cGF0aCBjbGFzcz0ic3RvcCIgZD0iTTAgMmwxMCA2LTEwIDZ6IiBwb2ludGVyLWV2ZW50cz0ibm9uZSIgdHJhbnNmb3JtLW9yaWdpbj0idG9wIGxlZnQiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDYsIDgpIHJvdGF0ZSgxODApIiBvcGFjaXR5PSIwIiBzdHlsZT0iZmlsbDogcmdiKDAsIDAsIDApOyIvPjxyZWN0IGNsYXNzPSJzdG9wIiB3aWR0aD0iMiIgaGVpZ2h0PSIxMiIgcG9pbnRlci1ldmVudHM9Im5vbmUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC03LCAtNikiIG9wYWNpdHk9IjAiIHN0eWxlPSJmaWxsOiByZ2IoMCwgMCwgMCk7Ii8+PC9nPg=="
+        };
+
         public static columnFormattingFn(data: LineDotChartViewModel) {
             return function (index: number, dataType: valueType): any {
                 if (dataType.dateTime) {
@@ -680,6 +685,9 @@ module powerbi.extensibility.visual {
 
             playBtnGroup.style("opacity", this.settings.play.opacity);
 
+            playBtn
+                .append("image")
+
             const circleSelection: d3.selection.Update<any> = playBtnGroup
                 .selectAll("circle")
                 .data(d => [d]);
@@ -778,6 +786,36 @@ module powerbi.extensibility.visual {
             playBtn
                 .exit()
                 .remove();
+
+            // var doctype = '<?xml version="1.0" standalone="no"?>'
+            //     + '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
+            // let source = (new XMLSerializer()).serializeToString(playBtn.node());
+            // let blob = new Blob([doctype + source], { type: 'image/svg+xml;charset=utf-8' });
+            // let fileName = "play.svg";
+
+
+            // let url = window.URL.createObjectURL(blob);
+            // let anchorElem = document.createElement("a");
+            // //anchorElem.style = "display: none";
+            // anchorElem.href = url;
+            // anchorElem.download = fileName;
+
+            // document.body.appendChild(anchorElem);
+            // anchorElem.click();
+
+            // document.body.removeChild(anchorElem);
+
+            // // On Edge, revokeObjectURL should be called only after
+            // // a.click() has completed, atleast on EdgeHTML 15.15048
+            // setTimeout(function () {
+            //     window.URL.revokeObjectURL(url);
+            // }, 1000);
+            // let data = "data:image/svg+xml;base64,";
+            // //let a = base64.getDecoder().decode();
+            // let svgString = playBtn[0][0].outerHTML;
+            // let base64 = window.btoa(svgString);
+            // let dataURI = data + base64;
+            // debugger;
         }
 
         private static pathClassName: string = "path";
