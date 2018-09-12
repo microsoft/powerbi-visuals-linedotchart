@@ -536,6 +536,8 @@ export class LineDotChart implements IVisual {
             useTickIntervalForDisplayUnits: true,
             getValueFn: LineDotChart.valueFormattingFn(this.data)
         });
+
+        this.yAxis2Properties.formatter = this.data.dataValueFormatter;
     }
 
     private static rotateAngle: number = 270;
@@ -612,9 +614,10 @@ export class LineDotChart implements IVisual {
             if (this.settings.yAxis.isDuplicated) {
                 const scale: any = this.yAxis2Properties.scale;
                 const ticksCount: number = this.yAxis2Properties.values.length;
-                const format: Function = this.yAxis2Properties.formatter.format;
+                const format = this.yAxis2Properties.formatter.format;
 
-                this.axisY2.call(d3.axisRight(scale).tickArguments([ticksCount]).tickFormat(this.yAxis2Properties.formatter.format));
+                this.axisY2.call(d3.axisRight(scale).tickArguments([ticksCount]).tickFormat(format));
+
             } else {
                 this.clearElement(this.axisY2);
             }
