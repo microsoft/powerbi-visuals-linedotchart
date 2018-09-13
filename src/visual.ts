@@ -680,6 +680,7 @@ module powerbi.extensibility.visual {
 
             playBtnGroup.style("opacity", this.settings.play.opacity);
 
+
             const circleSelection: d3.selection.Update<any> = playBtnGroup
                 .selectAll("circle")
                 .data(d => [d]);
@@ -732,7 +733,6 @@ module powerbi.extensibility.visual {
                 .attr({
                     "d": LineDotChart.playBtnGroupLineValues,
                     "pointer-events": "none",
-                    "transform-origin": "top left",
                     "transform": "translate(6, 8) rotate(180)"
                 });
 
