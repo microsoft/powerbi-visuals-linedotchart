@@ -614,10 +614,10 @@ export class LineDotChart implements IVisual {
             if (this.settings.yAxis.isDuplicated) {
                 const scale: any = this.yAxis2Properties.scale;
                 const ticksCount: number = this.yAxis2Properties.values.length;
-                const format = this.yAxis2Properties.formatter.format;
+                const format: any = (domainValue: d3.AxisDomain, value: any) => this.yAxis2Properties.values[value];
 
-                this.axisY2.call(d3.axisRight(scale).tickArguments([ticksCount]).tickFormat(format));
-
+                let axis = d3.axisRight(scale);
+                this.axisY2.call(axis.tickArguments([ticksCount]).tickFormat(format));
             } else {
                 this.clearElement(this.axisY2);
             }
