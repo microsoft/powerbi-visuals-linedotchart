@@ -79,14 +79,14 @@ import IInteractivityService = interactivityService.IInteractivityService;
 import { VisualLayout } from "./visualLayout";
 import { Behavior, BehaviorOptions, getFillOpacity } from "./behavior";
 import { LineDotChartColumns } from "./columns";
-import { LineSettings, Settings } from "./settings"
+import { LineSettings, Settings } from "./settings";
 import {
     Legend,
     LineDotChartViewModel,
     LineDotPoint,
     DateValue,
     ColumnNames
-} from "./dataInterfaces"
+} from "./dataInterfaces";
 import { textMeasurementService } from "powerbi-visuals-utils-formattingutils/lib/textMeasurementService";
 
 export interface LineDotChartDataRoles<T> {
@@ -733,7 +733,7 @@ export class LineDotChart implements IVisual {
         const circleSelectionMegred = circleSelection
             .enter()
             .append("circle")
-            .merge(circleSelection)
+            .merge(circleSelection);
 
         circleSelectionMegred
             .attr("r", LineDotChart.playBtnGroupDiameter / 2)
@@ -755,7 +755,7 @@ export class LineDotChart implements IVisual {
         const firstPathSelectionMerged = firstPathSelection
             .enter()
             .append("path")
-            .merge(firstPathSelection)
+            .merge(firstPathSelection);
 
         firstPathSelectionMerged
             .classed("play", true)
@@ -776,13 +776,12 @@ export class LineDotChart implements IVisual {
         const secondPathSelectionMerged = secondPathSelection
             .enter()
             .append("path")
-            .merge(secondPathSelection)
+            .merge(secondPathSelection);
 
         secondPathSelectionMerged
             .classed(LineDotChart.StopButton.className, true)
             .attr("d", LineDotChart.playBtnGroupLineValues)
             .attr("pointer-events", "none")
-            .attr("transform-origin", "top left")
             .attr("transform", "translate(6, 8) rotate(180)");
 
         secondPathSelectionMerged.style("fill", this.settings.play.innerColor);
@@ -798,11 +797,11 @@ export class LineDotChart implements IVisual {
         const rectSelectionMerged = rectSelection
             .enter()
             .append("rect")
-            .merge(rectSelection)
+            .merge(rectSelection);
 
         rectSelectionMerged
             .classed(LineDotChart.StopButton.className, true)
-            .merge(rectSelection)
+            .merge(rectSelection);
 
         rectSelectionMerged
             .attr("width", LineDotChart.playBtnGroupRectWidth)
@@ -844,7 +843,7 @@ export class LineDotChart implements IVisual {
         const linePathSelectionMerged = linePathSelection
             .enter()
             .append("g")
-            .merge(linePathSelection)
+            .merge(linePathSelection);
 
         linePathSelectionMerged
             .classed(LineDotChart.pathClassName, true);
@@ -856,7 +855,7 @@ export class LineDotChart implements IVisual {
         const pathPlotMerged = pathPlot
             .enter()
             .append("path")
-            .merge(pathPlot)
+            .merge(pathPlot);
 
         pathPlotMerged
             .classed(LineDotChart.plotClassName, true);
@@ -891,7 +890,7 @@ export class LineDotChart implements IVisual {
         const clipPathMerged = clipPath
             .enter()
             .append("clipPath")
-            .merge(clipPath)
+            .merge(clipPath);
 
         clipPathMerged
             .attr("id", LineDotChart.lineClip)
@@ -971,7 +970,7 @@ export class LineDotChart implements IVisual {
 
         const dotsSelectionMerged = dotsSelection.enter()
             .append("circle")
-            .merge(dotsSelection)
+            .merge(dotsSelection);
 
         dotsSelectionMerged
             .classed(LineDotChart.pointClassName, true)
@@ -1203,7 +1202,7 @@ export class LineDotChart implements IVisual {
         const legendSelectionMerged = legendSelection
             .enter()
             .append("svg:text")
-            .merge(legendSelection)
+            .merge(legendSelection);
 
         legendSelectionMerged
             .attr("x", 0)

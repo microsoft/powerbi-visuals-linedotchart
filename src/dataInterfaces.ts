@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-import powerbi from "powerbi-visuals-tools"
+import powerbi from "powerbi-visuals-tools";
 
 import Settings = powerbi.Settings;
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;

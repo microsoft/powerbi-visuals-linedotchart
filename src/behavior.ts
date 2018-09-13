@@ -31,7 +31,7 @@ import ISelectionHandler = interactivityService.ISelectionHandler;
 import SelectableDataPoint = interactivityService.SelectableDataPoint;
 import IInteractiveBehavior = interactivityService.IInteractiveBehavior;
 
-import { LineDotPoint } from "./dataInterfaces"
+import { LineDotPoint } from "./dataInterfaces";
 
 export const MinOpacity: number = 0.1;
 export const DimmedOpacity: number = 0.4;
