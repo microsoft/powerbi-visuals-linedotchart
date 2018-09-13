@@ -778,36 +778,6 @@ module powerbi.extensibility.visual {
             playBtn
                 .exit()
                 .remove();
-
-            // var doctype = '<?xml version="1.0" standalone="no"?>'
-            //     + '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
-            // let source = (new XMLSerializer()).serializeToString(playBtn.node());
-            // let blob = new Blob([doctype + source], { type: 'image/svg+xml;charset=utf-8' });
-            // let fileName = "play.svg";
-
-
-            // let url = window.URL.createObjectURL(blob);
-            // let anchorElem = document.createElement("a");
-            // //anchorElem.style = "display: none";
-            // anchorElem.href = url;
-            // anchorElem.download = fileName;
-
-            // document.body.appendChild(anchorElem);
-            // anchorElem.click();
-
-            // document.body.removeChild(anchorElem);
-
-            // // On Edge, revokeObjectURL should be called only after
-            // // a.click() has completed, atleast on EdgeHTML 15.15048
-            // setTimeout(function () {
-            //     window.URL.revokeObjectURL(url);
-            // }, 1000);
-            // let data = "data:image/svg+xml;base64,";
-            // //let a = base64.getDecoder().decode();
-            // let svgString = playBtn[0][0].outerHTML;
-            // let base64 = window.btoa(svgString);
-            // let dataURI = data + base64;
-            // debugger;
         }
 
         private static pathClassName: string = "path";

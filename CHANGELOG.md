@@ -1,5 +1,6 @@
 ## 1.6.0
 * API 2.1.0
+* * Fixed Edge SVG issue
 
 ## 1.5.1
 * Fixed wrong chart's scale yAxis rendering
