@@ -1,4 +1,4 @@
-## 1.6.0
+## 2.0.0
 * API 2.1.0
 * Webpack integration
 * Fixed Edge SVG issue
