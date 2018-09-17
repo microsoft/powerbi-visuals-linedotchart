@@ -25,40 +25,36 @@
  */
 
 module powerbi.extensibility.visual {
+    // powerbi.extensibility.utils.chart
+    import AxisHelper = powerbi.extensibility.utils.chart.axis;
+    import IAxisProperties = powerbi.extensibility.utils.chart.axis.IAxisProperties;
+
+    // powerbi.extensibility.utils.formatting
+    import valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
+    import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
+    import TextMeasurementService = powerbi.extensibility.utils.formatting.textMeasurementService;
+
+    // powerbi.extensibility.utils.svg
+    import SVGUtil = powerbi.extensibility.utils.svg;
     import ClassAndSelector = powerbi.extensibility.utils.svg.CssConstants.ClassAndSelector;
     import createClassAndSelector = powerbi.extensibility.utils.svg.CssConstants.createClassAndSelector;
-    import DataViewObjectPropertyTypeDescriptor = powerbi.DataViewPropertyValue;
-    import SelectableDataPoint = powerbi.extensibility.utils.interactivity.SelectableDataPoint;
-    import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
-    import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
-    import IMargin = powerbi.extensibility.utils.chart.axis.IMargin;
-    import IInteractiveBehavior = powerbi.extensibility.utils.interactivity.IInteractiveBehavior;
-    import ISelectionHandler = powerbi.extensibility.utils.interactivity.ISelectionHandler;
-    import appendClearCatcher = powerbi.extensibility.utils.interactivity.appendClearCatcher;
-    import createInteractivityService = powerbi.extensibility.utils.interactivity.createInteractivityService;
-    import valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
-    import IAxisProperties = powerbi.extensibility.utils.chart.axis.IAxisProperties;
-    import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-    import SVGUtil = powerbi.extensibility.utils.svg;
-    import AxisHelper = powerbi.extensibility.utils.chart.axis;
-    import TextMeasurementService = powerbi.extensibility.utils.formatting.textMeasurementService;
-    import IColorPalette = powerbi.extensibility.IColorPalette;
-    import valueType = utils.type.ValueType;
-    import DataViewObjectsParser = utils.dataview.DataViewObjectsParser;
-    import PrimitiveValue = powerbi.PrimitiveValue;
 
     // powerbi.extensibility.utils.type
-    import convertToPx = powerbi.extensibility.utils.type.PixelConverter.toString;
-    import convertToPt = powerbi.extensibility.utils.type.PixelConverter.fromPoint;
-    import fromPointToPixel = powerbi.extensibility.utils.type.PixelConverter.fromPointToPixel;
-
-    // powerbi.extensibility.utils.chart
-    import axisScale = powerbi.extensibility.utils.chart.axis.scale;
+    import valueType = powerbi.extensibility.utils.type.ValueType;
+    import PixelConverter = powerbi.extensibility.utils.type.PixelConverter;
 
     // powerbi.extensibility.utils.tooltip
     import TooltipEventArgs = powerbi.extensibility.utils.tooltip.TooltipEventArgs;
     import ITooltipServiceWrapper = powerbi.extensibility.utils.tooltip.ITooltipServiceWrapper;
     import createTooltipServiceWrapper = powerbi.extensibility.utils.tooltip.createTooltipServiceWrapper;
+
+    // powerbi.extensibility.utils.interactivity
+    import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
+    import IInteractiveBehavior = powerbi.extensibility.utils.interactivity.IInteractiveBehavior;
+    import createInteractivityService = powerbi.extensibility.utils.interactivity.createInteractivityService;
+
+    // powerbi.extensibility.utils.color
+    import ColorHelper = powerbi.extensibility.utils.color.ColorHelper;
 
     export interface LineDotChartDataRoles<T> {
         Date?: T;
@@ -82,20 +78,7 @@ module powerbi.extensibility.visual {
         private static LegendSize: number = 50;
         private static AxisSize: number = 30;
 
-        private static defaultSettingsRange: LineDotChartDefaultSettingsRange = {
-            dotSize: {
-                min: 0,
-                max: 100
-            },
-            lineThickness: {
-                min: 0,
-                max: 50,
-            },
-            animationDuration: {
-                min: 0,
-                max: 1000,
-            }
-        };
+
 
         private root: d3.Selection<any>;
         private main: d3.Selection<any>;
@@ -105,7 +88,6 @@ module powerbi.extensibility.visual {
         private axisY2: d3.Selection<any>;
         private legends: d3.Selection<any>;
         private line: d3.Selection<any>;
-        private colors: IColorPalette;
         private xAxisProperties: IAxisProperties;
         private yAxisProperties: IAxisProperties;
         private yAxis2Properties: IAxisProperties;
@@ -117,12 +99,14 @@ module powerbi.extensibility.visual {
 
         public data: LineDotChartViewModel;
 
-        private get settings(): LineDotChartSettings {
+        private get settings(): Settings {
             return this.data && this.data.settings;
         }
+
         private static counterTitleDefaultKey: string = "Visual_CounterTitle";
         private static axesDefaultColor: string = "black";
-        private static axesDefaultfontSize: number = 10.5;
+        private static axesDefaultFontSize: number = 10.5;
+
         private static viewportMargins = {
             top: 10,
             right: 30,
@@ -130,66 +114,104 @@ module powerbi.extensibility.visual {
             left: 10
         };
 
-        private static viewportDimentions: IViewport = {
+        private static viewportDimensions: IViewport = {
             width: 150,
             height: 150
         };
 
+        public static columnFormattingFn(data: LineDotChartViewModel) {
+            return function (index: number, dataType: valueType): any {
+                if (dataType.dateTime) {
+                    return data.dateColumnFormatter.format(new Date(index));
+                }
+                else if (dataType.text) {
+                    return data.dateValues[index].label;
+                }
+                return data.dateColumnFormatter.format(index);
+            };
+        }
+
+        public static valueFormattingFn(data: LineDotChartViewModel) {
+            return function (index: number, dataType: valueType): any {
+                if (dataType.dateTime) {
+                    return data.dataValueFormatter.format(new Date(index));
+                }
+                else if (dataType.text) {
+                    return data.dateValues[index].label;
+                }
+                let formatted: string = data.dataValueFormatter.format(index);
+
+                return formatted !== index.toString() ? formatted : index;
+            };
+        }
+
         private tooltipServiceWrapper: ITooltipServiceWrapper;
+        private colorHelper: ColorHelper;
+
         constructor(options: VisualConstructorOptions) {
             this.tooltipServiceWrapper = createTooltipServiceWrapper(
                 options.host.tooltipService,
-                options.element);
+                options.element
+            );
 
+            this.colorHelper = new ColorHelper(options.host.colorPalette);
             this.hostService = options.host;
             this.localizationManager = this.hostService.createLocalizationManager();
 
             this.layout = new VisualLayout(null, LineDotChart.viewportMargins);
-
-            this.layout.minViewport = LineDotChart.viewportDimentions;
+            this.layout.minViewport = LineDotChart.viewportDimensions;
 
             this.interactivityService = createInteractivityService(options.host);
-            this.behavior = new LineDotChartWebBehavior();
+            this.behavior = new behavior.Behavior();
 
             this.root = d3.select(options.element)
-                .append('svg')
+                .append("svg")
                 .classed(LineDotChart.Identity.className, true);
 
-            this.main = this.root.append('g');
+            this.main = this.root.append("g");
 
             this.axes = this.main
-                .append('g')
+                .append("g")
                 .classed(LineDotChart.Axes.className, true);
 
             this.axisX = this.axes
-                .append('g')
+                .append("g")
                 .classed(LineDotChart.Axis.className, true);
 
             this.axisY = this.axes
-                .append('g')
+                .append("g")
                 .classed(LineDotChart.Axis.className, true);
 
             this.axisY2 = this.axes
-                .append('g')
+                .append("g")
                 .classed(LineDotChart.Axis.className, true);
 
             this.legends = this.main
-                .append('g')
+                .append("g")
                 .classed(LineDotChart.Legends.className, true);
 
             this.line = this.main
-                .append('g')
+                .append("g")
                 .classed(LineDotChart.Line.className, true);
-
-            this.colors = options.host.colorPalette;
         }
 
         public update(options: VisualUpdateOptions) {
-            if (!options || !options.dataViews || !options.dataViews[0]) {
+            if (!options
+                || !options.dataViews
+                || !options.dataViews[0]
+            ) {
                 return;
             }
+
             this.layout.viewport = options.viewport;
-            let data: LineDotChartViewModel = LineDotChart.converter(options.dataViews[0], this.hostService, this.localizationManager);
+
+            const data: LineDotChartViewModel = LineDotChart.converter(
+                options.dataViews[0],
+                this.hostService,
+                this.localizationManager,
+                this.colorHelper,
+            );
+
             if (!data || _.isEmpty(data.dotPoints)) {
                 this.clear();
                 return;
@@ -210,22 +232,34 @@ module powerbi.extensibility.visual {
             this.root = null;
         }
 
-        public onClearSelection(): void {
-            if (this.interactivityService) {
-                this.interactivityService.clearSelection();
-            }
-        }
-
         public clear() {
             if (this.settings && this.settings.misc) {
                 this.settings.misc.isAnimated = false;
             }
 
-            this.axes.selectAll(LineDotChart.Axis.selectorName).selectAll("*").remove();
-            this.main.selectAll(LineDotChart.Legends.selectorName).selectAll("*").remove();
-            this.main.selectAll(LineDotChart.Line.selectorName).selectAll("*").remove();
-            this.main.selectAll(LineDotChart.Legend.selectorName).selectAll("*").remove();
-            this.line.selectAll(LineDotChart.textSelector).remove();
+            this.axes
+                .selectAll(LineDotChart.Axis.selectorName)
+                .selectAll("*")
+                .remove();
+
+            this.main
+                .selectAll(LineDotChart.Legends.selectorName)
+                .selectAll("*")
+                .remove();
+
+            this.main
+                .selectAll(LineDotChart.Line.selectorName)
+                .selectAll("*")
+                .remove();
+
+            this.main
+                .selectAll(LineDotChart.Legend.selectorName)
+                .selectAll("*")
+                .remove();
+
+            this.line
+                .selectAll(LineDotChart.textSelector)
+                .remove();
         }
 
         public setIsStopped(isStopped: Boolean): void {
@@ -245,9 +279,10 @@ module powerbi.extensibility.visual {
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
-            return LineDotChartSettings.enumerateObjectInstances(
-                this.settings || LineDotChartSettings.getDefault(),
-                options);
+            return Settings.enumerateObjectInstances(
+                this.settings || Settings.getDefault(),
+                options
+            );
         }
 
         private clearElement(selection: d3.Selection<any>): void {
@@ -256,17 +291,15 @@ module powerbi.extensibility.visual {
                 .remove();
         }
 
-        private static validateDataValue(value: number, defaultValues: MinMaxValue): number {
-            if (value < defaultValues.min) {
-                return defaultValues.min;
-            } else if (value > defaultValues.max) {
-                return defaultValues.max;
-            }
-            return value;
-        }
         private static dateMaxCutter: number = .05;
         private static makeSomeSpaceForCounter: number = .10;
-        private static converter(dataView: DataView, visualHost: IVisualHost, localizationManager: ILocalizationManager): LineDotChartViewModel {
+
+        private static converter(
+            dataView: DataView,
+            visualHost: IVisualHost,
+            localizationManager: ILocalizationManager,
+            colorHelper: ColorHelper,
+        ): LineDotChartViewModel {
             let categorical: LineDotChartColumns<DataViewCategoryColumn & DataViewValueColumn[]>
                 = LineDotChartColumns.getCategoricalColumns(dataView);
 
@@ -284,16 +317,22 @@ module powerbi.extensibility.visual {
             let counterValues: PrimitiveValue[] = null;
 
             for (let i = 0; i < dataView.categorical.values.length; i++) {
-                if (dataView.categorical.values[i].source.roles['Counter']) {
+                if (dataView.categorical.values[i].source.roles["Counter"]) {
                     counterValues = dataView.categorical.values[i].values;
                 }
             }
 
-            const valuesColumn: DataViewValueColumn = categorical.Values[0],
-                categoryType: valueType = AxisHelper.getCategoryValueType(categorical.Date.source, true);
+            const valuesColumn: DataViewValueColumn = categorical.Values[0];
+            const categoryType: valueType = AxisHelper.getCategoryValueType(categorical.Date.source, true);
 
-            const categoricalValues: LineDotChartColumns<any[]> = LineDotChartColumns.getCategoricalValues(dataView),
-                settings: LineDotChartSettings = this.parseSettings(dataView, localizationManager);
+            const categoricalValues: LineDotChartColumns<any[]> = LineDotChartColumns.getCategoricalValues(dataView);
+
+            const settings: Settings = Settings.parseSettings(
+                dataView,
+                localizationManager,
+                colorHelper,
+            );
+
             if (counterValues && counterValues.length > 0) {
                 let fValue: any = counterValues[0];
                 settings.isCounterDateTime.isCounterDateTime = fValue.getDate ? true : false;
@@ -359,10 +398,9 @@ module powerbi.extensibility.visual {
             };
 
             const dataValueFormatter: IValueFormatter = valueFormatter.create({
-                format: valueFormatter.getFormatStringByColumn(valuesColumn.source)
+                format: valueFormatter.getFormatStringByColumn(valuesColumn.source, true) || "#",
+                cultureSelector: visualHost.locale
             });
-
-            const metadata: DataViewMetadataColumn = categorical.Date.source;
 
             return {
                 columnNames,
@@ -385,26 +423,11 @@ module powerbi.extensibility.visual {
             return (column && column.source && column.source.displayName) || "";
         }
 
-        private static parseSettings(dataView: DataView, localizationManager: ILocalizationManager): LineDotChartSettings {
-            let settings: LineDotChartSettings = LineDotChartSettings.parse<LineDotChartSettings>(dataView);
-            let defaultRange: LineDotChartDefaultSettingsRange = this.defaultSettingsRange;
-            if (settings.counteroptions.counterTitle === null) {
-                settings.counteroptions.counterTitle = localizationManager.getDisplayName(LineDotChart.counterTitleDefaultKey);
-            }
-            settings.dotoptions.dotSizeMin = this.validateDataValue(settings.dotoptions.dotSizeMin, defaultRange.dotSize);
-            settings.dotoptions.dotSizeMax = this.validateDataValue(settings.dotoptions.dotSizeMax, {
-                min: settings.dotoptions.dotSizeMin,
-                max: defaultRange.dotSize.max
-            });
-            settings.lineoptions.lineThickness = this.validateDataValue(settings.lineoptions.lineThickness, defaultRange.lineThickness);
-            settings.misc.duration = this.validateDataValue(settings.misc.duration, defaultRange.animationDuration);
-
-            return settings;
-        }
         private static outerPadding: number = 0;
         private static forcedTickSize: number = 150;
         private static xLabelMaxWidth: number = 160;
         private static xLabelTickSize: number = 3.2;
+
         private calculateAxes() {
             let effectiveWidth: number = Math.max(0, this.layout.viewportIn.width - LineDotChart.LegendSize - LineDotChart.AxisSize);
             let effectiveHeight: number = Math.max(0, this.layout.viewportIn.height - LineDotChart.LegendSize);
@@ -418,7 +441,9 @@ module powerbi.extensibility.visual {
 
             this.xAxisProperties = AxisHelper.createAxis({
                 pixelSpan: effectiveWidth,
-                dataDomain: !this.data.isOrdinal ? [minDate, maxDate] : this.data.dateValues.map((dateValue: DateValue, index: number) => { return dateValue.value; }),
+                dataDomain: !this.data.isOrdinal
+                    ? [minDate, maxDate]
+                    : this.data.dateValues.map((dateValue: DateValue, index: number) => { return dateValue.value; }),
                 metaDataColumn: this.data.dateMetadataColumn,
                 formatString: null,
                 outerPadding: LineDotChart.outerPadding,
@@ -429,47 +454,63 @@ module powerbi.extensibility.visual {
                 forcedTickCount: Math.max(this.layout.viewport.width / LineDotChart.forcedTickSize, 0),
                 useTickIntervalForDisplayUnits: false,
                 shouldClamp: true,
-                getValueFn: (index: number, dataType: valueType): any => {
-                    if (dataType.dateTime) {
-                        return this.data.dateColumnFormatter.format(new Date(index));
-                    }
-                    else if (dataType.text) {
-                        return this.data.dateValues[index].label;
-                    }
-                    return index;
-                }
+                getValueFn: LineDotChart.columnFormattingFn(this.data)
             });
-            this.xAxisProperties.xLabelMaxWidth = Math.min(LineDotChart.xLabelMaxWidth, this.layout.viewportIn.width / LineDotChart.xLabelTickSize);
+
+            this.xAxisProperties.xLabelMaxWidth = Math.min(
+                LineDotChart.xLabelMaxWidth,
+                this.layout.viewportIn.width / LineDotChart.xLabelTickSize
+            );
 
             this.xAxisProperties.formatter = this.data.dateColumnFormatter;
+            let yMin = this.data.yMinValue;
+            let yMax = this.data.yMaxValue;
+            // Expanding a scope by increasing yMin and yMax to render y-axes
+            // - if all data values are the same (yMin = yMax) we increasing them all, for floats - increasing by const float, for integers - by 1;
+            // - if the data has diffrent minimum and maximum values we increasing only yMax
+            if (yMax === yMin) {
+                if ((Math.floor(yMin) === yMin) && yMin !== 0) {
+                    yMin = yMin - 1;
+                    yMax = yMax + 1;
+                } else {
+                    yMin = yMin - LineDotChart.dateMaxCutter;
+                    yMax = yMax + LineDotChart.dateMaxCutter;
+                }
+            } else {
+                yMax = yMax + (yMax - yMin) * LineDotChart.makeSomeSpaceForCounter;
+            }
 
             this.yAxisProperties = AxisHelper.createAxis({
                 pixelSpan: effectiveHeight,
-                dataDomain: [this.data.yMinValue, this.data.sumOfValues],
+                dataDomain: [yMin, yMax],
                 metaDataColumn: this.data.valuesMetadataColumn,
                 formatString: null,
                 outerPadding: LineDotChart.outerPadding,
                 isCategoryAxis: false,
                 isScalar: true,
                 isVertical: true,
-                useTickIntervalForDisplayUnits: true
+                useTickIntervalForDisplayUnits: true,
+                getValueFn: LineDotChart.valueFormattingFn(this.data)
             });
 
             this.yAxis2Properties = AxisHelper.createAxis({
                 pixelSpan: effectiveHeight,
-                dataDomain: [this.data.yMinValue, this.data.sumOfValues],
+                dataDomain: [yMin, yMax],
                 metaDataColumn: this.data.valuesMetadataColumn,
                 formatString: null,
                 outerPadding: LineDotChart.outerPadding,
                 isCategoryAxis: false,
                 isScalar: true,
                 isVertical: true,
-                useTickIntervalForDisplayUnits: true
+                useTickIntervalForDisplayUnits: true,
+                getValueFn: LineDotChart.valueFormattingFn(this.data)
             });
-            this.yAxis2Properties.axis.orient('right');
+
+            this.yAxis2Properties.axis.orient("right");
         }
 
         private static rotateAngle: number = 270;
+
         private generateAxisLabels(): Legend[] {
             return [
                 {
@@ -490,17 +531,42 @@ module powerbi.extensibility.visual {
                 width: this.layout.viewport.width,
                 height: this.layout.viewport.height
             });
-            this.main.attr('transform', SVGUtil.translate(this.layout.margin.left, this.layout.margin.top));
-            this.legends.attr('transform', SVGUtil.translate(this.layout.margin.left, this.layout.margin.top));
-            this.line.attr('transform', SVGUtil.translate(this.layout.margin.left + LineDotChart.LegendSize, 0));
-            this.axes.attr('transform', SVGUtil.translate(this.layout.margin.left + LineDotChart.LegendSize, 0));
-            this.axisX.attr('transform', SVGUtil.translate(0, this.layout.viewportIn.height - LineDotChart.LegendSize));
-            this.axisY2.attr('transform', SVGUtil.translate(this.layout.viewportIn.width - LineDotChart.LegendSize - LineDotChart.AxisSize, 0));
+
+            this.main.attr(
+                "transform",
+                SVGUtil.translate(this.layout.margin.left, this.layout.margin.top)
+            );
+
+            this.legends.attr(
+                "transform",
+                SVGUtil.translate(this.layout.margin.left, this.layout.margin.top)
+            );
+
+            this.line.attr(
+                "transform",
+                SVGUtil.translate(this.layout.margin.left + LineDotChart.LegendSize, 0)
+            );
+
+            this.axes.attr(
+                "transform",
+                SVGUtil.translate(this.layout.margin.left + LineDotChart.LegendSize, 0)
+            );
+
+            this.axisX.attr(
+                "transform",
+                SVGUtil.translate(0, this.layout.viewportIn.height - LineDotChart.LegendSize)
+            );
+
+            this.axisY2.attr(
+                "transform",
+                SVGUtil.translate(this.layout.viewportIn.width - LineDotChart.LegendSize - LineDotChart.AxisSize, 0)
+            );
         }
 
-        private static tickText: string = '.tick text';
+        private static tickText: string = ".tick text";
         private static dotPointsText: string = "g.path, g.dot-points";
         private static dotPathText: string = "g.path";
+
         private draw(): void {
             this.stopAnimation();
             this.renderLegends();
@@ -528,21 +594,32 @@ module powerbi.extensibility.visual {
             this.axisX.selectAll(LineDotChart.tickText).call(
                 AxisHelper.LabelLayoutStrategy.clip,
                 this.xAxisProperties.xLabelMaxWidth,
-                TextMeasurementService.svgEllipsis);
+                TextMeasurementService.svgEllipsis
+            );
 
             if (this.settings.misc.isAnimated && this.settings.misc.isStopped) {
-                this.main.selectAll(LineDotChart.Line.selectorName).selectAll(LineDotChart.dotPointsText).remove();
-                this.line.selectAll(LineDotChart.textSelector).remove();
+                this.main
+                    .selectAll(LineDotChart.Line.selectorName)
+                    .selectAll(LineDotChart.dotPointsText)
+                    .remove();
+
+                this.line
+                    .selectAll(LineDotChart.textSelector)
+                    .remove();
 
                 return;
             }
 
             this.applyAxisSettings();
+
             let linePathSelection: d3.selection.Update<LineDotPoint[]> = this.line
                 .selectAll(LineDotChart.dotPathText)
                 .data([this.data.dotPoints]);
+
             linePathSelection
-                .exit().remove();
+                .exit()
+                .remove();
+
             this.drawLine(linePathSelection);
             this.drawClipPath(linePathSelection);
 
@@ -552,94 +629,175 @@ module powerbi.extensibility.visual {
         public applyAxisSettings(): void {
             let xColor: string = LineDotChart.axesDefaultColor,
                 yColor: string = LineDotChart.axesDefaultColor,
-                xFontSize: string = convertToPt(LineDotChart.axesDefaultfontSize),
-                yFontSize: string = convertToPt(LineDotChart.axesDefaultfontSize);
+                xFontSize: string = PixelConverter.fromPoint(LineDotChart.axesDefaultFontSize),
+                yFontSize: string = PixelConverter.fromPoint(LineDotChart.axesDefaultFontSize);
 
             if (this.settings.xAxis.show === true) {
                 xColor = this.settings.xAxis.color;
-                xFontSize = convertToPt(this.settings.xAxis.textSize);
-                this.axisX.selectAll('line').style('stroke', function (d, i) { return xColor; });
-                this.axisX.selectAll('path').style('stroke', function (d, i) { return xColor; });
-                this.axisX.selectAll('text').style('fill', function (d, i) { return xColor; }).style("font-size", xFontSize);
+                xFontSize = PixelConverter.fromPoint(this.settings.xAxis.textSize);
+                this.axisX.selectAll("line").style("stroke", function (d, i) { return xColor; });
+                this.axisX.selectAll("path").style("stroke", function (d, i) { return xColor; });
+                this.axisX.selectAll("text").style("fill", function (d, i) { return xColor; }).style("font-size", xFontSize);
             }
 
             if (this.settings.yAxis.show === true) {
                 yColor = this.settings.yAxis.color;
-                yFontSize = convertToPt(this.settings.yAxis.textSize);
-                this.axisY.selectAll('line').style('stroke', function (d, i) { return yColor; });
-                this.axisY.selectAll('path').style('stroke', function (d, i) { return yColor; });
-                this.axisY.selectAll('text').style('fill', function (d, i) { return yColor; }).style("font-size", yFontSize);
+                yFontSize = PixelConverter.fromPoint(this.settings.yAxis.textSize);
+                this.axisY.selectAll("line").style("stroke", function (d, i) { return yColor; });
+                this.axisY.selectAll("path").style("stroke", function (d, i) { return yColor; });
+                this.axisY.selectAll("text").style("fill", function (d, i) { return yColor; }).style("font-size", yFontSize);
 
                 if (this.settings.yAxis.isDuplicated) {
-                    this.axisY2.selectAll('line').style('stroke', function (d, i) { return yColor; });
-                    this.axisY2.selectAll('path').style('stroke', function (d, i) { return yColor; });
-                    this.axisY2.selectAll('text').style('fill', function (d, i) { return yColor; }).style("font-size", yFontSize);
+                    this.axisY2.selectAll("line").style("stroke", function (d, i) { return yColor; });
+                    this.axisY2.selectAll("path").style("stroke", function (d, i) { return yColor; });
+                    this.axisY2.selectAll("text").style("fill", function (d, i) { return yColor; }).style("font-size", yFontSize);
                 }
             }
         }
 
         private static lineDotChartPlayBtn: string = "lineDotChart__playBtn";
-        private static lineDotChartPlayBtnTranslate: string = "lineDotChartPlayBtnTranslate";
+
         private static gLineDotChartPayBtn: string = "g.lineDotChart__playBtn";
         private static playBtnGroupDiameter: number = 34;
         private static playBtnGroupLineValues: string = "M0 2l10 6-10 6z";
-        private static playBtnGroupPlayTranslate: string = "playBtnGroupPlayTranslate";
-        private static playBtnGroupPathTranslate: string = "playBtnGroupPathTranslate";
-        private static playBtnGroupRectTranslate: string = "playBtnGroupRectTranslate";
         private static playBtnGroupRectWidth: string = "2";
         private static playBtnGroupRectHeight: string = "12";
         private static StopButton: ClassAndSelector = createClassAndSelector("stop");
+
+        private firstPathSelector: ClassAndSelector = createClassAndSelector("firstPath");
+        private secondPathSelector: ClassAndSelector = createClassAndSelector("secondPath");
+
         private drawPlaybackButtons() {
-            let playBtn: d3.selection.Update<string> = this.line.selectAll(LineDotChart.gLineDotChartPayBtn).data([""]);
-            let playBtnGroup: d3.Selection<string> = playBtn.enter()
+            const playBtn: d3.selection.Update<string> = this.line
+                .selectAll(LineDotChart.gLineDotChartPayBtn)
+                .data([""]);
+
+            const playBtnGroup: d3.Selection<string> = playBtn
+                .enter()
                 .append("g")
+                .attr("transform", "translate(40, 20)")
                 .classed(LineDotChart.lineDotChartPlayBtn, true);
 
-            playBtnGroup
-                .classed(LineDotChart.lineDotChartPlayBtnTranslate, true)
+            playBtnGroup.style("opacity", this.settings.play.opacity);
+
+
+            const circleSelection: d3.selection.Update<any> = playBtnGroup
+                .selectAll("circle")
+                .data(d => [d]);
+
+            circleSelection
+                .enter()
                 .append("circle")
                 .attr("r", LineDotChart.playBtnGroupDiameter / 2)
-                .on('click', () => this.setIsStopped(!this.settings.misc.isStopped));
+                .on("click", () => this.setIsStopped(!this.settings.misc.isStopped));
 
-            playBtnGroup.append("path")
+            circleSelection.style({
+                fill: this.settings.play.fill,
+                stroke: this.settings.play.stroke,
+                "stroke-width": PixelConverter.toString(this.settings.play.strokeWidth),
+                opacity: this.settings.play.opacity,
+            });
+
+            circleSelection
+                .exit()
+                .remove();
+
+            const firstPathSelection: d3.selection.Update<any> = playBtnGroup
+                .selectAll(this.firstPathSelector.selectorName)
+                .data(d => [d]);
+
+            firstPathSelection
+                .enter()
+                .append("path")
                 .classed("play", true)
-                .classed(LineDotChart.playBtnGroupPlayTranslate, true)
-                .attr("d", LineDotChart.playBtnGroupLineValues)
-                .attr('pointer-events', "none");
+                .attr({
+                    "d": LineDotChart.playBtnGroupLineValues,
+                    "transform": "translate(-4, -8)",
+                })
+                .style("pointer-events", "none");
 
-            playBtnGroup
+            firstPathSelection.style("fill", this.settings.play.innerColor);
+
+            firstPathSelection
+                .exit()
+                .remove();
+
+            const secondPathSelection: d3.selection.Update<any> = playBtnGroup
+                .selectAll(this.secondPathSelector.selectorName)
+                .data(d => [d]);
+
+            secondPathSelection
+                .enter()
                 .append("path")
                 .classed(LineDotChart.StopButton.className, true)
-                .classed(LineDotChart.playBtnGroupPathTranslate, true)
-                .attr("d", LineDotChart.playBtnGroupLineValues)
-                .attr("transform-origin", "center")
-                .attr('pointer-events', "none");
+                .attr({
+                    "d": LineDotChart.playBtnGroupLineValues,
+                    "pointer-events": "none",
+                    "transform": "translate(6, 8) rotate(180)"
+                });
 
-            playBtnGroup
+            secondPathSelection.style("fill", this.settings.play.innerColor);
+
+            secondPathSelection
+                .exit()
+                .remove();
+
+            const rectSelection: d3.selection.Update<any> = playBtnGroup
+                .selectAll("rect")
+                .data(d => [d]);
+
+            rectSelection
+                .enter()
                 .append("rect")
                 .classed(LineDotChart.StopButton.className, true)
-                .classed(LineDotChart.playBtnGroupRectTranslate, true)
-                .attr("width", LineDotChart.playBtnGroupRectWidth)
-                .attr("height", LineDotChart.playBtnGroupRectHeight)
-                .attr('pointer-events', "none");
+                .attr({
+                    "width": LineDotChart.playBtnGroupRectWidth,
+                    "height": LineDotChart.playBtnGroupRectHeight,
+                    "pointer-events": "none",
+                    "transform": "translate(-7, -6)",
+                });
 
-            playBtn.selectAll("circle").attr("opacity", () => this.settings.misc.isAnimated ? 1 : 0);
-            playBtn.selectAll(".play").attr("opacity", () => this.settings.misc.isAnimated && this.settings.misc.isStopped ? 1 : 0);
-            playBtn.selectAll(LineDotChart.StopButton.selectorName).attr("opacity", () => this.settings.misc.isAnimated && !this.settings.misc.isStopped ? 1 : 0);
+            rectSelection.style("fill", this.settings.play.innerColor);
 
-            playBtn.exit().remove();
+            rectSelection
+                .exit()
+                .remove();
+
+            playBtn
+                .selectAll("circle")
+                .attr("opacity", () => this.settings.misc.isAnimated ? 1 : 0);
+
+            playBtn
+                .selectAll(".play")
+                .attr("opacity", () => this.settings.misc.isAnimated && this.settings.misc.isStopped ? 1 : 0);
+
+            playBtn
+                .selectAll(LineDotChart.StopButton.selectorName)
+                .attr("opacity", () => this.settings.misc.isAnimated && !this.settings.misc.isStopped ? 1 : 0);
+
+            playBtn
+                .exit()
+                .remove();
         }
 
         private static pathClassName: string = "path";
         private static pathPlotClassName: string = "path.plot";
         private static plotClassName: string = "plot";
         private static lineClip: string = "lineClip";
-        private drawLine(linePathSelection: d3.selection.Update<LineDotPoint[]>) {
-            linePathSelection.enter().append("g").classed(LineDotChart.pathClassName, true);
 
-            let pathPlot: d3.selection.Update<LineDotPoint[]> = linePathSelection.selectAll(LineDotChart.pathPlotClassName).data(d => [d]);
-            pathPlot.enter()
-                .append('path')
+        private drawLine(linePathSelection: d3.selection.Update<LineDotPoint[]>) {
+            linePathSelection
+                .enter()
+                .append("g")
+                .classed(LineDotChart.pathClassName, true);
+
+            const pathPlot: d3.selection.Update<LineDotPoint[]> = linePathSelection
+                .selectAll(LineDotChart.pathPlotClassName)
+                .data(d => [d]);
+
+            pathPlot
+                .enter()
+                .append("path")
                 .classed(LineDotChart.plotClassName, true);
 
             // Draw the line
@@ -648,45 +806,51 @@ module powerbi.extensibility.visual {
                     return this.xAxisProperties.scale(dataPoint.dateValue.value);
                 })
                 .y((dataPoint: LineDotPoint) => {
-                    return this.yAxisProperties.scale(dataPoint.sum);
+                    return this.yAxisProperties.scale(dataPoint.value);
                 });
 
             pathPlot
-                .attr('stroke', () => this.settings.lineoptions.fill)
-                .attr('stroke-width', this.settings.lineoptions.lineThickness)
-                .attr('d', drawLine)
-                .attr("clip-path", "url(" + location.href + '#' + LineDotChart.lineClip + ")");
+                .attr("stroke", () => this.settings.lineoptions.fill)
+                .attr("stroke-width", this.settings.lineoptions.lineThickness)
+                .attr("d", drawLine)
+                .attr("clip-path", "url(" + location.href + "#" + LineDotChart.lineClip + ")");
         }
 
         private static zeroX: number = 0;
         private static zeroY: number = 0;
         private static millisecondsInOneSecond: number = 1000;
+
         private drawClipPath(linePathSelection: d3.selection.Update<any>) {
-            let clipPath: d3.selection.Update<any> = linePathSelection.selectAll("clipPath").data(d => [d]);
-            clipPath.enter().append("clipPath")
+            const clipPath: d3.selection.Update<any> = linePathSelection
+                .selectAll("clipPath")
+                .data(d => [d]);
+
+            clipPath
+                .enter()
+                .append("clipPath")
                 .attr("id", LineDotChart.lineClip)
                 .append("rect")
                 .attr("x", LineDotChart.zeroX)
                 .attr("y", LineDotChart.zeroY)
                 .attr("height", this.layout.viewportIn.height);
 
-            let line_left: any = this.xAxisProperties.scale(_.first(this.data.dotPoints).dateValue.value),
-                line_right: any = this.xAxisProperties.scale(_.last(this.data.dotPoints).dateValue.value);
+            const line_left: any = this.xAxisProperties.scale(_.first(this.data.dotPoints).dateValue.value);
+            const line_right: any = this.xAxisProperties.scale(_.last(this.data.dotPoints).dateValue.value);
 
             const rectSettings: LineAnimationSettings = this.getRectAnimationSettings(line_left, line_right);
 
             if (this.settings.misc.isAnimated) {
                 clipPath
                     .selectAll("rect")
-                    .attr('x', rectSettings.startX)
-                    .attr('width', 0)
+                    .attr("x", rectSettings.startX)
+                    .attr("width", 0)
                     .attr("height", this.layout.viewportIn.height)
                     .interrupt()
                     .transition()
                     .ease("linear")
                     .duration(this.animationDuration * LineDotChart.millisecondsInOneSecond)
-                    .attr('x', rectSettings.endX)
-                    .attr('width', rectSettings.endWidth);
+                    .attr("x", rectSettings.endX)
+                    .attr("width", rectSettings.endWidth);
             } else {
                 linePathSelection.selectAll("clipPath").remove();
             }
@@ -713,101 +877,143 @@ module powerbi.extensibility.visual {
 
         private static pointTime: number = 300;
         private static dotPointsClass: string = "dot-points";
-        private static pointClassName: string = 'point';
-        private static pointScaleValue: number = 0.005;
+        private static pointClassName: string = "point";
+        private static pointScaleValue: number = 0;
         private static pointTransformScaleValue: number = 3.4;
-        private drawDots() {
-            let point_time: number = this.settings.misc.isAnimated && !this.settings.misc.isStopped ? LineDotChart.pointTime : 0;
 
-            let hasHighlights: boolean = this.data.hasHighlights;
-            let hasSelection: boolean = this.interactivityService && this.interactivityService.hasSelection();
+        private drawDots() {
+            const point_time: number = this.settings.misc.isAnimated && !this.settings.misc.isStopped
+                ? LineDotChart.pointTime
+                : 0;
+
+            const hasHighlights: boolean = this.data.hasHighlights;
+            const hasSelection: boolean = this.interactivityService && this.interactivityService.hasSelection();
+
             // Draw the individual data points that will be shown on hover with a tooltip
-            let lineTipSelection: d3.selection.Update<LineDotPoint[]> = this.line.selectAll('g.' + LineDotChart.dotPointsClass)
+            const lineTipSelection: d3.selection.Update<LineDotPoint[]> = this.line
+                .selectAll("g." + LineDotChart.dotPointsClass)
                 .data([this.data.dotPoints]);
 
             lineTipSelection.enter()
                 .append("g")
                 .classed(LineDotChart.dotPointsClass, true);
 
-            let dotsSelection: d3.selection.Update<LineDotPoint> = lineTipSelection
+            const dotsSelection: d3.selection.Update<LineDotPoint> = lineTipSelection
                 .selectAll("circle." + LineDotChart.pointClassName)
                 .data(d => d);
 
             dotsSelection.enter()
-                .append('circle')
+                .append("circle")
                 .classed(LineDotChart.pointClassName, true)
-                .on('mouseover.point', this.showDataPoint)
-                .on('mouseout.point', this.hideDataPoint);
+                .on("mouseover.point", this.showDataPoint)
+                .on("mouseout.point", this.hideDataPoint);
 
             dotsSelection
-                .attr('fill', this.settings.dotoptions.color)
-                .style("opacity", (d: LineDotPoint) => {
-                    return lineDotChartUtils.getFillOpacity(d, d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights);
+                .style({
+                    "fill": this.settings.dotoptions.color,
+                    "stroke": this.settings.dotoptions.stroke,
+                    "stroke-opacity": this.settings.dotoptions.strokeOpacity,
+                    "stroke-width": this.settings.dotoptions.strokeWidth
+                        ? PixelConverter.toString(this.settings.dotoptions.strokeWidth)
+                        : null,
+                    "opacity": (dotPoint: LineDotPoint) => {
+                        return behavior.getFillOpacity(
+                            dotPoint,
+                            dotPoint.selected,
+                            dotPoint.highlight,
+                            !dotPoint.highlight && hasSelection,
+                            !dotPoint.selected && hasHighlights
+                        );
+                    },
                 })
-                .attr('r', (d: LineDotPoint) =>
-                    this.settings.dotoptions.dotSizeMin + d.dot * (this.settings.dotoptions.dotSizeMax - this.settings.dotoptions.dotSizeMin));
+                .attr("r", (dotPoint: LineDotPoint) => {
+                    return this.settings.dotoptions.dotSizeMin
+                        + dotPoint.dot * (this.settings.dotoptions.dotSizeMax - this.settings.dotoptions.dotSizeMin);
+                });
 
             if (this.settings.misc.isAnimated) {
-                let maxTextLength: number = Math.min(350, this.xAxisProperties.scale.range()[1] - this.xAxisProperties.scale.range()[0] - 60);
-                let lineTextSelection: d3.Selection<any> = this.line.selectAll(LineDotChart.textSelector);
-                let lineText: d3.selection.Update<string> = lineTextSelection.data([""]);
+                const maxTextLength: number = Math.min(
+                    350,
+                    this.xAxisProperties.scale.range()[1] - this.xAxisProperties.scale.range()[0] - 60
+                );
+
+                const lineText: d3.selection.Update<string> = this.line
+                    .selectAll(LineDotChart.textSelector)
+                    .data([""]);
+
                 lineText
                     .enter()
                     .append("text")
-                    .attr('text-anchor', "end")
+                    .attr("text-anchor", "end")
                     .classed("text", true);
+
                 lineText
-                    .attr('x', this.layout.viewportIn.width - LineDotChart.widthMargin)
-                    .attr('y', LineDotChart.yPosition)
+                    .attr("x", this.layout.viewportIn.width - LineDotChart.widthMargin)
+                    .attr("y", LineDotChart.yPosition)
+                    .style({
+                        fill: this.settings.counteroptions.color,
+                        "font-size": PixelConverter.toString(PixelConverter.fromPointToPixel(this.settings.counteroptions.textSize)),
+                    })
                     .call(selection => TextMeasurementService.svgEllipsis(<any>selection.node(), maxTextLength));
-                lineText.exit().remove();
+
+                lineText
+                    .exit()
+                    .remove();
 
                 dotsSelection
                     .interrupt()
-                    .attr('transform', (dataPoint: LineDotPoint) => {
+                    .attr("transform", (dataPoint: LineDotPoint) => {
                         return SVGUtil.translateAndScale(
                             this.xAxisProperties.scale(dataPoint.dateValue.value),
-                            this.yAxisProperties.scale(dataPoint.sum),
+                            this.yAxisProperties.scale(dataPoint.value),
                             LineDotChart.pointScaleValue);
                     })
                     .transition()
                     .each("start", (d: LineDotPoint, i: number) => {
-                        let text = this.settings.counteroptions.counterTitle + ' ';
-                        if (d.counter) {
-                            text += this.settings.isCounterDateTime.isCounterDateTime ? this.data.dateColumnFormatter.format(d.counter) : d.counter;
+                        if (this.settings.counteroptions.show) {
+                            let text: string = `${this.settings.counteroptions.counterTitle} `;
+
+                            if (d.counter) {
+                                text += this.settings.isCounterDateTime.isCounterDateTime
+                                    ? this.data.dateColumnFormatter.format(d.counter)
+                                    : d.counter;
+                            } else {
+                                text += (i + 1);
+                            }
+
+                            this.updateLineText(lineText, text);
                         } else {
-                            text += (i + 1);
+                            this.updateLineText(lineText, "");
                         }
-                        this.updateLineText(lineText, text);
                     })
                     .duration(point_time)
-                    .delay((d: LineDotPoint, i: number) => this.pointDelay(this.data.dotPoints, i, this.animationDuration))
+                    .delay((_, i: number) => this.pointDelay(this.data.dotPoints, i, this.animationDuration))
                     .ease("linear")
-                    .attr('transform', (dataPoint: LineDotPoint) => {
+                    .attr("transform", (dataPoint: LineDotPoint) => {
                         return SVGUtil.translateAndScale(
                             this.xAxisProperties.scale(dataPoint.dateValue.value),
-                            this.yAxisProperties.scale(dataPoint.sum),
+                            this.yAxisProperties.scale(dataPoint.value),
                             LineDotChart.pointTransformScaleValue);
                     })
                     .transition()
                     .duration(point_time)
-                    .delay((d: LineDotPoint, i: number) => {
+                    .delay((_, i: number) => {
                         return this.pointDelay(this.data.dotPoints, i, this.animationDuration) + point_time;
                     })
                     .ease("elastic")
-                    .attr('transform', (dataPoint: LineDotPoint) => {
+                    .attr("transform", (dataPoint: LineDotPoint) => {
                         return SVGUtil.translateAndScale(
                             this.xAxisProperties.scale(dataPoint.dateValue.value),
-                            this.yAxisProperties.scale(dataPoint.sum),
+                            this.yAxisProperties.scale(dataPoint.value),
                             1);
                     });
             } else {
                 dotsSelection
                     .interrupt()
-                    .attr('transform', (dataPoint: LineDotPoint) => {
+                    .attr("transform", (dataPoint: LineDotPoint) => {
                         return SVGUtil.translateAndScale(
                             this.xAxisProperties.scale(dataPoint.dateValue.value),
-                            this.yAxisProperties.scale(dataPoint.sum),
+                            this.yAxisProperties.scale(dataPoint.value),
                             1);
                     });
 
@@ -816,25 +1022,32 @@ module powerbi.extensibility.visual {
                     .remove();
             }
 
-            for (let i: number = 0; i < dotsSelection[0].length; i++) {
-                this.addTooltip(dotsSelection[0][i] as Element);
-            }
+            this.tooltipServiceWrapper.addTooltip<LineDotPoint>(
+                dotsSelection,
+                (tooltipEvent: TooltipEventArgs<LineDotPoint>) => {
+                    return this.getTooltipDataItems(tooltipEvent.data);
+                });
 
-            dotsSelection.exit().remove();
-            lineTipSelection.exit().remove();
+            dotsSelection
+                .exit()
+                .remove();
+
+            lineTipSelection
+                .exit()
+                .remove();
 
             if (this.interactivityService) {
-                const behaviorOptions: LineDotChartBehaviorOptions = {
+                const behaviorOptions: behavior.BehaviorOptions = {
                     selection: dotsSelection,
                     clearCatcher: this.root,
-                    interactivityService: this.interactivityService,
-                    hasHighlights: hasHighlights
+                    hasHighlights: hasHighlights,
                 };
 
                 this.interactivityService.bind(
                     this.data.dotPoints,
                     this.behavior,
-                    behaviorOptions);
+                    behaviorOptions,
+                );
             }
         }
 
@@ -857,6 +1070,7 @@ module powerbi.extensibility.visual {
         private static textSelector: string = "text.text";
         private static widthMargin: number = 85;
         private static yPosition: number = 30;
+
         private updateLineText(textSelector: d3.Selection<any>, text?: string): void {
             textSelector.text(d => text);
         }
@@ -866,19 +1080,21 @@ module powerbi.extensibility.visual {
                 || !points[num]
                 || num === 0
                 || !this.settings.misc.isAnimated
-                || this.settings.misc.isStopped) {
+                || this.settings.misc.isStopped
+            ) {
 
                 return 0;
             }
 
-            let time: number = points[num].dateValue.value,
-                min: number = points[0].dateValue.value,
-                max: number = points[points.length - 1].dateValue.value;
+            const time: number = points[num].dateValue.value;
+            const min: number = points[0].dateValue.value;
+            const max: number = points[points.length - 1].dateValue.value;
 
             return animation_duration * 1000 * (time - min) / (max - min);
         }
 
-        private static showClassName: string = 'show';
+        private static showClassName: string = "show";
+
         private showDataPoint(data: LineDotPoint, index: number): void {
             d3.select(<any>this).classed(LineDotChart.showClassName, true);
         }
@@ -887,27 +1103,15 @@ module powerbi.extensibility.visual {
             d3.select(<any>this).classed(LineDotChart.showClassName, false);
         }
 
-        private addTooltip(element: Element): void {
-            const selection: d3.Selection<any> = d3.select(element);
-
-            this.tooltipServiceWrapper.addTooltip<LineDotPoint>(
-                selection,
-                (tooltipEvent: TooltipEventArgs<LineDotPoint>) => {
-                    return this.getTooltipDataItems(tooltipEvent.data);
-                });
-        }
-
         public getTooltipDataItems(dataPoint: LineDotPoint): VisualTooltipDataItem[] {
             if (!dataPoint) {
                 return [];
             }
 
-            const unformattedDate: string | Date | number = dataPoint.dateValue.label
-                || dataPoint.dateValue.value;
+            const unformattedDate: string | number = dataPoint.dateValue.label || dataPoint.dateValue.value;
 
-            const valueFormatterLocalized = valueFormatter.create({cultureSelector: this.hostService.locale}),
-                formattedDate: string = this.data.dateColumnFormatter.format(unformattedDate),
-                formattedValue: string = this.data.dataValueFormatter.format(valueFormatterLocalized.format(dataPoint.value));
+            const formattedDate: string = this.data.dateColumnFormatter.format(unformattedDate);
+            const formattedValue: string = this.data.dataValueFormatter.format(dataPoint.value);
 
             const columnNames: ColumnNames = this.data.columnNames;
 
@@ -924,10 +1128,9 @@ module powerbi.extensibility.visual {
         }
 
         private renderLegends(): void {
-            let legends: Legend[] = this.generateAxisLabels();
-            let legendSelection: d3.selection.Update<any> = this.legends
+            const legendSelection: d3.selection.Update<Legend> = this.legends
                 .selectAll(LineDotChart.Legend.selectorName)
-                .data(legends);
+                .data(this.generateAxisLabels());
 
             legendSelection
                 .enter()
@@ -936,27 +1139,15 @@ module powerbi.extensibility.visual {
             legendSelection
                 .attr("x", 0)
                 .attr("y", 0)
-                .attr("dx", (item: Legend) => item.dx)
-                .attr("dy", (item: Legend) => item.dy)
-                .attr("transform", (item: Legend) => item.transform)
-                .text((item: Legend) => item.text)
+                .attr("dx", (legend: Legend) => legend.dx)
+                .attr("dy", (legend: Legend) => legend.dy)
+                .attr("transform", (legend: Legend) => legend.transform)
+                .text((legend: Legend) => legend.text)
                 .classed(LineDotChart.Legend.className, true);
 
             legendSelection
                 .exit()
                 .remove();
-        }
-    }
-
-    export module lineDotChartUtils {
-        export let DimmedOpacity: number = 0.4;
-
-        export function getFillOpacity(dot: LineDotPoint, selected: boolean, highlight: boolean, hasSelection: boolean, hasPartialHighlights: boolean): number {
-            if ((hasPartialHighlights && !highlight) || (hasSelection && !selected)) {
-                let opacity: number = dot.opacity - DimmedOpacity;
-                return opacity < 0.1 ? 0.1 : opacity;
-            }
-            return dot.opacity;
         }
     }
 }

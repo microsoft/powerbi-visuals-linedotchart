@@ -27,28 +27,25 @@
 /// <reference path="_references.ts"/>
 
 namespace powerbi.extensibility.visual.test {
-    import LineDotChartData = powerbi.extensibility.visual.test.LineDotChartData;
-    import LineDotChartBuilder = powerbi.extensibility.visual.test.LineDotChartBuilder;
+    // powerbi.extensibility.utils.test
     import helpers = powerbi.extensibility.utils.test.helpers;
     import colorHelper = powerbi.extensibility.utils.test.helpers.color;
-    import RgbColor = powerbi.extensibility.utils.test.helpers.color.RgbColor;
-    import MockISelectionId = powerbi.extensibility.utils.test.mocks.MockISelectionId;
-    import createSelectionId = powerbi.extensibility.utils.test.mocks.createSelectionId;
-    import getRandomHexColor = powerbitests.customVisuals.getRandomHexColor;
+
+    // powerbi.extensibility.visual.test
+    import LineDotChartData = powerbi.extensibility.visual.test.LineDotChartData;
+    import areColorsEqual = powerbi.extensibility.visual.test.helpers.areColorsEqual;
+    import LineDotChartBuilder = powerbi.extensibility.visual.test.LineDotChartBuilder;
+    import getRandomHexColor = powerbi.extensibility.visual.test.helpers.getRandomHexColor;
 
     // powerbi.extensibility.utils.formatting
     import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
-
-    // powerbi.extensibility.utils.type
-    import convertToPx = powerbi.extensibility.utils.type.PixelConverter.toString;
-    import convertToPt = powerbi.extensibility.utils.type.PixelConverter.fromPoint;
-    import fromPointToPixel = powerbi.extensibility.utils.type.PixelConverter.fromPointToPixel;
 
     // LineDotChart1460463831201
     import ColumnNames = powerbi.extensibility.visual.LineDotChart1460463831201.ColumnNames;
     import LineDotPoint = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotPoint;
     import LineDotChartViewModel = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChartViewModel;
     import LineDotChartColumns = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChartColumns;
+    import LineDotChart = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChart;
 
     describe("LineDotChartTests", () => {
         let visualBuilder: LineDotChartBuilder,
@@ -312,7 +309,7 @@ namespace powerbi.extensibility.visual.test {
             it("the date should be formatted", () => {
                 const dataPoint: LineDotPoint = {
                     dateValue: {
-                        date: new Date(2008, 1, 1)
+                        date: new Date(2008, 1, 1),
                     }
                 } as LineDotPoint;
 
@@ -411,6 +408,198 @@ namespace powerbi.extensibility.visual.test {
                 };
 
                 objectsChecker(jsonData);
+            });
+        });
+
+        describe("Accessibility", () => {
+            describe("High contrast mode", () => {
+                const backgroundColor: string = "#000000";
+                const foregroundColor: string = "#ffff00";
+
+                beforeEach(() => {
+                    visualBuilder.visualHost.colorPalette.isHighContrast = true;
+
+                    visualBuilder.visualHost.colorPalette.background = { value: backgroundColor };
+                    visualBuilder.visualHost.colorPalette.foreground = { value: foregroundColor };
+                });
+
+                it("should not use fill style", (done) => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
+                        const dots: JQuery[] = visualBuilder.dots.toArray().map($);
+
+                        expect(isColorAppliedToElements(dots, null, "fill"));
+
+                        done();
+                    });
+                });
+
+                it("should use stroke style", (done) => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
+                        const dots: JQuery[] = visualBuilder.dots.toArray().map($);
+
+                        expect(isColorAppliedToElements(dots, foregroundColor, "stroke"));
+
+                        done();
+                    });
+                });
+
+                function isColorAppliedToElements(
+                    elements: JQuery[],
+                    color?: string,
+                    colorStyleName: string = "fill"
+                ): boolean {
+                    return elements.some((element: JQuery) => {
+                        const currentColor: string = element.css(colorStyleName);
+
+                        if (!currentColor || !color) {
+                            return currentColor === color;
+                        }
+
+                        return areColorsEqual(currentColor, color);
+                    });
+                }
+            });
+        });
+
+        describe("should formatting functions work correctly", () => {
+            let data: LineDotChartViewModel;
+            let columnFormattingFn: Function;
+            let valueFormattingFn: Function;
+
+            beforeEach(() => {
+                dataView = defaultDataViewBuilder.getDataViewWithDifferentFormats();
+                visualBuilder.update(dataView);
+
+                data = visualBuilder.visualInstance.data;
+                columnFormattingFn = LineDotChart.columnFormattingFn(data);
+                valueFormattingFn = LineDotChart.valueFormattingFn(data);
+            });
+
+            it("dateTime formatting", () => {
+                const timestamp: number = 108875;
+                const actualResultForColumn: string = columnFormattingFn(timestamp, { dateTime: true });
+                const actualResultForValue: string = valueFormattingFn(timestamp, { dateTime: true });
+
+                const expectedResultForColumn: string = data.dateColumnFormatter.format(new Date(timestamp));
+                const expectedResultForValue: string = data.dataValueFormatter.format(new Date(timestamp));
+
+                expect(actualResultForColumn).toBe(expectedResultForColumn);
+                expect(actualResultForValue).toBe(expectedResultForValue);
+            });
+
+            it("text formatting", () => {
+                const index: number = 17;
+                const actualResultForColumn: string = columnFormattingFn(index, { text: true });
+                const actualResultForValue: string = valueFormattingFn(index, { text: true });
+
+                const expectedResult: string = data.dateValues[index].label;
+                expect(actualResultForColumn).toBe(expectedResult);
+                expect(actualResultForValue).toBe(expectedResult);
+            });
+
+            it("numbers formatting", () => {
+                const index: number = 13;
+                const actualResultForColumn: string = columnFormattingFn(index, { number: true });
+                const expectedResultForColumn: string = data.dateColumnFormatter.format(index);
+
+                const actualResultForValue: string = valueFormattingFn(index, { number: true });
+                const expectedResultForValue: string = data.dataValueFormatter.format(index);
+
+                expect(actualResultForColumn).toBe(expectedResultForColumn);
+                expect(actualResultForValue).toBe(expectedResultForValue);
+            });
+        });
+
+        describe("Different formats data representation test", () => {
+            let tickText: JQuery[];
+            let xTicksCount: number;
+
+            beforeEach(() => {
+                dataView = defaultDataViewBuilder.getDataViewWithDifferentFormats();
+                visualBuilder.update(dataView);
+                tickText = visualBuilder.tickText.toArray().map($);
+                xTicksCount = visualBuilder.xAxisTickText.toArray().length;
+            });
+
+            it("should representate data in required format on axes", (done) => {
+                const percentRegex: string = "^\\d+(\.?\\d+)?%$";
+                const priceRegex: string = "$";
+
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    tickText.forEach((tick, index) => {
+                        let text = tickText[index].text();
+                        if (index < xTicksCount) {
+                            expect(text).toMatch(priceRegex);
+                        } else {
+                            expect(text).toMatch(percentRegex);
+                        }
+                    });
+                    done();
+                });
+            });
+
+            it("should representate data in required format in tooltip", () => {
+                const defaultFormattedColumnValue: string = visualBuilder.visualInstance.data.dateColumnFormatter.format(13);
+                const defaultFormattedValue: string = visualBuilder.visualInstance.data.dataValueFormatter.format(17);
+
+                const dataPoint: LineDotPoint = {
+                    dateValue: {
+                        value: 13
+                    },
+                    value: 17
+                } as LineDotPoint;
+
+                const actualResult: VisualTooltipDataItem[]
+                    = visualBuilder.visualInstance.getTooltipDataItems(dataPoint);
+
+                expect(actualResult[0].value).toBe(defaultFormattedColumnValue);
+                expect(actualResult[1].value).toBe(defaultFormattedValue);
+            });
+        });
+
+        describe("Y axis right scaling test", () => {
+            let yTicksText: JQuery[] = [];
+            let allTicksText: JQuery[];
+
+            beforeEach(() => {
+                const orderedDates: Date[] = [
+                    new Date(2013, 1, 1),
+                    new Date(2014, 1, 1),
+                    new Date(2015, 1, 1),
+                    new Date(2016, 1, 1),
+                    new Date(2017, 1, 1)
+                ];
+                const orderedNumbers: number[] = [11, 18, 23, 29, 31];
+                dataView = defaultDataViewBuilder.getDataView(undefined, orderedDates, orderedNumbers);
+                visualBuilder.update(dataView);
+
+                let xTicksCount = visualBuilder.xAxisTick.toArray().length;
+                allTicksText = visualBuilder.tickText.toArray().map($);
+                const yTicksCount: number = (allTicksText.length - xTicksCount) / 2;
+                allTicksText.forEach((tick, index) => {
+                    if (index >= xTicksCount && index <= yTicksCount + xTicksCount - 1) {
+                        yTicksText.push(tick);
+                    }
+                });
+            });
+
+            it("should graphic be correctly scaled on y axis", (done) => {
+                const dotPoints: LineDotPoint[] = visualBuilder.visualInstance.data.dotPoints;
+
+                let previosYTickIndex = 0;
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    dotPoints.forEach((dotPoint: LineDotPoint) => {
+                        let lowAxisValue: number = parseInt(yTicksText[previosYTickIndex].text());
+                        expect(dotPoint.value).toBeGreaterThanOrEqual(lowAxisValue);
+
+                        if (previosYTickIndex + 1 < yTicksText.length) {
+                            let highAxisValue: number = parseInt(yTicksText[previosYTickIndex + 1].text());
+                            expect(dotPoint.value).toBeGreaterThanOrEqual(lowAxisValue);
+                        }
+                        previosYTickIndex++;
+                    });
+                    done();
+                });
             });
         });
     });

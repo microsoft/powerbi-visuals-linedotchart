@@ -28,11 +28,9 @@
 
 module powerbi.extensibility.visual.test {
     import VisualBuilderBase = powerbi.extensibility.utils.test.VisualBuilderBase;
-    import getRandomNumber = powerbi.extensibility.utils.test.helpers.getRandomNumber;
 
     // LineDotChart1460463831201
     import VisualClass = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChart;
-    import VisualSettings = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChartSettings;
 
     export class LineDotChartBuilder extends VisualBuilderBase<VisualClass> {
         constructor(width: number, height: number) {
@@ -71,13 +69,13 @@ module powerbi.extensibility.visual.test {
 
         public get axes() {
             return this.mainElement
-            .children("g")
-            .children("g.axes");
+                .children("g")
+                .children("g.axes");
         }
 
         public get axis() {
             return this.axes
-            .children("g.axis");
+                .children("g.axis");
         }
 
         public get emptyAxis() {
@@ -89,8 +87,17 @@ module powerbi.extensibility.visual.test {
                 .children("g.tick");
         }
 
+        public get xAxisTick() {
+            return this.axis.first()
+                .children("g.tick");
+        }
+
         public get tickText() {
             return this.ticks.children("text");
+        }
+
+        public get xAxisTickText() {
+            return this.xAxisTick.children("text");
         }
 
         public get animationPlay(): JQuery {

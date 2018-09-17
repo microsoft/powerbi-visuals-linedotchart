@@ -1,6 +1,5 @@
 ﻿{
-  "dataRoles": [
-    {
+  "dataRoles": [{
       "name": "Date",
       "kind": "Grouping",
       "displayName": "Date",
@@ -19,61 +18,57 @@
       "displayNameKey": "Visual_Counter"
     }
   ],
-  "dataViewMappings": [
-    {
-      "conditions": [
-        {
-          "Date": {
-            "min": 0,
-            "max": 1
-          },
-          "Values": {
-            "min": 0,
-            "max": 1
-          },
-          "Counter": {
-            "min": 0,
-            "max": 1
-          },
-          "Labels": {
-            "min": 0,
-            "max": 1
+  "dataViewMappings": [{
+    "conditions": [{
+      "Date": {
+        "min": 0,
+        "max": 1
+      },
+      "Values": {
+        "min": 0,
+        "max": 1
+      },
+      "Counter": {
+        "min": 0,
+        "max": 1
+      },
+      "Labels": {
+        "min": 0,
+        "max": 1
+      }
+    }],
+    "categorical": {
+      "categories": {
+        "select": [{
+          "for": {
+            "in": "Date"
+          }
+        }],
+        "dataReductionAlgorithm": {
+          "top": {
+            "count": 10000
           }
         }
-      ],
-      "categorical": {
-        "categories": {
-          "select": [
-            {
-              "for": {
-                "in": "Date"
-              }
+      },
+      "values": {
+        "select": [{
+            "bind": {
+              "to": "Values"
             }
-          ],
-          "dataReductionAlgorithm": {
-            "top": {
-              "count": 10000
+          },
+          {
+            "bind": {
+              "to": "Counter"
             }
           }
-        },
-        "values": {
-          "select": [
-            {
-              "bind": {
-                "to": "Values"
-              }
-            },
-             {
-              "bind": {
-                "to": "Counter"
-              }
-            }
-          ]
-        }
+        ]
       }
     }
-  ],
+  }],
   "supportsHighlight": true,
+  "sorting": {
+    "default": {}
+  },
   "objects": {
     "lineoptions": {
       "displayName": "Line",
@@ -106,7 +101,7 @@
         "percentile": {
           "displayName": "Opacity",
           "displayNameKey": "Visual_Opacity",
-         "type": {
+          "type": {
             "numeric": true
           }
         },
@@ -163,7 +158,7 @@
           "displayName": "Text Size",
           "displayNameKey": "Visual_TextSize",
           "type": {
-              "numeric": true
+            "numeric": true
           }
         }
       }
@@ -194,7 +189,7 @@
           "displayName": "Text Size",
           "displayNameKey": "Visual_TextSize",
           "type": {
-              "numeric": true
+            "numeric": true
           }
         },
         "isDuplicated": {
@@ -210,11 +205,36 @@
       "displayName": "Counter",
       "displayNameKey": "Visual_Counter",
       "properties": {
+        "show": {
+          "displayName": "Show",
+          "displayNameKey": "Visual_Show",
+          "type": {
+            "bool": true
+          }
+        },
         "counterTitle": {
           "displayName": "Title",
           "displayNameKey": "Visual_Title",
           "type": {
             "text": true
+          }
+        },
+        "color": {
+          "displayName": "Fill",
+          "displayNameKey": "Visual_Fill",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "textSize": {
+          "displayName": "Text Size",
+          "displayNameKey": "Visual_TextSize",
+          "type": {
+            "numeric": true
           }
         }
       }
