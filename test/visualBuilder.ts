@@ -24,91 +24,89 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="_references.ts"/>
+import powerbi from "powerbi-visuals-api";
 
-module powerbi.extensibility.visual.test {
-    import VisualBuilderBase = powerbi.extensibility.utils.test.VisualBuilderBase;
+import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
+import { VisualBuilderBase } from "powerbi-visuals-utils-testutils";
 
-    // LineDotChart1460463831201
-    import VisualClass = powerbi.extensibility.visual.LineDotChart1460463831201.LineDotChart;
+import { LineDotChart as VisualClass } from "./../src/visual";
 
-    export class LineDotChartBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(width: number, height: number) {
-            super(width, height, "LineDotChart1460463831201");
-        }
-
-        protected build(options: VisualConstructorOptions) {
-            return new VisualClass(options);
-        }
-
-        public get visualInstance(): VisualClass {
-            return this.visual;
-        }
-
-        public get mainElement(): JQuery {
-            return this.element.children(".lineDotChart");
-        }
-
-        public get line() {
-            return this.mainElement
-                .children("g")
-                .children("g.line");
-        }
-
-        public get linePath() {
-            return this.line
-                .children("g.path")
-                .children("path.plot");
-        }
-
-        public get dots() {
-            return this.line
-                .children("g.dot-points")
-                .children("circle.point");
-        }
-
-        public get axes() {
-            return this.mainElement
-                .children("g")
-                .children("g.axes");
-        }
-
-        public get axis() {
-            return this.axes
-                .children("g.axis");
-        }
-
-        public get emptyAxis() {
-            return this.axes.children("g.axis:empty");
-        }
-
-        public get ticks() {
-            return this.axis
-                .children("g.tick");
-        }
-
-        public get xAxisTick() {
-            return this.axis.first()
-                .children("g.tick");
-        }
-
-        public get tickText() {
-            return this.ticks.children("text");
-        }
-
-        public get xAxisTickText() {
-            return this.xAxisTick.children("text");
-        }
-
-        public get animationPlay(): JQuery {
-            return this.mainElement
-                .find("g.lineDotChart__playBtn");
-        }
-
-        public get counterTitle(): JQuery {
-            return this.line
-                .children("text.text");
-        }
-
+export class LineDotChartBuilder extends VisualBuilderBase<VisualClass> {
+    constructor(width: number, height: number) {
+        super(width, height, "LineDotChart1460463831201");
     }
+
+    protected build(options: VisualConstructorOptions) {
+        return new VisualClass(options);
+    }
+
+    public get visualInstance(): VisualClass {
+        return this.visual;
+    }
+
+    public get mainElement(): JQuery {
+        return this.element.children(".lineDotChart");
+    }
+
+    public get line() {
+        return this.mainElement
+            .children("g")
+            .children("g.line");
+    }
+
+    public get linePath() {
+        return this.line
+            .children("g.path")
+            .children("path.plot");
+    }
+
+    public get dots() {
+        return this.line
+            .children("g.dot-points")
+            .children("circle.point");
+    }
+
+    public get axes() {
+        return this.mainElement
+            .children("g")
+            .children("g.axes");
+    }
+
+    public get axis() {
+        return this.axes
+            .children("g.axis");
+    }
+
+    public get emptyAxis() {
+        return this.axes.children("g.axis:empty");
+    }
+
+    public get ticks() {
+        return this.axis
+            .children("g.tick");
+    }
+
+    public get xAxisTick() {
+        return this.axis.first()
+            .children("g.tick");
+    }
+
+    public get tickText() {
+        return this.ticks.children("text");
+    }
+
+    public get xAxisTickText() {
+        return this.xAxisTick.children("text");
+    }
+
+    public get animationPlay(): JQuery {
+        return this.mainElement
+            .find("g.lineDotChart__playBtn");
+    }
+
+    public get counterTitle(): JQuery {
+        return this.line
+            .children("text.text");
+    }
+
 }

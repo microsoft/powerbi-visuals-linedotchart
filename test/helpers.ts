@@ -24,40 +24,34 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="_references.ts"/>
+import * as powerbi from "powerbi-visuals-api";
+import * as _ from "lodash";
 
-namespace powerbi.extensibility.visual.test.helpers {
-    // powerbi.extensibility.utils.test
-    import RgbColor = powerbi.extensibility.utils.test.helpers.color.RgbColor;
-    import parseColorString = powerbi.extensibility.utils.test.helpers.color.parseColorString;
+import { RgbColor, parseColorString } from "powerbi-visuals-utils-colorutils";
+import { getRandomNumber } from "powerbi-visuals-utils-testutils";
 
-    // powerbi.extensibility.utils.test
-    import helpers = powerbi.extensibility.utils.test.helpers;
+export function areColorsEqual(firstColor: string, secondColor: string): boolean {
+    const firstConvertedColor: RgbColor = parseColorString(firstColor),
+        secondConvertedColor: RgbColor = parseColorString(secondColor);
 
-    export function areColorsEqual(firstColor: string, secondColor: string): boolean {
-        const firstConvertedColor: RgbColor = parseColorString(firstColor),
-            secondConvertedColor: RgbColor = parseColorString(secondColor);
+    return firstConvertedColor.R === secondConvertedColor.R
+        && firstConvertedColor.G === secondConvertedColor.G
+        && firstConvertedColor.B === secondConvertedColor.B;
+}
 
-        return firstConvertedColor.R === secondConvertedColor.R
-            && firstConvertedColor.G === secondConvertedColor.G
-            && firstConvertedColor.B === secondConvertedColor.B;
-    }
+export function getHexColorFromNumber(value: number) {
+    let hex: string = value.toString(16).toUpperCase();
+    return "#" + (hex.length === 6 ? hex : _.range(0, 6 - hex.length, 0).join("") + hex);
+}
 
-    export function getHexColorFromNumber(value: number) {
-        let hex: string = value.toString(16).toUpperCase();
-        return "#" + (hex.length === 6 ? hex : _.range(0, 6 - hex.length, 0).join("") + hex);
-    }
+export function getRandomInteger(min: number, max: number, exceptionList?: number[]): number {
+    return getRandomNumber(max, min, exceptionList, Math.floor);
+}
 
-    export function getRandomInteger(min: number, max: number, exceptionList?: number[]): number {
-        return helpers.getRandomNumber(max, min, exceptionList, Math.floor);
-    }
+export function getRandomHexColor(): string {
+    return getHexColorFromNumber(getRandomInteger(0, 16777215 + 1));
+}
 
-    export function getRandomHexColor(): string {
-        return getHexColorFromNumber(getRandomInteger(0, 16777215 + 1));
-    }
-
-    export function getRandomHexColors(count: number): string[] {
-        return _.range(count).map(x => getRandomHexColor());
-    }
-
+export function getRandomHexColors(count: number): string[] {
+    return _.range(count).map(x => getRandomHexColor());
 }
