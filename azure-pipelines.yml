@@ -17,3 +17,25 @@ steps:
     npm run lint
     npm run test
   displayName: 'npm install and build'
+
+# Publish Test Results to Azure Pipelines/TFS
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'JUnit' # Options: JUnit, NUnit, VSTest, xUnit
+    testResultsFiles: '**/TEST-*.xml' 
+    #searchFolder: '$(System.DefaultWorkingDirectory)' # Optional
+    #mergeTestResults: false # Optional
+    #testRunTitle: # Optional
+    #buildPlatform: # Optional
+    #buildConfiguration: # Optional
+    #publishRunAttachments: true # Optional
+
+# Publish Code Coverage Results
+# Publish Cobertura or JaCoCo code coverage results from a build
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: 'cobertura' # Options: cobertura, jaCoCo
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/*coverage.xml'
+    reportDirectory: '$(System.DefaultWorkingDirectory)/**/coverage'
+    #additionalCodeCoverageFiles: # Optional
+    #failIfCoverageEmpty: false # Optional
