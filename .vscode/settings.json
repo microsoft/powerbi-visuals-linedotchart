@@ -9,7 +9,7 @@
   },
   "files.exclude": {
     ".tmp": false,
-    "coverage": true
+    "coverage": false
   },
   "search.exclude": {
     ".tmp": true,

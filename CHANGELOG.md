@@ -1,3 +1,6 @@
+## 2.0.1
+* Moved CI to Azure Pipelines
+
 ## 2.0.0
 * API 2.1.0
 * Webpack integration
