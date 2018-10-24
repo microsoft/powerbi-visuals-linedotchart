@@ -1035,7 +1035,7 @@ export class LineDotChart implements IVisual {
                         LineDotChart.pointScaleValue);
                 })
                 .transition()
-                .each((d: LineDotPoint, i: number) => {
+                .on("start", (d: LineDotPoint, i: number) => {
                     if (this.settings.counteroptions.show) {
                         let text: string = `${this.settings.counteroptions.counterTitle} `;
 
