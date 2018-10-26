@@ -242,6 +242,7 @@ describe("LineDotChartTests", () => {
             });
             it("opacity", () => {
                 let color: string = getRandomHexColor();
+                const dots: JQuery<any>[] = visualBuilder.dots.toArray().map($);
                 dataView.metadata.objects = {
                     dotoptions: {
                         color: getSolidColorStructuralObject(color),
@@ -249,7 +250,7 @@ describe("LineDotChartTests", () => {
                     }
                 };
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                visualBuilder.dots.toArray().map($).forEach(e => assertColorsMatch(e.attr('fill'), color) && assertColorsMatch(e.style('opacity'), color));
+                dots.forEach(e => assertColorsMatch(e.attr('fill'), color) && assertColorsMatch(e.css('opacity'), color));
             });
         });
 
@@ -429,7 +430,7 @@ describe("LineDotChartTests", () => {
 
             it("should not use fill style", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    const dots: JQuery[] = visualBuilder.dots.toArray().map($);
+                    const dots: JQuery<any>[] = visualBuilder.dots.toArray().map($);
 
                     expect(isColorAppliedToElements(dots, null, "fill"));
 
@@ -439,7 +440,7 @@ describe("LineDotChartTests", () => {
 
             it("should use stroke style", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    const dots: JQuery[] = visualBuilder.dots.toArray().map($);
+                    const dots: JQuery<any>[] = visualBuilder.dots.toArray().map($);
 
                     expect(isColorAppliedToElements(dots, foregroundColor, "stroke"));
 
@@ -515,7 +516,7 @@ describe("LineDotChartTests", () => {
     });
 
     describe("Different formats data representation test", () => {
-        let tickText: JQuery[];
+        let tickText: JQuery<any>[];
         let xTicksCount: number;
 
         beforeEach(() => {
@@ -563,7 +564,7 @@ describe("LineDotChartTests", () => {
 
     describe("Y axis right scaling test", () => {
         let yTicksText: JQuery[] = [];
-        let allTicksText: JQuery[];
+        let allTicksText: JQuery<any>[];
 
         beforeEach(() => {
             const orderedDates: Date[] = [
