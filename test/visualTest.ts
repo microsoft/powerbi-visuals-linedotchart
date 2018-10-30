@@ -96,6 +96,37 @@ describe("LineDotChartTests", () => {
         });
     });
 
+    describe("Counter animation test", () => {
+        const durationInSeconds: number = 20;
+        const durationInMilliSeconds: number = durationInSeconds * 1000;
+
+        it("Counter update", (done) => {
+            dataView.metadata.objects = {
+                misc: {
+                    isAnimated: true,
+                    duration: durationInSeconds,
+                    isStopped: false
+                },
+                counteroptions: {
+                    counterTitle: ""
+                }
+            };
+
+            visualBuilder.updateFlushAllD3Transitions(dataView);
+
+            renderTimeout(() => {
+                let counterNumber: number = 0;
+                expect(visualBuilder.counterTitle).toBeInDOM();
+                setInterval(() => {
+                    const newCounterNumber: number = Number(visualBuilder.counterTitle);
+                    expect(newCounterNumber).toBeGreaterThan(counterNumber);
+                    counterNumber = newCounterNumber;
+                }, durationInMilliSeconds);
+                done();
+            });
+        });
+    });
+
     describe("Axes test", () => {
         it("set color and font-size", () => {
             let color: string = getRandomHexColor();
@@ -382,7 +413,6 @@ describe("LineDotChartTests", () => {
                 lastValue: number = 10;
 
             const settings = visualBuilder.visualInstance.getRectAnimationSettings(firstValue, lastValue);
-
             // for descending order X value moves from right to left
             expect(settings.startX).toBe(firstValue);
             expect(settings.endX).toBe(lastValue);
