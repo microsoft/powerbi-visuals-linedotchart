@@ -1,6 +1,7 @@
 ## 2.0.1
 * Azure Pipelines integration
-* Visual packages update 
+* Visual packages update
+* Counter issue fixed 
 
 ## 2.0.0
 * API 2.1.0

@@ -413,7 +413,6 @@ describe("LineDotChartTests", () => {
                 lastValue: number = 10;
 
             const settings = visualBuilder.visualInstance.getRectAnimationSettings(firstValue, lastValue);
-            debugger;
             // for descending order X value moves from right to left
             expect(settings.startX).toBe(firstValue);
             expect(settings.endX).toBe(lastValue);
