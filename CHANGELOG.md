@@ -1,3 +1,8 @@
+## 2.0.2
+* UPD: powerbi-visuals-tools has been updated to 3.0.9 to add IE11 support
+* UPD: API has been updated to 2.3.0 to add IE11 support
+* UPD: powerbi-visuals-api has been updated to 2.3.1 to add IE11 support
+
 ## 2.0.1
 * Azure Pipelines integration
 * Visual packages update
