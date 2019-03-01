@@ -162,16 +162,15 @@ export class LineDotChart implements IVisual {
     }
 
     public static valueFormattingFn(data: LineDotChartViewModel) {
-        return function (index: number, dataType: valueType): any {
+        return function (index: number, dataType: valueType): string | number {
+           
             if (dataType.dateTime) {
                 return data.dataValueFormatter.format(new Date(index));
             }
             else if (dataType.text) {
                 return data.dateValues[index].label;
             }
-            let formatted: string = data.dataValueFormatter.format(index);
-
-            return formatted !== index.toString() ? formatted : index;
+            return index;
         };
     }
 
