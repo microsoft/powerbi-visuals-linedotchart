@@ -56,7 +56,7 @@ describe("LineDotChartTests", () => {
     });
 
     describe("DOM tests", () => {
-        it("main element was created", () => {
+        it("main element was created", () => { 
             expect(visualBuilder.mainElement.get(0)).toBeDefined();
         });
 
