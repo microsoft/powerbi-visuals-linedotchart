@@ -149,18 +149,6 @@ export class LineDotChart implements IVisual {
         height: 150
     };
 
-    // public static columnFormattingFn(data: LineDotChartViewModel) {
-    //     return function (index: number, dataType: valueType): any {
-    //         if (dataType.dateTime) {
-    //             return data.dateColumnFormatter.format(new Date(index));
-    //         }
-    //         else if (dataType.text) {
-    //             return data.dateValues[index].label;
-    //         }
-    //         return data.dateColumnFormatter.format(index);
-    //     };
-    // }
-
     private tooltipServiceWrapper: ITooltipServiceWrapper;
     private colorHelper: ColorHelper;
 
@@ -302,6 +290,26 @@ export class LineDotChart implements IVisual {
             this.settings || Settings.getDefault(),
             options
         );
+    }
+
+    public columnFormattingCallback(index: number, dataType: valueType): any {
+        if (dataType.dateTime) {
+            return this.data.dateColumnFormatter.format(new Date(index));
+        }
+        else if (dataType.text) {
+            return this.data.dateValues[index].label;
+        }
+        return this.data.dateColumnFormatter.format(index);
+    }
+
+    public valueFormattingCallback(index: number, dataType: valueType): string | number {
+        if (dataType.dateTime) {
+            return this.data.dataValueFormatter.format(new Date(index));
+        }
+        else if (dataType.text) {
+            return this.data.dateValues[index].label;
+        }
+        return index;
     }
 
     private clearElement(selection: d3.Selection<d3.BaseType, any, any, any>): void {
@@ -935,26 +943,6 @@ export class LineDotChart implements IVisual {
     private static pointScaleValue: number = 0;
     private static pointTransformScaleValue: number = 3.4;
     private static pointDelayCoefficient: number = 1000;
-
-    private columnFormattingCallback(index: number, dataType: valueType): any {
-        if (dataType.dateTime) {
-            return this.data.dateColumnFormatter.format(new Date(index));
-        }
-        else if (dataType.text) {
-            return this.data.dateValues[index].label;
-        }
-        return this.data.dateColumnFormatter.format(index);
-    }
-
-    private valueFormattingCallback(index: number, dataType: valueType): string | number {
-        if (dataType.dateTime) {
-            return this.data.dataValueFormatter.format(new Date(index));
-        }
-        else if (dataType.text) {
-            return this.data.dateValues[index].label;
-        }
-        return index;
-    }
 
     private drawDots(lineTipSelection) {
         const point_time: number = this.settings.misc.isAnimated && !this.settings.misc.isStopped

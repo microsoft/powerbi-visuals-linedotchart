@@ -506,8 +506,8 @@ describe("LineDotChartTests", () => {
             visualBuilder.update(dataView);
 
             data = visualBuilder.visualInstance.data;
-            columnFormattingFn = LineDotChart.columnFormattingFn(data);
-            valueFormattingFn = LineDotChart.valueFormattingFn(data);
+            columnFormattingFn =  visualBuilder.visualInstance.columnFormattingCallback;//LineDotChart.columnFormattingFn(data);
+            valueFormattingFn = visualBuilder.visualInstance.valueFormattingCallback;//LineDotChart.valueFormattingFn(data);
         });
 
         it("dateTime formatting", () => {
