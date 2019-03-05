@@ -56,7 +56,7 @@ describe("LineDotChartTests", () => {
     });
 
     describe("DOM tests", () => {
-        it("main element was created", () => { 
+        it("main element was created", () => {
             expect(visualBuilder.mainElement.get(0)).toBeDefined();
         });
 
@@ -506,8 +506,8 @@ describe("LineDotChartTests", () => {
             visualBuilder.update(dataView);
 
             data = visualBuilder.visualInstance.data;
-            columnFormattingFn =  visualBuilder.visualInstance.columnFormattingCallback;//LineDotChart.columnFormattingFn(data);
-            valueFormattingFn = visualBuilder.visualInstance.valueFormattingCallback;//LineDotChart.valueFormattingFn(data);
+            columnFormattingFn = visualBuilder.visualInstance.columnFormattingCallback;
+            valueFormattingFn = visualBuilder.visualInstance.valueFormattingCallback;
         });
 
         it("dateTime formatting", () => {

@@ -157,7 +157,7 @@ export class LineDotChart implements IVisual {
             options.host.tooltipService,
             options.element
         );
-        
+
         this.valueFormattingCallback = this.valueFormattingCallback.bind(this);
         this.columnFormattingCallback = this.columnFormattingCallback.bind(this);
 
@@ -309,14 +309,14 @@ export class LineDotChart implements IVisual {
         else if (dataType.text) {
             return this.data.dateValues[index].label;
         }
-        
-        if(Math.floor(index) !== index){
+
+        if (Math.floor(index) !== index) {
             return index;
         }
 
         let formatted: string = this.data.dataValueFormatter.format(index);
-        
-        return (formatted !== index.toString()) 
+
+        return (formatted !== index.toString())
             ? (isNaN(Number(formatted))) ? formatted : Number(formatted)
             : index;
     }
