@@ -309,7 +309,11 @@ export class LineDotChart implements IVisual {
         else if (dataType.text) {
             return this.data.dateValues[index].label;
         }
-        return index;
+        let formatted: string = this.data.dataValueFormatter.format(index);
+        
+        return (formatted !== index.toString()) 
+            ? (isNaN(Number(formatted))) ? formatted : Number(formatted)
+            : index;
     }
 
     private clearElement(selection: d3.Selection<d3.BaseType, any, any, any>): void {
