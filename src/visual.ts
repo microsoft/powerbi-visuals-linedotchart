@@ -309,6 +309,11 @@ export class LineDotChart implements IVisual {
         else if (dataType.text) {
             return this.data.dateValues[index].label;
         }
+        
+        if(Math.floor(index) !== index){
+            return index;
+        }
+
         let formatted: string = this.data.dataValueFormatter.format(index);
         
         return (formatted !== index.toString()) 
