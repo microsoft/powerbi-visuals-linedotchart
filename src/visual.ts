@@ -292,7 +292,7 @@ export class LineDotChart implements IVisual {
         );
     }
 
-    public columnFormattingCallback(index: number, dataType: valueType): any {
+    public columnFormattingCallback(index: number, dataType: valueType): string | number {
         if (dataType.dateTime) {
             return this.data.dateColumnFormatter.format(new Date(index));
         }
@@ -310,15 +310,15 @@ export class LineDotChart implements IVisual {
             return this.data.dateValues[index].label;
         }
 
-        if (Math.floor(index) !== index) {
-            return index;
-        }
+        let formatted: string = this.data.dataValueFormatter.format(index); // format to percent or unit str if needed
 
-        let formatted: string = this.data.dataValueFormatter.format(index);
+        if (formatted === index.toString()) return index; // number return preferred
+        if (isNaN(Number(formatted))) return formatted; // returns string with unit sign
 
-        return (formatted !== index.toString())
-            ? (isNaN(Number(formatted))) ? formatted : Number(formatted)
-            : index;
+        return (Math.floor(index) !== index)
+
+            ? index
+            : formatted
     }
 
     private clearElement(selection: d3.Selection<d3.BaseType, any, any, any>): void {
@@ -527,7 +527,7 @@ export class LineDotChart implements IVisual {
             isScalar: true,
             isVertical: true,
             useTickIntervalForDisplayUnits: true,
-            getValueFn:  this.valueFormattingCallback
+            getValueFn: this.valueFormattingCallback
         });
 
         this.yAxis2Properties = AxisHelper.createAxis({
@@ -540,7 +540,7 @@ export class LineDotChart implements IVisual {
             isScalar: true,
             isVertical: true,
             useTickIntervalForDisplayUnits: true,
-            getValueFn:   this.valueFormattingCallback
+            getValueFn: this.valueFormattingCallback
         });
 
         this.yAxis2Properties.formatter = this.data.dataValueFormatter;
