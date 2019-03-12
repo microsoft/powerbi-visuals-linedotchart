@@ -316,9 +316,8 @@ export class LineDotChart implements IVisual {
         if (isNaN(Number(formatted))) return formatted; // returns string with unit sign
 
         return (Math.floor(index) !== index)
-
             ? index
-            : formatted
+            : formatted;
     }
 
     private clearElement(selection: d3.Selection<d3.BaseType, any, any, any>): void {
