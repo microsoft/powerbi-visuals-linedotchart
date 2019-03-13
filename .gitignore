@@ -7,3 +7,4 @@ typings
 *.log
 /coverage
 webpack.statistics.*
+vim.exe.stackdump
