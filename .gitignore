@@ -6,4 +6,5 @@ typings
 .api
 *.log
 /coverage
-webpack.statistics.html
+webpack.statistics.*
+vim.exe.stackdump

@@ -506,8 +506,8 @@ describe("LineDotChartTests", () => {
             visualBuilder.update(dataView);
 
             data = visualBuilder.visualInstance.data;
-            columnFormattingFn = LineDotChart.columnFormattingFn(data);
-            valueFormattingFn = LineDotChart.valueFormattingFn(data);
+            columnFormattingFn =  LineDotChart.getColumnFormattingCallback(data);
+            valueFormattingFn = LineDotChart.getValueFormattingCallback(data);
         });
 
         it("dateTime formatting", () => {
@@ -543,6 +543,19 @@ describe("LineDotChartTests", () => {
             expect(actualResultForColumn).toBe(expectedResultForColumn);
             expect(actualResultForValue).toBe(expectedResultForValue);
         });
+
+        it("fractional numbers formatting", () => {
+            const index: number = 13.42;
+
+            const actualResultForColumn: string = columnFormattingFn(index, { number: true });
+            const expectedResultForColumn: string = data.dateColumnFormatter.format(index);
+
+            const actualResultForValue: string = valueFormattingFn(index, { number: true });
+            const expectedResultForValue: string = data.dataValueFormatter.format(index);
+
+            expect(actualResultForColumn).toBe(expectedResultForColumn);
+            expect(actualResultForValue).toBe(expectedResultForValue);
+        });
     });
 
     describe("Different formats data representation test", () => {
@@ -556,7 +569,7 @@ describe("LineDotChartTests", () => {
             xTicksCount = visualBuilder.xAxisTickText.toArray().length;
         });
 
-        it("should representate data in required format on axes", (done) => {
+        it("should represent data in required format on axes", (done) => {
             const percentRegex: string = "^\\d+(\.?\\d+)?%$";
             const priceRegex: string = "$";
 
@@ -573,7 +586,7 @@ describe("LineDotChartTests", () => {
             });
         });
 
-        it("should representate data in required format in tooltip", () => {
+        it("should represent data in required format in tooltip", () => {
             const defaultFormattedColumnValue: string = visualBuilder.visualInstance.data.dateColumnFormatter.format(13);
             const defaultFormattedValue: string = visualBuilder.visualInstance.data.dataValueFormatter.format(17);
 

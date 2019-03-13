@@ -149,8 +149,8 @@ export class LineDotChart implements IVisual {
         height: 150
     };
 
-    public static columnFormattingFn(data: LineDotChartViewModel) {
-        return function (index: number, dataType: valueType): any {
+    public static getColumnFormattingCallback(data: LineDotChartViewModel) {
+        return (index: number, dataType: valueType): string | number => {
             if (dataType.dateTime) {
                 return data.dateColumnFormatter.format(new Date(index));
             }
@@ -161,17 +161,27 @@ export class LineDotChart implements IVisual {
         };
     }
 
-    public static valueFormattingFn(data: LineDotChartViewModel) {
-        return function (index: number, dataType: valueType): any {
+    public static getValueFormattingCallback(data: LineDotChartViewModel) {
+        return (index: number, dataType: valueType): string | number => {
             if (dataType.dateTime) {
                 return data.dataValueFormatter.format(new Date(index));
             }
             else if (dataType.text) {
                 return data.dateValues[index].label;
             }
-            let formatted: string = data.dataValueFormatter.format(index);
 
-            return formatted !== index.toString() ? formatted : index;
+            let formatted: string = data.dataValueFormatter.format(index); // format to percent or unit str if needed
+
+            if (formatted === index.toString()) {
+                return index; // number return preferred
+            }
+            if (isNaN(Number(formatted))) {
+                return formatted; // returns string with unit sign
+            }
+
+            return (Math.floor(index) !== index)
+                ? index
+                : formatted;
         };
     }
 
@@ -484,7 +494,7 @@ export class LineDotChart implements IVisual {
             forcedTickCount: Math.max(this.layout.viewport.width / LineDotChart.forcedTickSize, 0),
             useTickIntervalForDisplayUnits: false,
             shouldClamp: true,
-            getValueFn: LineDotChart.columnFormattingFn(this.data)
+            getValueFn: LineDotChart.getColumnFormattingCallback(this.data)
         });
 
         this.xAxisProperties.xLabelMaxWidth = Math.min(
@@ -520,7 +530,7 @@ export class LineDotChart implements IVisual {
             isScalar: true,
             isVertical: true,
             useTickIntervalForDisplayUnits: true,
-            getValueFn: LineDotChart.valueFormattingFn(this.data)
+            getValueFn: LineDotChart.getValueFormattingCallback(this.data)
         });
 
         this.yAxis2Properties = AxisHelper.createAxis({
@@ -533,7 +543,7 @@ export class LineDotChart implements IVisual {
             isScalar: true,
             isVertical: true,
             useTickIntervalForDisplayUnits: true,
-            getValueFn: LineDotChart.valueFormattingFn(this.data)
+            getValueFn: LineDotChart.getValueFormattingCallback(this.data)
         });
 
         this.yAxis2Properties.formatter = this.data.dataValueFormatter;
