@@ -22,7 +22,7 @@
     "url": "git+https://github.com/Microsoft/PowerBI-visuals-linedotchart.git"
   },
   "dependencies": {
-    "@babel/polyfill": "^7.0.0",
+    "core-js": "^3.1.4",
     "d3": "^5.4.0",
     "lodash": "4.17.12",
     "powerbi-models": "1.0.12",

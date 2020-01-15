@@ -26,7 +26,6 @@
 
 import "./../style/lineDotChart.less";
 
-import "@babel/polyfill";
 import * as d3 from "d3";
 import * as _ from "lodash";
 import powerbi from "powerbi-visuals-api";
@@ -189,6 +188,10 @@ export class LineDotChart implements IVisual {
     private colorHelper: ColorHelper;
 
     constructor(options: VisualConstructorOptions) {
+        if (window.location !== window.parent.location) {
+            require("core-js/stable");
+        }
+
         this.tooltipServiceWrapper = createTooltipServiceWrapper(
             options.host.tooltipService,
             options.element
