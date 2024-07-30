@@ -4,6 +4,7 @@
 * Update to latest d3, split d3 into submodules
 * Remove core-js, .travis.yml, azure-pipelines.yml
 * Add CI/CD and CodeQL
+* Add Rendering API support
 
 ## 2.0.3
 * Fixed ticks formatting of fractional numbers

@@ -47,6 +47,7 @@ import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInst
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 
 import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
+import IVisualEventService = powerbi.extensibility.IVisualEventService;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import IVisual = powerbi.extensibility.visual.IVisual;
 import ISelectionId = powerbi.visuals.ISelectionId;
@@ -127,6 +128,7 @@ export class LineDotChart implements IVisual {
     private behavior: IInteractiveBehavior;
     private hostService: IVisualHost;
     private localizationManager: ILocalizationManager;
+    private events: IVisualEventService;
 
     private dataView: DataView;
     public data: LineDotChartViewModel;
@@ -199,6 +201,7 @@ export class LineDotChart implements IVisual {
         this.colorHelper = new ColorHelper(options.host.colorPalette);
         this.hostService = options.host;
         this.localizationManager = this.hostService.createLocalizationManager();
+        this.events = this.hostService.eventService;
 
         this.layout = new VisualLayout(null, LineDotChart.viewportMargins);
         this.layout.minViewport = LineDotChart.viewportDimensions;
@@ -277,30 +280,6 @@ export class LineDotChart implements IVisual {
         } catch (ex) {
             this.events.renderingFailed(options, JSON.stringify(ex));
         }
-
-        this.layout.viewport = options.viewport;
-
-        const data: LineDotChartViewModel = LineDotChart.converter(
-            options.dataViews[0],
-            this.hostService,
-            this.localizationManager,
-            this.colorHelper,
-        );
-
-        if (!data || _.isEmpty(data.dotPoints)) {
-            this.clear();
-            return;
-        }
-
-        this.data = data;
-
-        if (this.interactivityService) {
-            this.interactivityService.applySelectionStateToData(this.data.dotPoints);
-        }
-
-        this.resize();
-        this.calculateAxes();
-        this.draw();
     }
 
     public destroy() {
