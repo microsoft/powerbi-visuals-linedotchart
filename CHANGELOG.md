@@ -1,3 +1,6 @@
+## 2.1.0
+* Migrate to eslint from tslint
+
 ## 2.0.3
 * Fixed ticks formatting of fractional numbers
 
