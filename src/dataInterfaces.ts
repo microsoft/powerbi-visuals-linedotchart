@@ -30,8 +30,8 @@ import Settings = powerbi.Settings;
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 
 import { valueFormatter as vf } from "powerbi-visuals-utils-formattingutils";
-import { interactivityService } from "powerbi-visuals-utils-interactivityutils";
-import SelectableDataPoint = interactivityService.SelectableDataPoint;
+import { interactivitySelectionService } from "powerbi-visuals-utils-interactivityutils";
+import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
 import IValueFormatter = vf.IValueFormatter;
 
 export class DateValue {

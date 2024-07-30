@@ -120,7 +120,7 @@ export class LineDotChartData extends TestDataViewBuilder {
                     },
                     values: values2
                 }
-            ], columnNames).build();
+            ], columnNames || []).build();
     }
 
     public createStringView(columnNames?: string[]): powerbi.DataView {

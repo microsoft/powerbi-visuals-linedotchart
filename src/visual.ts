@@ -52,10 +52,9 @@ import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructor
 import { axis as AxisHelper, axisInterfaces } from "powerbi-visuals-utils-chartutils";
 import IAxisProperties = axisInterfaces.IAxisProperties;
 
-import { valueFormatter as vf, textMeasurementService as tms } from "powerbi-visuals-utils-formattingutils";
-import TextMeasurementService = tms.textMeasurementService;
-import IValueFormatter = vf.IValueFormatter;
-import valueFormatter = vf.valueFormatter;
+import { valueFormatter as valueFormatter, textMeasurementService } from "powerbi-visuals-utils-formattingutils";
+
+import IValueFormatter = valueFormatter.IValueFormatter;
 
 import * as SVGUtil from "powerbi-visuals-utils-svgutils";
 import SVGManipulations = SVGUtil.manipulation;
@@ -68,11 +67,11 @@ import valueType = vt.ValueType;
 import { TooltipEventArgs, ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
 import { ColorHelper } from "powerbi-visuals-utils-colorutils";
 
-import { interfaces, interactivityUtils, interactivityService } from "powerbi-visuals-utils-interactivityutils";
-import createInteractivityService = interactivityService.createInteractivityService;
-import SelectableDataPoint = interactivityService.SelectableDataPoint;
-import IInteractiveBehavior = interactivityService.IInteractiveBehavior;
-import IInteractivityService = interactivityService.IInteractivityService;
+import { interactivitySelectionService, interactivityBaseService } from 'powerbi-visuals-utils-interactivityutils';
+import createInteractivityService = interactivitySelectionService.createInteractivitySelectionService
+import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
+import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
+import IInteractivityService = interactivityBaseService.IInteractivityService;
 
 import { VisualLayout } from "./visualLayout";
 import { Behavior, BehaviorOptions, getFillOpacity } from "./behavior";
@@ -85,7 +84,6 @@ import {
     DateValue,
     ColumnNames
 } from "./dataInterfaces";
-import { textMeasurementService } from "powerbi-visuals-utils-formattingutils/lib/textMeasurementService";
 
 export interface LineDotChartDataRoles<T> {
     Date?: T;
@@ -109,19 +107,19 @@ export class LineDotChart implements IVisual {
     private static LegendSize: number = 50;
     private static AxisSize: number = 30;
 
-    private root: d3.Selection<d3.BaseType, any, any, any>;
-    private main: d3.Selection<d3.BaseType, any, any, any>;
-    private axes: d3.Selection<d3.BaseType, any, any, any>;
-    private axisX: d3.Selection<d3.BaseType, any, any, any>;
-    private axisY: d3.Selection<d3.BaseType, any, any, any>;
-    private axisY2: d3.Selection<d3.BaseType, any, any, any>;
-    private legends: d3.Selection<d3.BaseType, any, any, any>;
-    private line: d3.Selection<d3.BaseType, any, any, any>;
+    private root: d3.Selection<SVGElement, any, any, any>;
+    private main: d3.Selection<SVGGElement, any, any, any>;
+    private axes: d3.Selection<SVGGElement, any, any, any>;
+    private axisX: d3.Selection<SVGGElement, any, any, any>;
+    private axisY: d3.Selection<SVGGElement, any, any, any>;
+    private axisY2: d3.Selection<SVGGElement, any, any, any>;
+    private legends: d3.Selection<SVGGElement, any, any, any>;
+    private line: d3.Selection<SVGGElement, any, any, any>;
     private xAxisProperties: IAxisProperties;
     private yAxisProperties: IAxisProperties;
     private yAxis2Properties: IAxisProperties;
     private layout: VisualLayout;
-    private interactivityService: IInteractivityService;
+    private interactivityService: IInteractivityService<LineDotPoint>;
     private behavior: IInteractiveBehavior;
     private hostService: IVisualHost;
     private localizationManager: ILocalizationManager;
@@ -328,7 +326,7 @@ export class LineDotChart implements IVisual {
         );
     }
 
-    private clearElement(selection: d3.Selection<d3.BaseType, any, any, any>): void {
+    private clearElement(selection: d3.Selection<SVGGElement, any, any, any>): void {
         selection
             .selectAll("*")
             .remove();
@@ -641,7 +639,7 @@ export class LineDotChart implements IVisual {
         this.axisX.selectAll(LineDotChart.tickText).call(
             AxisHelper.LabelLayoutStrategy.clip,
             this.xAxisProperties.xLabelMaxWidth,
-            TextMeasurementService.svgEllipsis
+            textMeasurementService.svgEllipsis
         );
 
         if (this.settings.misc.isAnimated && this.settings.misc.isStopped) {
@@ -659,16 +657,16 @@ export class LineDotChart implements IVisual {
 
         this.applyAxisSettings();
 
-        let linePathSelection: d3.Selection<d3.BaseType, LineDotPoint[], any, any> = this.line
-            .selectAll(LineDotChart.dotPathText)
+        let linePathSelection: d3.Selection<SVGGElement, LineDotPoint[], any, any> = this.line
+            .selectAll<SVGGElement, any>(LineDotChart.dotPathText)
             .data([this.data.dotPoints]);
 
         linePathSelection
             .exit()
             .remove();
 
-        const lineTipSelection: d3.Selection<d3.BaseType, LineDotPoint[], any, any> = this.line
-            .selectAll("g." + LineDotChart.dotPointsClass)
+        const lineTipSelection: d3.Selection<SVGPathElement, LineDotPoint[], any, any> = this.line
+            .selectAll<SVGPathElement, any>("g." + LineDotChart.dotPointsClass)
             .data([this.data.dotPoints]);
 
         lineTipSelection
@@ -723,11 +721,11 @@ export class LineDotChart implements IVisual {
     private secondPathSelector: ClassAndSelector = createClassAndSelector("secondPath");
 
     private drawPlaybackButtons() {
-        const playBtn: d3.Selection<d3.BaseType, string, any, any> = this.line
-            .selectAll(LineDotChart.gLineDotChartPayBtn)
+        const playBtn: d3.Selection<SVGGElement, string, any, any> = this.line
+            .selectAll<SVGGElement, any>(LineDotChart.gLineDotChartPayBtn)
             .data([""]);
 
-        const playBtnGroup: d3.Selection<d3.BaseType, string, any, any> = playBtn
+        const playBtnGroup: d3.Selection<SVGGElement, string, any, any> = playBtn
             .enter()
             .append("g")
             .merge(playBtn);
@@ -738,8 +736,8 @@ export class LineDotChart implements IVisual {
 
         playBtnGroup.style("opacity", this.settings.play.opacity);
 
-        const circleSelection: d3.Selection<d3.BaseType, any, any, any> = playBtnGroup
-            .selectAll("circle")
+        const circleSelection: d3.Selection<SVGCircleElement, any, any, any> = playBtnGroup
+            .selectAll<SVGCircleElement, any>("circle")
             .data(d => [d]);
 
         const circleSelectionMegred = circleSelection
@@ -760,8 +758,8 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
-        const firstPathSelection: d3.Selection<d3.BaseType, any, any, any> = playBtnGroup
-            .selectAll(this.firstPathSelector.selectorName)
+        const firstPathSelection: d3.Selection<SVGPathElement, any, any, any> = playBtnGroup
+            .selectAll<SVGPathElement, any>(this.firstPathSelector.selectorName)
             .data(d => [d]);
 
         const firstPathSelectionMerged = firstPathSelection
@@ -781,8 +779,8 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
-        const secondPathSelection: d3.Selection<d3.BaseType, any, any, any> = playBtnGroup
-            .selectAll(this.secondPathSelector.selectorName)
+        const secondPathSelection: d3.Selection<SVGPathElement, any, any, any> = playBtnGroup
+            .selectAll<SVGPathElement, any>(this.secondPathSelector.selectorName)
             .data(d => [d]);
 
         const secondPathSelectionMerged = secondPathSelection
@@ -802,8 +800,8 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
-        const rectSelection: d3.Selection<d3.BaseType, any, any, any> = playBtnGroup
-            .selectAll("rect")
+        const rectSelection: d3.Selection<SVGRectElement, any, any, any> = playBtnGroup
+            .selectAll<SVGRectElement, any>("rect")
             .data(d => [d]);
 
         const rectSelectionMerged = rectSelection
@@ -851,7 +849,7 @@ export class LineDotChart implements IVisual {
     private static plotClassName: string = "plot";
     private static lineClip: string = "lineClip";
 
-    private drawLine(linePathSelection: d3.Selection<d3.BaseType, LineDotPoint[], any, any>) {
+    private drawLine(linePathSelection: d3.Selection<SVGGElement, LineDotPoint[], any, any>) {
         const linePathSelectionMerged = linePathSelection
             .enter()
             .append("g")
@@ -860,8 +858,8 @@ export class LineDotChart implements IVisual {
         linePathSelectionMerged
             .classed(LineDotChart.pathClassName, true);
 
-        let pathPlot: d3.Selection<d3.BaseType, LineDotPoint[], any, any> = linePathSelectionMerged
-            .selectAll(LineDotChart.pathPlotClassName)
+        let pathPlot: d3.Selection<SVGPathElement, LineDotPoint[], any, any> = linePathSelectionMerged
+            .selectAll<SVGPathElement, any>(LineDotChart.pathPlotClassName)
             .data(d => [d]);
 
         const pathPlotMerged = pathPlot
@@ -895,8 +893,8 @@ export class LineDotChart implements IVisual {
     private static millisecondsInOneSecond: number = 1000;
 
     private drawClipPath(linePathSelection: d3.Selection<d3.BaseType, any, any, any>) {
-        const clipPath: d3.Selection<d3.BaseType, any, any, any> = linePathSelection
-            .selectAll("clipPath")
+        const clipPath: d3.Selection<SVGClipPathElement, any, any, any> = linePathSelection
+            .selectAll<SVGClipPathElement, any>("clipPath")
             .data(d => [d]);
 
         const clipPathMerged = clipPath
@@ -959,7 +957,7 @@ export class LineDotChart implements IVisual {
     private static pointTransformScaleValue: number = 3.4;
     private static pointDelayCoefficient: number = 1000;
 
-    private drawDots(lineTipSelection) {
+    private drawDots(lineTipSelection: d3.Selection<SVGPathElement, LineDotPoint[], any, any>) {
         const point_time: number = this.settings.misc.isAnimated && !this.settings.misc.isStopped
             ? LineDotChart.pointTime
             : 0;
@@ -976,8 +974,8 @@ export class LineDotChart implements IVisual {
         lineTipSelectionMerged
             .classed(LineDotChart.dotPointsClass, true);
 
-        const dotsSelection: d3.Selection<d3.BaseType, LineDotPoint, any, any> = lineTipSelectionMerged
-            .selectAll("circle." + LineDotChart.pointClassName)
+        const dotsSelection: d3.Selection<SVGCircleElement, LineDotPoint, any, any> = lineTipSelectionMerged
+            .selectAll<SVGCircleElement, LineDotPoint>("circle." + LineDotChart.pointClassName)
             .data(d => d);
 
         const dotsSelectionMerged = dotsSelection.enter()
@@ -1016,8 +1014,8 @@ export class LineDotChart implements IVisual {
                 this.xAxisProperties.scale.range()[1] - this.xAxisProperties.scale.range()[0] - 60
             );
 
-            const lineText: d3.Selection<d3.BaseType, string, any, any> = this.line
-                .selectAll(LineDotChart.textSelector)
+            const lineText: d3.Selection<SVGTextElement, string, any, any> = this.line
+                .selectAll<SVGTextElement, any>(LineDotChart.textSelector)
                 .data([""]);
 
             const lineTextMerged = lineText
@@ -1034,7 +1032,7 @@ export class LineDotChart implements IVisual {
                 .attr("y", LineDotChart.yPosition)
                 .style("fill", this.settings.counteroptions.color)
                 .style("font-size", PixelConverter.toString(PixelConverter.fromPointToPixel(this.settings.counteroptions.textSize)))
-                .call(selection => TextMeasurementService.svgEllipsis(<any>selection.node(), maxTextLength));
+                .call(selection => textMeasurementService.svgEllipsis(<any>selection.node(), maxTextLength));
 
             lineText
                 .exit()
@@ -1103,9 +1101,7 @@ export class LineDotChart implements IVisual {
 
         this.tooltipServiceWrapper.addTooltip<LineDotPoint>(
             dotsSelectionMerged,
-            (tooltipEvent: TooltipEventArgs<LineDotPoint>) => {
-                return this.getTooltipDataItems(tooltipEvent.data);
-            });
+            (dataPoint: LineDotPoint) => this.getTooltipDataItems(dataPoint));
 
         dotsSelection
             .exit()
@@ -1120,13 +1116,11 @@ export class LineDotChart implements IVisual {
                 selection: dotsSelectionMerged,
                 clearCatcher: this.root,
                 hasHighlights: hasHighlights,
+                behavior: this.behavior,
+                dataPoints: this.data.dotPoints,
             };
 
-            this.interactivityService.bind(
-                this.data.dotPoints,
-                this.behavior,
-                behaviorOptions,
-            );
+            this.interactivityService.bind(behaviorOptions);
         }
     }
 
@@ -1174,11 +1168,11 @@ export class LineDotChart implements IVisual {
 
     private static showClassName: string = "show";
 
-    private showDataPoint(data: LineDotPoint, index: number): void {
+    private showDataPoint(data: LineDotPoint): void {
         d3.select(<any>this).classed(LineDotChart.showClassName, true);
     }
 
-    private hideDataPoint(data: LineDotPoint, index: number): void {
+    private hideDataPoint(data: LineDotPoint): void {
         d3.select(<any>this).classed(LineDotChart.showClassName, false);
     }
 

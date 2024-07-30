@@ -35,8 +35,7 @@ import DataViewValueColumn = powerbi.DataViewValueColumn;
 import DataViewValueColumns = powerbi.DataViewValueColumns;
 import PrimitiveValue = powerbi.PrimitiveValue;
 
-import { converterHelper as ConverterHelperModule } from "powerbi-visuals-utils-dataviewutils";
-import converterHelper = ConverterHelperModule.converterHelper;
+import { converterHelper } from "powerbi-visuals-utils-dataviewutils";
 
 export class LineDotChartColumns<T> {
     public static getCategoricalValues(dataView: DataView) {

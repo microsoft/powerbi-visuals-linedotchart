@@ -47,7 +47,6 @@ module.exports = (config: Config) => {
         reporters: [
             "progress",
             "junit",
-            "coverage-istanbul"
         ],
         junitReporter: {
             outputDir: path.join(__dirname, coverageFolder),
@@ -63,7 +62,6 @@ module.exports = (config: Config) => {
             "karma-sourcemap-loader",
             "karma-chrome-launcher",
             "karma-junit-reporter",
-            "karma-coverage-istanbul-reporter"
         ],
         files: [
             "node_modules/jquery/dist/jquery.min.js",
@@ -87,18 +85,6 @@ module.exports = (config: Config) => {
         typescriptPreprocessor: {
             options: tsconfig.compilerOptions
         },
-        coverageIstanbulReporter: {
-            reports: ["html", "lcovonly", "text-summary", "cobertura"],
-            dir: path.join(__dirname, coverageFolder),
-            'report-config': {
-                html: {
-                    subdir: 'html-report'
-                }
-            },
-            combineBrowserReports: true,
-            fixWebpackSourcePaths: true,
-            verbose: false
-        },
         coverageReporter: {
             dir: path.join(__dirname, coverageFolder),
             reporters: [
@@ -110,6 +96,7 @@ module.exports = (config: Config) => {
                 { type: 'cobertura', subdir: '.', file: 'cobertura-coverage.xml' },
                 { type: 'lcovonly', subdir: '.', file: 'report-lcovonly.txt' },
                 { type: 'text-summary', subdir: '.', file: 'text-summary.txt' },
+                { type: 'json', subdir: '.', file: 'coverage-final.json' }
             ]
         },
         mime: {

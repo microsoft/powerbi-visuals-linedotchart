@@ -24,7 +24,6 @@
  *  THE SOFTWARE.
  */
 
-import * as powerbi from "powerbi-visuals-api";
 import * as _ from "lodash";
 
 import { RgbColor, parseColorString } from "powerbi-visuals-utils-colorutils";

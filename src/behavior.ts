@@ -23,13 +23,13 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-import powerbi from "powerbi-visuals-api";
-import * as d3 from "d3";
+import { Selection as d3Selection } from "d3-selection"
 
-import { interactivityService } from "powerbi-visuals-utils-interactivityutils";
-import ISelectionHandler = interactivityService.ISelectionHandler;
-import SelectableDataPoint = interactivityService.SelectableDataPoint;
-import IInteractiveBehavior = interactivityService.IInteractiveBehavior;
+import { interactivityBaseService, interactivitySelectionService } from "powerbi-visuals-utils-interactivityutils";
+import ISelectionHandler = interactivityBaseService.ISelectionHandler;
+import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
+import IBehaviorOptions = interactivityBaseService.IBehaviorOptions;
+import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
 
 import { LineDotPoint } from "./dataInterfaces";
 
@@ -52,9 +52,9 @@ export function getFillOpacity(
     return dot.opacity;
 }
 
-export interface BehaviorOptions {
-    selection: d3.Selection<any, SelectableDataPoint, any, any>;
-    clearCatcher: d3.Selection<any, any, any, any>;
+export interface BehaviorOptions extends IBehaviorOptions<LineDotPoint> {
+    selection: d3Selection<any, SelectableDataPoint, any, any>;
+    clearCatcher: d3Selection<any, any, any, any>;
     hasHighlights: boolean;
 }
 
@@ -69,9 +69,7 @@ export class Behavior implements IInteractiveBehavior {
 
         this.options = options;
 
-        selection.on("click", (dataPoint: SelectableDataPoint) => {
-            const event: MouseEvent = d3.event as MouseEvent;
-
+        selection.on("click", (event: MouseEvent, dataPoint: SelectableDataPoint) => {
             event.stopPropagation();
 
             selectionHandler.handleSelection(dataPoint, event.ctrlKey);

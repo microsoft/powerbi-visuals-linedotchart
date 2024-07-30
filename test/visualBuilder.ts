@@ -25,6 +25,7 @@
  */
 
 import powerbi from "powerbi-visuals-api";
+import jQuery from "jquery";
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import { VisualBuilderBase } from "powerbi-visuals-utils-testutils";
@@ -45,7 +46,7 @@ export class LineDotChartBuilder extends VisualBuilderBase<VisualClass> {
     }
 
     public get mainElement(): JQuery {
-        return this.element.children(".lineDotChart");
+        return jQuery(this.element).children(".lineDotChart");
     }
 
     public get line() {
