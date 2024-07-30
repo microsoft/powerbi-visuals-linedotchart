@@ -23,7 +23,7 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-import { Selection as d3Selection } from "d3-selection"
+import { Selection } from "d3-selection"
 
 import { interactivityBaseService, interactivitySelectionService } from "powerbi-visuals-utils-interactivityutils";
 import ISelectionHandler = interactivityBaseService.ISelectionHandler;
@@ -53,8 +53,8 @@ export function getFillOpacity(
 }
 
 export interface BehaviorOptions extends IBehaviorOptions<LineDotPoint> {
-    selection: d3Selection<any, SelectableDataPoint, any, any>;
-    clearCatcher: d3Selection<any, any, any, any>;
+    selection: Selection<any, SelectableDataPoint, any, any>;
+    clearCatcher: Selection<any, any, any, any>;
     hasHighlights: boolean;
 }
 

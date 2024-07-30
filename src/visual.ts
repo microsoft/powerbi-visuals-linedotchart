@@ -26,7 +26,12 @@
 
 import "./../style/lineDotChart.less";
 
-import * as d3 from "d3";
+import { Selection, select, BaseType } from "d3-selection";
+import { extent } from "d3-array";
+import { axisRight, AxisDomain } from "d3-axis";
+import { line, Line } from "d3-shape";
+import { easeLinear, easeElastic } from "d3-ease";
+import { timerFlush } from "d3-timer";
 import * as _ from "lodash";
 import powerbi from "powerbi-visuals-api";
 
@@ -107,14 +112,14 @@ export class LineDotChart implements IVisual {
     private static LegendSize: number = 50;
     private static AxisSize: number = 30;
 
-    private root: d3.Selection<SVGElement, any, any, any>;
-    private main: d3.Selection<SVGGElement, any, any, any>;
-    private axes: d3.Selection<SVGGElement, any, any, any>;
-    private axisX: d3.Selection<SVGGElement, any, any, any>;
-    private axisY: d3.Selection<SVGGElement, any, any, any>;
-    private axisY2: d3.Selection<SVGGElement, any, any, any>;
-    private legends: d3.Selection<SVGGElement, any, any, any>;
-    private line: d3.Selection<SVGGElement, any, any, any>;
+    private root: Selection<SVGElement, any, any, any>;
+    private main: Selection<SVGGElement, any, any, any>;
+    private axes: Selection<SVGGElement, any, any, any>;
+    private axisX: Selection<SVGGElement, any, any, any>;
+    private axisY: Selection<SVGGElement, any, any, any>;
+    private axisY2: Selection<SVGGElement, any, any, any>;
+    private legends: Selection<SVGGElement, any, any, any>;
+    private line: Selection<SVGGElement, any, any, any>;
     private xAxisProperties: IAxisProperties;
     private yAxisProperties: IAxisProperties;
     private yAxis2Properties: IAxisProperties;
@@ -205,7 +210,7 @@ export class LineDotChart implements IVisual {
         this.interactivityService = createInteractivityService(options.host);
         this.behavior = new Behavior();
 
-        this.root = d3.select(options.element)
+        this.root = select(options.element)
             .append("svg")
             .classed(LineDotChart.Identity.className, true);
 
@@ -326,7 +331,7 @@ export class LineDotChart implements IVisual {
         );
     }
 
-    private clearElement(selection: d3.Selection<SVGGElement, any, any, any>): void {
+    private clearElement(selection: Selection<SVGGElement, any, any, any>): void {
         selection
             .selectAll("*")
             .remove();
@@ -386,7 +391,7 @@ export class LineDotChart implements IVisual {
             cultureSelector: visualHost.locale
         });
 
-        let extentValues: [number, number] = d3.extent(categoricalValues.Values),
+        let extentValues: [number, number] = extent(categoricalValues.Values),
             yMinValue: number = extentValues[0],
             yMaxValue: number = extentValues[1],
             dotPoints: LineDotPoint[] = [],
@@ -473,7 +478,7 @@ export class LineDotChart implements IVisual {
         let effectiveWidth: number = Math.max(0, this.layout.viewportIn.width - LineDotChart.LegendSize - LineDotChart.AxisSize);
         let effectiveHeight: number = Math.max(0, this.layout.viewportIn.height - LineDotChart.LegendSize);
 
-        const extentDate: [number, number] = d3.extent(
+        const extentDate: [number, number] = extent(
             this.data.dateValues,
             (dateValue: DateValue) => dateValue.value);
 
@@ -624,9 +629,9 @@ export class LineDotChart implements IVisual {
             if (this.settings.yAxis.isDuplicated) {
                 const scale: any = this.yAxis2Properties.scale;
                 const ticksCount: number = this.yAxis2Properties.values.length;
-                const format: any = (domainValue: d3.AxisDomain, value: any) => this.yAxis2Properties.values[value];
+                const format: any = (domainValue: AxisDomain, value: any) => this.yAxis2Properties.values[value];
 
-                let axis = d3.axisRight(scale);
+                let axis = axisRight(scale);
                 this.axisY2.call(axis.tickArguments([ticksCount]).tickFormat(format));
             } else {
                 this.clearElement(this.axisY2);
@@ -657,7 +662,7 @@ export class LineDotChart implements IVisual {
 
         this.applyAxisSettings();
 
-        let linePathSelection: d3.Selection<SVGGElement, LineDotPoint[], any, any> = this.line
+        let linePathSelection: Selection<SVGGElement, LineDotPoint[], any, any> = this.line
             .selectAll<SVGGElement, any>(LineDotChart.dotPathText)
             .data([this.data.dotPoints]);
 
@@ -665,7 +670,7 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
-        const lineTipSelection: d3.Selection<SVGPathElement, LineDotPoint[], any, any> = this.line
+        const lineTipSelection: Selection<SVGPathElement, LineDotPoint[], any, any> = this.line
             .selectAll<SVGPathElement, any>("g." + LineDotChart.dotPointsClass)
             .data([this.data.dotPoints]);
 
@@ -721,11 +726,11 @@ export class LineDotChart implements IVisual {
     private secondPathSelector: ClassAndSelector = createClassAndSelector("secondPath");
 
     private drawPlaybackButtons() {
-        const playBtn: d3.Selection<SVGGElement, string, any, any> = this.line
+        const playBtn: Selection<SVGGElement, string, any, any> = this.line
             .selectAll<SVGGElement, any>(LineDotChart.gLineDotChartPayBtn)
             .data([""]);
 
-        const playBtnGroup: d3.Selection<SVGGElement, string, any, any> = playBtn
+        const playBtnGroup: Selection<SVGGElement, string, any, any> = playBtn
             .enter()
             .append("g")
             .merge(playBtn);
@@ -736,7 +741,7 @@ export class LineDotChart implements IVisual {
 
         playBtnGroup.style("opacity", this.settings.play.opacity);
 
-        const circleSelection: d3.Selection<SVGCircleElement, any, any, any> = playBtnGroup
+        const circleSelection: Selection<SVGCircleElement, any, any, any> = playBtnGroup
             .selectAll<SVGCircleElement, any>("circle")
             .data(d => [d]);
 
@@ -758,7 +763,7 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
-        const firstPathSelection: d3.Selection<SVGPathElement, any, any, any> = playBtnGroup
+        const firstPathSelection: Selection<SVGPathElement, any, any, any> = playBtnGroup
             .selectAll<SVGPathElement, any>(this.firstPathSelector.selectorName)
             .data(d => [d]);
 
@@ -779,7 +784,7 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
-        const secondPathSelection: d3.Selection<SVGPathElement, any, any, any> = playBtnGroup
+        const secondPathSelection: Selection<SVGPathElement, any, any, any> = playBtnGroup
             .selectAll<SVGPathElement, any>(this.secondPathSelector.selectorName)
             .data(d => [d]);
 
@@ -800,7 +805,7 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
-        const rectSelection: d3.Selection<SVGRectElement, any, any, any> = playBtnGroup
+        const rectSelection: Selection<SVGRectElement, any, any, any> = playBtnGroup
             .selectAll<SVGRectElement, any>("rect")
             .data(d => [d]);
 
@@ -849,8 +854,8 @@ export class LineDotChart implements IVisual {
     private static plotClassName: string = "plot";
     private static lineClip: string = "lineClip";
 
-    private drawLine(linePathSelection: d3.Selection<SVGGElement, LineDotPoint[], any, any>) {
-        const linePathSelectionMerged = linePathSelection
+    private drawLine(linePathSelection: Selection<SVGGElement, LineDotPoint[], any, any>) {
+        const linePathSelectionMerged: Selection<SVGGElement, LineDotPoint[], any, any> = linePathSelection
             .enter()
             .append("g")
             .merge(linePathSelection);
@@ -858,7 +863,7 @@ export class LineDotChart implements IVisual {
         linePathSelectionMerged
             .classed(LineDotChart.pathClassName, true);
 
-        let pathPlot: d3.Selection<SVGPathElement, LineDotPoint[], any, any> = linePathSelectionMerged
+        let pathPlot: Selection<SVGPathElement, LineDotPoint[], any, any> = linePathSelectionMerged
             .selectAll<SVGPathElement, any>(LineDotChart.pathPlotClassName)
             .data(d => [d]);
 
@@ -871,7 +876,7 @@ export class LineDotChart implements IVisual {
             .classed(LineDotChart.plotClassName, true);
 
         // Draw the line
-        const drawLine: d3.Line<LineDotPoint> = d3.line<LineDotPoint>()
+        const drawLine: Line<LineDotPoint> = line<LineDotPoint>()
             .x((dataPoint: LineDotPoint) => {
                 return this.xAxisProperties.scale(dataPoint.dateValue.value);
             })
@@ -892,8 +897,8 @@ export class LineDotChart implements IVisual {
     private static zeroY: number = 0;
     private static millisecondsInOneSecond: number = 1000;
 
-    private drawClipPath(linePathSelection: d3.Selection<d3.BaseType, any, any, any>) {
-        const clipPath: d3.Selection<SVGClipPathElement, any, any, any> = linePathSelection
+    private drawClipPath(linePathSelection: Selection<BaseType, any, any, any>) {
+        const clipPath: Selection<SVGClipPathElement, any, any, any> = linePathSelection
             .selectAll<SVGClipPathElement, any>("clipPath")
             .data(d => [d]);
 
@@ -922,7 +927,7 @@ export class LineDotChart implements IVisual {
                 .attr("height", this.layout.viewportIn.height)
                 .interrupt()
                 .transition()
-                .ease(d3.easeLinear)
+                .ease(easeLinear)
                 .duration(this.animationDuration * LineDotChart.millisecondsInOneSecond)
                 .attr("x", rectSettings.endX)
                 .attr("width", rectSettings.endWidth);
@@ -957,7 +962,7 @@ export class LineDotChart implements IVisual {
     private static pointTransformScaleValue: number = 3.4;
     private static pointDelayCoefficient: number = 1000;
 
-    private drawDots(lineTipSelection: d3.Selection<SVGPathElement, LineDotPoint[], any, any>) {
+    private drawDots(lineTipSelection: Selection<SVGPathElement, LineDotPoint[], any, any>) {
         const point_time: number = this.settings.misc.isAnimated && !this.settings.misc.isStopped
             ? LineDotChart.pointTime
             : 0;
@@ -974,7 +979,7 @@ export class LineDotChart implements IVisual {
         lineTipSelectionMerged
             .classed(LineDotChart.dotPointsClass, true);
 
-        const dotsSelection: d3.Selection<SVGCircleElement, LineDotPoint, any, any> = lineTipSelectionMerged
+        const dotsSelection: Selection<SVGCircleElement, LineDotPoint, any, any> = lineTipSelectionMerged
             .selectAll<SVGCircleElement, LineDotPoint>("circle." + LineDotChart.pointClassName)
             .data(d => d);
 
@@ -1014,7 +1019,7 @@ export class LineDotChart implements IVisual {
                 this.xAxisProperties.scale.range()[1] - this.xAxisProperties.scale.range()[0] - 60
             );
 
-            const lineText: d3.Selection<SVGTextElement, string, any, any> = this.line
+            const lineText: Selection<SVGTextElement, string, any, any> = this.line
                 .selectAll<SVGTextElement, any>(LineDotChart.textSelector)
                 .data([""]);
 
@@ -1065,7 +1070,7 @@ export class LineDotChart implements IVisual {
                 })
                 .duration(point_time)
                 .delay((_, i: number) => this.pointDelay(this.data.dotPoints, i, this.animationDuration))
-                .ease(d3.easeLinear)
+                .ease(easeLinear)
                 .attr("transform", (dataPoint: LineDotPoint) => {
                     return SVGManipulations.translateAndScale(
                         this.xAxisProperties.scale(dataPoint.dateValue.value),
@@ -1077,7 +1082,7 @@ export class LineDotChart implements IVisual {
                 .delay((_, i: number) => {
                     return (this.pointDelay(this.data.dotPoints, i, this.animationDuration) + point_time) / LineDotChart.pointDelayCoefficient;
                 })
-                .ease(d3.easeElastic)
+                .ease(easeElastic)
                 .attr("transform", (dataPoint: LineDotPoint) => {
                     return SVGManipulations.translateAndScale(
                         this.xAxisProperties.scale(dataPoint.dateValue.value),
@@ -1137,14 +1142,14 @@ export class LineDotChart implements IVisual {
             .duration(0)
             .delay(0);
 
-        d3.timerFlush();
+        timerFlush();
     }
 
     private static textSelector: string = "text.text";
     private static widthMargin: number = 85;
     private static yPosition: number = 30;
 
-    private updateLineText(textSelector: d3.Selection<d3.BaseType, any, any, any>, text?: string): void {
+    private updateLineText(textSelector: Selection<BaseType, any, any, any>, text?: string): void {
         textSelector.text(d => text);
     }
 
@@ -1169,11 +1174,11 @@ export class LineDotChart implements IVisual {
     private static showClassName: string = "show";
 
     private showDataPoint(data: LineDotPoint): void {
-        d3.select(<any>this).classed(LineDotChart.showClassName, true);
+        select(<any>this).classed(LineDotChart.showClassName, true);
     }
 
     private hideDataPoint(data: LineDotPoint): void {
-        d3.select(<any>this).classed(LineDotChart.showClassName, false);
+        select(<any>this).classed(LineDotChart.showClassName, false);
     }
 
     public getTooltipDataItems(dataPoint: LineDotPoint): VisualTooltipDataItem[] {
@@ -1201,7 +1206,7 @@ export class LineDotChart implements IVisual {
     }
 
     private renderLegends(): void {
-        const legendSelection: d3.Selection<d3.BaseType, Legend, any, any> = this.legends
+        const legendSelection: Selection<BaseType, Legend, any, any> = this.legends
             .selectAll(LineDotChart.Legend.selectorName)
             .data(this.generateAxisLabels());
 
