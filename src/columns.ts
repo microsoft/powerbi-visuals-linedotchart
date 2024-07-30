@@ -53,7 +53,7 @@ export class LineDotChartColumns<T> {
                 .filter(x => x.source.roles && x.source.roles[i])
                 .map(x => x.values.map(y => {
                     if (_.isString(y)) {
-                        let date: Date = new Date(y);
+                        const date: Date = new Date(y);
                         if (isNaN(date.getTime())) {
                             return y;
                         }

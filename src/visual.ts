@@ -69,19 +69,18 @@ import createClassAndSelector = SVGUtil.CssConstants.createClassAndSelector;
 import { valueType as vt, pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutils";
 import valueType = vt.ValueType;
 
-import { TooltipEventArgs, ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
+import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
 import { ColorHelper } from "powerbi-visuals-utils-colorutils";
 
 import { interactivitySelectionService, interactivityBaseService } from 'powerbi-visuals-utils-interactivityutils';
 import createInteractivityService = interactivitySelectionService.createInteractivitySelectionService
-import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
 import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
 import IInteractivityService = interactivityBaseService.IInteractivityService;
 
 import { VisualLayout } from "./visualLayout";
 import { Behavior, BehaviorOptions, getFillOpacity } from "./behavior";
 import { LineDotChartColumns } from "./columns";
-import { LineSettings, Settings } from "./settings";
+import { Settings } from "./settings";
 import {
     Legend,
     LineDotChartViewModel,
@@ -129,6 +128,7 @@ export class LineDotChart implements IVisual {
     private hostService: IVisualHost;
     private localizationManager: ILocalizationManager;
 
+    private dataView: DataView;
     public data: LineDotChartViewModel;
 
     private get settings(): Settings {
@@ -172,7 +172,7 @@ export class LineDotChart implements IVisual {
                 return data.dateValues[index].label;
             }
 
-            let formatted: string = data.dataValueFormatter.format(index); // format to percent or unit str if needed
+            const formatted: string = data.dataValueFormatter.format(index); // format to percent or unit str if needed
 
             if (formatted === index.toString()) {
                 return index; // number return preferred
@@ -238,11 +238,44 @@ export class LineDotChart implements IVisual {
     }
 
     public update(options: VisualUpdateOptions) {
-        if (!options
-            || !options.dataViews
-            || !options.dataViews[0]
-        ) {
-            return;
+        try {
+            this.events.renderingStarted(options);
+
+            if (!options
+                || !options.dataViews
+                || !options.dataViews[0]
+            ) {
+                return;
+            }
+
+            this.dataView = options.dataViews[0];
+            this.layout.viewport = options.viewport;
+
+            const data: LineDotChartViewModel = this.converter(
+                this.dataView,
+                this.hostService,
+                this.localizationManager,
+                this.colorHelper,
+            );
+
+            if (!data || _.isEmpty(data.dotPoints)) {
+                this.clear();
+                return;
+            }
+
+            this.data = data;
+
+            if (this.interactivityService) {
+                this.interactivityService.applySelectionStateToData(this.data.dotPoints);
+            }
+
+            this.resize();
+            this.calculateAxes();
+            this.draw();
+
+            this.events.renderingFinished(options);
+        } catch (ex) {
+            this.events.renderingFailed(options, JSON.stringify(ex));
         }
 
         this.layout.viewport = options.viewport;
@@ -304,8 +337,8 @@ export class LineDotChart implements IVisual {
             .remove();
     }
 
-    public setIsStopped(isStopped: Boolean): void {
-        let objects: VisualObjectInstancesToPersist = {
+    public setIsStopped(isStopped: boolean): void {
+        const objects: VisualObjectInstancesToPersist = {
             merge: [
                 <VisualObjectInstance>{
                     objectName: "misc",
@@ -336,13 +369,13 @@ export class LineDotChart implements IVisual {
     private static dateMaxCutter: number = .05;
     private static makeSomeSpaceForCounter: number = .10;
 
-    private static converter(
+    private converter(
         dataView: DataView,
         visualHost: IVisualHost,
         localizationManager: ILocalizationManager,
         colorHelper: ColorHelper,
     ): LineDotChartViewModel {
-        let categorical: LineDotChartColumns<DataViewCategoryColumn & DataViewValueColumn[]>
+        const categorical: LineDotChartColumns<DataViewCategoryColumn & DataViewValueColumn[]>
             = LineDotChartColumns.getCategoricalColumns(dataView);
 
         if (!categorical
@@ -376,30 +409,61 @@ export class LineDotChart implements IVisual {
         );
 
         if (counterValues && counterValues.length > 0) {
-            let fValue: any = counterValues[0];
+            const fValue: any = counterValues[0];
             settings.isCounterDateTime.isCounterDateTime = fValue.getDate ? true : false;
         }
 
-        let hasHighlights: boolean = !!(categorical.Values.length > 0 && valuesColumn.highlights);
+        const hasHighlights: boolean = !!(categorical.Values.length > 0 && valuesColumn.highlights);
 
         const dateColumnFormatter = valueFormatter.create({
             format: valueFormatter.getFormatStringByColumn(categorical.Date.source, true) || categorical.Date.source.format,
             cultureSelector: visualHost.locale
         });
 
-        let extentValues: [number, number] = extent(categoricalValues.Values),
-            yMinValue: number = extentValues[0],
-            yMaxValue: number = extentValues[1],
-            dotPoints: LineDotPoint[] = [],
-            sumOfValues: number = 0;
+        const { sumOfValues, yMinValue, dotPoints, isOrdinal, dateValues, yMaxValue }: { sumOfValues: number; yMinValue: number; dotPoints: LineDotPoint[]; isOrdinal: boolean; dateValues: DateValue[]; yMaxValue: number; } = LineDotChart.calculateLineDotChartValues(categoricalValues, categoryType, visualHost, categorical, hasHighlights, valuesColumn, settings, counterValues);
 
-        const dateValues: DateValue[] = [],
-            isOrdinal: boolean = AxisHelper.isOrdinal(categoryType),
-            isDateTime: boolean = AxisHelper.isDateTime(categoryType);
+        // make some space for counter + 25%
+        const sumOfValuesSpaced = sumOfValues + (sumOfValues - yMinValue) * LineDotChart.makeSomeSpaceForCounter;
+
+        const columnNames: ColumnNames = {
+            category: LineDotChart.getDisplayName(categorical.Date),
+            values: LineDotChart.getDisplayName(valuesColumn)
+        };
+
+        const dataValueFormatter: IValueFormatter = valueFormatter.create({
+            format: valueFormatter.getFormatStringByColumn(valuesColumn.source, true) || "#",
+            cultureSelector: visualHost.locale
+        });
+
+        return {
+            columnNames,
+            dotPoints,
+            settings,
+            dataValueFormatter,
+            dateColumnFormatter,
+            isOrdinal,
+            dateValues,
+            yMinValue,
+            yMaxValue,
+            sumOfValues: sumOfValuesSpaced,
+            hasHighlights,
+            dateMetadataColumn: categorical.Date.source,
+            valuesMetadataColumn: valuesColumn.source
+        };
+    }
+
+    private static calculateLineDotChartValues(categoricalValues: LineDotChartColumns<any[]>, categoryType: vt.ValueType, visualHost: IVisualHost, categorical: LineDotChartColumns<powerbi.DataViewCategoryColumn & powerbi.DataViewValueColumn[]>, hasHighlights: boolean, valuesColumn: powerbi.DataViewValueColumn, settings: Settings, counterValues: powerbi.PrimitiveValue[]) {
+        const extentValues: [number, number] = extent(categoricalValues.Values);
+        const yMinValue: number = extentValues[0];
+        const yMaxValue: number = extentValues[1];
+        const dotPoints: LineDotPoint[] = [];
+        let sumOfValues: number = 0;
+
+        const dateValues: DateValue[] = [], isOrdinal: boolean = AxisHelper.isOrdinal(categoryType), isDateTime: boolean = AxisHelper.isDateTime(categoryType);
 
         for (let valueIndex: number = 0, length: number = categoricalValues.Date.length; valueIndex < length; valueIndex++) {
             const value: number = categoricalValues.Values[valueIndex] || 0;
-            let dateValue: DateValue = new DateValue(categoricalValues.Date[valueIndex], null);
+            const dateValue: DateValue = new DateValue(categoricalValues.Date[valueIndex], null);
 
             if (isDateTime) {
                 dateValue.value = categoricalValues.Date[valueIndex].getTime();
@@ -431,34 +495,7 @@ export class LineDotChart implements IVisual {
             });
         }
 
-        // make some space for counter + 25%
-        sumOfValues = sumOfValues + (sumOfValues - yMinValue) * LineDotChart.makeSomeSpaceForCounter;
-
-        const columnNames: ColumnNames = {
-            category: LineDotChart.getDisplayName(categorical.Date),
-            values: LineDotChart.getDisplayName(valuesColumn)
-        };
-
-        const dataValueFormatter: IValueFormatter = valueFormatter.create({
-            format: valueFormatter.getFormatStringByColumn(valuesColumn.source, true) || "#",
-            cultureSelector: visualHost.locale
-        });
-
-        return {
-            columnNames,
-            dotPoints,
-            settings,
-            dataValueFormatter,
-            dateColumnFormatter,
-            isOrdinal,
-            dateValues,
-            yMinValue,
-            yMaxValue,
-            sumOfValues,
-            hasHighlights,
-            dateMetadataColumn: categorical.Date.source,
-            valuesMetadataColumn: valuesColumn.source
-        };
+        return { sumOfValues, yMinValue, dotPoints, isOrdinal, dateValues, yMaxValue };
     }
 
     private static getDisplayName(column: DataViewCategoricalColumn): string {
@@ -471,21 +508,21 @@ export class LineDotChart implements IVisual {
     private static xLabelTickSize: number = 3.2;
 
     private calculateAxes() {
-        let effectiveWidth: number = Math.max(0, this.layout.viewportIn.width - LineDotChart.LegendSize - LineDotChart.AxisSize);
-        let effectiveHeight: number = Math.max(0, this.layout.viewportIn.height - LineDotChart.LegendSize);
+        const effectiveWidth: number = Math.max(0, this.layout.viewportIn.width - LineDotChart.LegendSize - LineDotChart.AxisSize);
+        const effectiveHeight: number = Math.max(0, this.layout.viewportIn.height - LineDotChart.LegendSize);
 
         const extentDate: [number, number] = extent(
             this.data.dateValues,
             (dateValue: DateValue) => dateValue.value);
 
-        let minDate: number = extentDate[0],
+        const minDate: number = extentDate[0],
             maxDate: number = extentDate[1] + (extentDate[1] - extentDate[0]) * LineDotChart.dateMaxCutter;
 
         this.xAxisProperties = AxisHelper.createAxis({
             pixelSpan: effectiveWidth,
             dataDomain: !this.data.isOrdinal
                 ? [minDate, maxDate]
-                : this.data.dateValues.map((dateValue: DateValue, index: number) => { return dateValue.value; }),
+                : this.data.dateValues.map((dateValue: DateValue) => { return dateValue.value; }),
             metaDataColumn: this.data.dateMetadataColumn,
             formatString: null,
             outerPadding: LineDotChart.outerPadding,
@@ -627,7 +664,7 @@ export class LineDotChart implements IVisual {
                 const ticksCount: number = this.yAxis2Properties.values.length;
                 const format: any = (domainValue: AxisDomain, value: any) => this.yAxis2Properties.values[value];
 
-                let axis = axisRight(scale);
+                const axis = axisRight(scale);
                 this.axisY2.call(axis.tickArguments([ticksCount]).tickFormat(format));
             } else {
                 this.clearElement(this.axisY2);
@@ -658,7 +695,7 @@ export class LineDotChart implements IVisual {
 
         this.applyAxisSettings();
 
-        let linePathSelection: Selection<SVGGElement, LineDotPoint[], any, any> = this.line
+        const linePathSelection: Selection<SVGGElement, LineDotPoint[], any, any> = this.line
             .selectAll<SVGGElement, any>(LineDotChart.dotPathText)
             .data([this.data.dotPoints]);
 
@@ -674,7 +711,7 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
-        let linePathSelectionMerged = this.drawLine(linePathSelection);
+        const linePathSelectionMerged = this.drawLine(linePathSelection);
         this.drawClipPath(linePathSelectionMerged);
 
         this.drawDots(lineTipSelection);
@@ -689,22 +726,22 @@ export class LineDotChart implements IVisual {
         if (this.settings.xAxis.show === true) {
             xColor = this.settings.xAxis.color;
             xFontSize = PixelConverter.fromPoint(this.settings.xAxis.textSize);
-            this.axisX.selectAll("line").style("stroke", function (d, i) { return xColor; });
-            this.axisX.selectAll("path").style("stroke", function (d, i) { return xColor; });
-            this.axisX.selectAll("text").style("fill", function (d, i) { return xColor; }).style("font-size", xFontSize);
+            this.axisX.selectAll("line").style("stroke", xColor);
+            this.axisX.selectAll("path").style("stroke", xColor);
+            this.axisX.selectAll("text").style("fill", xColor).style("font-size", xFontSize);
         }
 
         if (this.settings.yAxis.show === true) {
             yColor = this.settings.yAxis.color;
             yFontSize = PixelConverter.fromPoint(this.settings.yAxis.textSize);
-            this.axisY.selectAll("line").style("stroke", function (d, i) { return yColor; });
-            this.axisY.selectAll("path").style("stroke", function (d, i) { return yColor; });
-            this.axisY.selectAll("text").style("fill", function (d, i) { return yColor; }).style("font-size", yFontSize);
+            this.axisY.selectAll("line").style("stroke", yColor);
+            this.axisY.selectAll("path").style("stroke", yColor);
+            this.axisY.selectAll("text").style("fill", yColor).style("font-size", yFontSize);
 
             if (this.settings.yAxis.isDuplicated) {
-                this.axisY2.selectAll("line").style("stroke", function (d, i) { return yColor; });
-                this.axisY2.selectAll("path").style("stroke", function (d, i) { return yColor; });
-                this.axisY2.selectAll("text").style("fill", function (d, i) { return yColor; }).style("font-size", yFontSize);
+                this.axisY2.selectAll("line").style("stroke", yColor);
+                this.axisY2.selectAll("path").style("stroke", yColor);
+                this.axisY2.selectAll("text").style("fill", yColor).style("font-size", yFontSize);
             }
         }
     }
@@ -859,7 +896,7 @@ export class LineDotChart implements IVisual {
         linePathSelectionMerged
             .classed(LineDotChart.pathClassName, true);
 
-        let pathPlot: Selection<SVGPathElement, LineDotPoint[], any, any> = linePathSelectionMerged
+        const pathPlot: Selection<SVGPathElement, LineDotPoint[], any, any> = linePathSelectionMerged
             .selectAll<SVGPathElement, any>(LineDotChart.pathPlotClassName)
             .data(d => [d]);
 
@@ -1009,6 +1046,34 @@ export class LineDotChart implements IVisual {
                     + dotPoint.dot * (this.settings.dotoptions.dotSizeMax - this.settings.dotoptions.dotSizeMin);
             });
 
+        this.handleDotsTransformation(dotsSelectionMerged, point_time);
+
+        this.tooltipServiceWrapper.addTooltip<LineDotPoint>(
+            dotsSelectionMerged,
+            (dataPoint: LineDotPoint) => this.getTooltipDataItems(dataPoint));
+
+        dotsSelection
+            .exit()
+            .remove();
+
+        lineTipSelection
+            .exit()
+            .remove();
+
+        if (this.interactivityService) {
+            const behaviorOptions: BehaviorOptions = {
+                selection: dotsSelectionMerged,
+                clearCatcher: this.root,
+                hasHighlights: hasHighlights,
+                behavior: this.behavior,
+                dataPoints: this.data.dotPoints,
+            };
+
+            this.interactivityService.bind(behaviorOptions);
+        }
+    }
+
+    private handleDotsTransformation(dotsSelectionMerged: Selection<SVGCircleElement, LineDotPoint, any, any>, point_time: number) {
         if (this.settings.misc.isAnimated) {
             const maxTextLength: number = Math.min(
                 350,
@@ -1099,30 +1164,6 @@ export class LineDotChart implements IVisual {
                 .selectAll(LineDotChart.textSelector)
                 .remove();
         }
-
-        this.tooltipServiceWrapper.addTooltip<LineDotPoint>(
-            dotsSelectionMerged,
-            (dataPoint: LineDotPoint) => this.getTooltipDataItems(dataPoint));
-
-        dotsSelection
-            .exit()
-            .remove();
-
-        lineTipSelection
-            .exit()
-            .remove();
-
-        if (this.interactivityService) {
-            const behaviorOptions: BehaviorOptions = {
-                selection: dotsSelectionMerged,
-                clearCatcher: this.root,
-                hasHighlights: hasHighlights,
-                behavior: this.behavior,
-                dataPoints: this.data.dotPoints,
-            };
-
-            this.interactivityService.bind(behaviorOptions);
-        }
     }
 
     private get animationDuration(): number {
@@ -1146,7 +1187,7 @@ export class LineDotChart implements IVisual {
     private static yPosition: number = 30;
 
     private updateLineText(textSelector: Selection<BaseType, any, any, any>, text?: string): void {
-        textSelector.text(d => text);
+        textSelector.text(text);
     }
 
     private pointDelay(points: LineDotPoint[], num: number, animation_duration: number): number {
@@ -1169,11 +1210,11 @@ export class LineDotChart implements IVisual {
 
     private static showClassName: string = "show";
 
-    private showDataPoint(data: LineDotPoint): void {
+    private showDataPoint(): void {
         select(<any>this).classed(LineDotChart.showClassName, true);
     }
 
-    private hideDataPoint(data: LineDotPoint): void {
+    private hideDataPoint(): void {
         select(<any>this).classed(LineDotChart.showClassName, false);
     }
 

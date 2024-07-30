@@ -109,7 +109,7 @@ export class VisualLayout {
 
     private setUpdateObject<T>(object: T, setObjectFn: (T) => void, beforeUpdateFn?: (T) => void): void {
         object = _.clone(object);
-        setObjectFn(VisualLayout.createNotifyChangedObject(object, o => {
+        setObjectFn(VisualLayout.createNotifyChangedObject((object: T) => {
             if (beforeUpdateFn) beforeUpdateFn(object);
             this.update();
         }));
@@ -118,11 +118,16 @@ export class VisualLayout {
         this.update();
     }
 
-    private static createNotifyChangedObject<T>(object: T, objectChanged: (o?: T, key?: string) => void): T {
-        let result: T = <any>{};
+    private static createNotifyChangedObject<T>(object: T, objectChanged?: (o?: T, key?: string) => void): T {
+        const result: T = <any>{};
         _.keys(object).forEach(key => Object.defineProperty(result, key, {
             get: () => object[key],
-            set: (value) => { object[key] = value; objectChanged(object, key); },
+            set: (value) => {
+                object[key] = value;
+                if (objectChanged) {
+                    objectChanged(object, key);
+                }
+            },
             enumerable: true,
             configurable: true
         }));
