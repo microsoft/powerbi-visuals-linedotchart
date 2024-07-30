@@ -191,10 +191,6 @@ export class LineDotChart implements IVisual {
     private colorHelper: ColorHelper;
 
     constructor(options: VisualConstructorOptions) {
-        if (window.location !== window.parent.location) {
-            require("core-js/stable");
-        }
-
         this.tooltipServiceWrapper = createTooltipServiceWrapper(
             options.host.tooltipService,
             options.element

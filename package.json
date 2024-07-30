@@ -22,7 +22,6 @@
     "url": "git+https://github.com/Microsoft/PowerBI-visuals-linedotchart.git"
   },
   "dependencies": {
-    "core-js": "^3.37.1",
     "d3-array": "^3.2.4",
     "d3-axis": "^3.0.0",
     "d3-ease": "^3.0.1",
