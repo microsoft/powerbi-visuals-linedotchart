@@ -1197,7 +1197,7 @@ export class LineDotChart implements IVisual {
         select(<any>this).classed(LineDotChart.showClassName, false);
     }
 
-    public getTooltipDataItems(dataPoint: LineDotPoint): VisualTooltipDataItem[] {
+    public getTooltipDataItems(dataPoint?: LineDotPoint): VisualTooltipDataItem[] {
         if (!dataPoint) {
             return [];
         }

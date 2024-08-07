@@ -34,12 +34,10 @@ const testRecursivePath = "test/visualTest.ts";
 const srcOriginalRecursivePath = "src/**/*.ts";
 const coverageFolder = "coverage";
 
-process.env.CHROME_BIN = require("puppeteer").executablePath();
+process.env.CHROME_BIN = require("playwright-chromium").chromium.executablePath();
 
-import { Config, ConfigOptions } from "karma";
-
-module.exports = (config: Config) => {
-    config.set(<ConfigOptions>{
+module.exports = (config) => {
+    config.set({
         browserNoActivityTimeout: 100000,
         browsers: ["ChromeHeadless"],
         colors: true,
@@ -96,7 +94,7 @@ module.exports = (config: Config) => {
                 { type: 'cobertura', subdir: '.', file: 'cobertura-coverage.xml' },
                 { type: 'lcovonly', subdir: '.', file: 'report-lcovonly.txt' },
                 { type: 'text-summary', subdir: '.', file: 'text-summary.txt' },
-                { type: 'json', subdir: '.', file: 'coverage-final.json' }
+                // { type: 'json', subdir: '.', file: 'coverage-final.json' }
             ]
         },
         mime: {

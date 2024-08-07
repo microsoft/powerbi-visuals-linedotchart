@@ -25,7 +25,7 @@
  */
 
 import powerbi from "powerbi-visuals-api";
-import jQuery from "jquery";
+import * as jQuery from "jquery";
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import { VisualBuilderBase } from "powerbi-visuals-utils-testutils";

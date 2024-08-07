@@ -269,7 +269,7 @@ describe("LineDotChartTests", () => {
                 };
                 visualBuilder.updateFlushAllD3Transitions(dataView);
                 visualBuilder.dots.toArray().map($).forEach(e =>
-                    assertColorsMatch(e.attr('fill'), color));
+                    assertColorsMatch(e.attr('fill')!, color));
             });
             it("opacity", () => {
                 let color: string = getRandomHexColor();
@@ -281,7 +281,10 @@ describe("LineDotChartTests", () => {
                     }
                 };
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                dots.forEach(e => assertColorsMatch(e.attr('fill'), color) && assertColorsMatch(e.css('opacity'), color));
+                dots.forEach(e => {
+                    assertColorsMatch(e.attr('fill')!, color);
+                    assertColorsMatch(e.css('opacity'), color);
+                });
             });
         });
 
@@ -462,7 +465,7 @@ describe("LineDotChartTests", () => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
                     const dots: JQuery<any>[] = visualBuilder.dots.toArray().map($);
 
-                    expect(isColorAppliedToElements(dots, null, "fill"));
+                    expect(isColorAppliedToElements(dots, undefined, "fill"));
 
                     done();
                 });
