@@ -6,6 +6,7 @@
 * Add CI/CD and CodeQL
 * Add Rendering API support
 * Fix less-loader options, fix running tests, migrate from puppeteer to playwright-chromium
+* Migrate to new formatting model
 
 ## 2.0.3
 * Fixed ticks formatting of fractional numbers

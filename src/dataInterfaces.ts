@@ -25,8 +25,6 @@
  */
 
 import powerbi from "powerbi-visuals-tools";
-
-import Settings = powerbi.Settings;
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 
 import { valueFormatter as vf } from "powerbi-visuals-utils-formattingutils";
@@ -63,7 +61,6 @@ export interface ColumnNames {
 export interface LineDotChartViewModel {
     columnNames: ColumnNames;
     dotPoints: LineDotPoint[];
-    settings: Settings;
     dateMetadataColumn: DataViewMetadataColumn;
     valuesMetadataColumn: DataViewMetadataColumn;
     dateColumnFormatter: IValueFormatter;
@@ -72,6 +69,7 @@ export interface LineDotChartViewModel {
     isOrdinal: boolean;
     yMinValue: number;
     yMaxValue: number;
+    // TODO:// Remove if not used
     sumOfValues: number;
     hasHighlights: boolean;
 }

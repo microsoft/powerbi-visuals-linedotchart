@@ -145,7 +145,7 @@ export class Settings extends DataViewObjectsParser {
             settings.lineoptions.lineThickness = 2;
 
             settings.dotoptions.color = backgroundColor;
-            settings.dotoptions.strokeOpacity = null;
+            settings.dotoptions.strokeOpacity = 1;
             settings.dotoptions.strokeWidth = 2;
             settings.dotoptions.stroke = foregroundColor;
 
