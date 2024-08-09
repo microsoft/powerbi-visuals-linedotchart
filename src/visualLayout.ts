@@ -109,7 +109,7 @@ export class VisualLayout {
 
     private setUpdateObject<T>(object: T, setObjectFn: (T) => void, beforeUpdateFn?: (T) => void): void {
         object = _.clone(object);
-        setObjectFn(VisualLayout.createNotifyChangedObject((object: T) => {
+        setObjectFn(VisualLayout.createNotifyChangedObject(object, (object) => {
             if (beforeUpdateFn) beforeUpdateFn(object);
             this.update();
         }));
