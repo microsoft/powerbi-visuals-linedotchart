@@ -419,6 +419,8 @@ export class LineDotChart implements IVisual {
 
         const categoricalValues: LineDotChartColumns<any[]> = LineDotChartColumns.getCategoricalValues(dataView);
 
+        this.formattingSettings.validateAndCorrectSettings();
+
         if (counterValues && counterValues.length > 0) {
             const fValue: any = counterValues[0];
             if (typeof fValue.getMonth === "function") {

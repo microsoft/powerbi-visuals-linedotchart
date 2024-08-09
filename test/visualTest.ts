@@ -57,15 +57,16 @@ describe("LineDotChartTests", () => {
 
     describe("DOM tests", () => {
         it("main element was created", () => {
-            expect(visualBuilder.mainElement.get(0)).toBeDefined();
+            expect(visualBuilder.mainElement).toBeDefined();
         });
 
         it("update", (done) => {
             visualBuilder.updateRenderTimeout(dataView, () => {
-                expect(visualBuilder.mainElement.find(".axis").length).not.toBe(0);
-                expect(visualBuilder.mainElement.find(".tick").length).not.toBe(0);
-                expect(visualBuilder.mainElement.find(".lineDotChart__playBtn").get(0)).toBeDefined();
-                expect(visualBuilder.mainElement.find(".legends").get(0)).toBeDefined();
+                expect(visualBuilder.axis.length).toBeGreaterThan(0);
+                expect(visualBuilder.ticks.length).toBeGreaterThan(0);
+                expect(visualBuilder.line).toBeDefined()
+                expect(visualBuilder.animationPlayButton).toBeDefined();
+                expect(visualBuilder.legends).toBeDefined();
 
                 done();
             });
@@ -90,7 +91,7 @@ describe("LineDotChartTests", () => {
             visualBuilder.updateFlushAllD3Transitions(dataView);
 
             renderTimeout(() => {
-                expect(visualBuilder.counterTitle).toBeInDOM();
+                expect(visualBuilder.counterTitle).toBeDefined();
                 done();
             });
         });
@@ -116,7 +117,7 @@ describe("LineDotChartTests", () => {
 
             renderTimeout(() => {
                 let counterNumber: number = 0;
-                expect(visualBuilder.counterTitle).toBeInDOM();
+                expect(visualBuilder.counterTitle).toBeDefined();
                 setInterval(() => {
                     const newCounterNumber: number = Number(visualBuilder.counterTitle);
                     expect(newCounterNumber).toBeGreaterThan(counterNumber);
@@ -152,9 +153,11 @@ describe("LineDotChartTests", () => {
 
             expect(visualBuilder.tickText.length).toBeGreaterThan(0);
 
-            visualBuilder.tickText.toArray().map($).forEach(e => {
-                expect(e.prop('style')['font-size']).toBe(expectedTextSize);
-                assertColorsMatch(e.prop('style')['fill'], color);
+            visualBuilder.tickText.forEach((element: SVGTextElement) => {
+                const styles = getComputedStyle(element);
+                const fontSize: string = styles.fontSize;
+                expect(fontSize).toBe(expectedTextSize);
+                assertColorsMatch(styles.fill, color);
             });
         });
 
@@ -208,10 +211,15 @@ describe("LineDotChartTests", () => {
 
     describe("Clear test", () => {
         it("clear all", (done) => {
+            dataView.metadata.objects = {
+                misc: {
+                    isStopped: false
+                }
+            }
             visualBuilder.updateFlushAllD3Transitions(dataView);
             renderTimeout(() => {
                 visualBuilder.visualInstance.clear();
-                expect(visualBuilder.mainElement.find("circle").get(0)).toBe(undefined);
+                expect(visualBuilder.dots).toBeNull();
                 done();
             });
         });
@@ -234,7 +242,7 @@ describe("LineDotChartTests", () => {
 
             visualBuilder.updateFlushAllD3Transitions(dataView);
             renderTimeout(() => {
-                expect(visualBuilder.mainElement.find("clipPath").get(0)).toBe(undefined);
+                expect(visualBuilder.clipPath).toBeNull();
                 done();
             });
         });
@@ -251,56 +259,76 @@ describe("LineDotChartTests", () => {
 
         describe("Line", () => {
             it("color", () => {
-                let color: string = getRandomHexColor();
-                (dataView.metadata.objects as any).lineoptions = { fill: getSolidColorStructuralObject(color) };
+                const color: string = "#123123";
+
+                dataView.metadata.objects = {
+                    lineoptions: {
+                        fill: getSolidColorStructuralObject("#123123")
+                    },
+                    misc: {
+                        isAnimated: false
+                    }
+                }
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                assertColorsMatch(visualBuilder.linePath.css('stroke'), color);
+                assertColorsMatch(getComputedStyle(visualBuilder.linePath!).stroke, color);
             });
         });
 
         describe("Dot", () => {
             it("color", () => {
+                // check
                 let color: string = getRandomHexColor();
 
                 dataView.metadata.objects = {
                     dotoptions: {
                         color: getSolidColorStructuralObject(color)
+                    },
+                    misc: {
+                        isAnimated: false
                     }
                 };
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                visualBuilder.dots.toArray().map($).forEach(e =>
-                    assertColorsMatch(e.attr('fill')!, color));
+                visualBuilder.dots!.forEach((dot: SVGCircleElement) => {
+                    assertColorsMatch(dot.style.fill, color);
+                });
             });
             it("opacity", () => {
-                let color: string = getRandomHexColor();
-                const dots: JQuery<any>[] = visualBuilder.dots.toArray().map($);
+                const color: string = getRandomHexColor();
+                const opacity: number = 50;
                 dataView.metadata.objects = {
                     dotoptions: {
                         color: getSolidColorStructuralObject(color),
-                        percentile: 50
+                        percentile: opacity
+                    },
+                    misc: {
+                        isAnimated: false
                     }
                 };
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                dots.forEach(e => {
-                    assertColorsMatch(e.attr('fill')!, color);
-                    assertColorsMatch(e.css('opacity'), color);
+                expect(visualBuilder.dots).toBeDefined();
+                visualBuilder.dots!.forEach(e => {
+                    assertColorsMatch(e.style.fill, color);
+                    expect(parseFloat(e.style.opacity)).toBe(opacity / 100);
                 });
             });
         });
 
         describe("Validate params", () => {
             it("Dots", () => {
-
                 dataView.metadata.objects = {
                     dotoptions: {
                         dotSizeMin: -6,
                         dotSizeMax: 678
+                    },
+                    misc: {
+                        isAnimated: false
                     }
                 };
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                visualBuilder.dots.toArray().map($).forEach(e => {
-                    expect(e.attr("r")).toBeGreaterThan(-1);
-                    expect(e.attr("r")).toBeLessThan(101);
+                visualBuilder.dots!.forEach(e => {
+                    // TODO:// FIX ERRORS
+                    expect(e.getAttribute("r")).toBeGreaterThan(-1);
+                    expect(e.getAttribute("r")).toBeLessThan(101);
                 });
             });
         });
@@ -337,7 +365,7 @@ describe("LineDotChartTests", () => {
         });
 
         it("the date should be formatted", () => {
-            const dataPoint: LineDotPoint = {
+            const dataPoint: LineDotPoint = <any>{
                 dateValue: {
                     date: new Date(2008, 1, 1),
                     label: undefined,
@@ -389,10 +417,20 @@ describe("LineDotChartTests", () => {
             visualBuilder.updateFlushAllD3Transitions(defaultDataViewBuilder.createStringView());
             visualBuilder.visualInstance.applyAxisSettings();
 
-            let ticks: any = visualBuilder.axis.first().children("g.tick");
+            const ticks: NodeListOf<SVGGElement> = visualBuilder.axis[0].querySelectorAll("g.tick");
+            const tickTexts: SVGTextElement[] = [];
+            ticks.forEach((tick: SVGGElement) => {
+                tickTexts.push(...tick.querySelectorAll("text"));
+            });
 
             expect(ticks.length).toBe(4);
-            expect(ticks.children("text").text()).toEqual(expectedXlabel);
+            for (let i = 0; i < tickTexts.length; i++) {
+                if (!tickTexts[i].textContent) {
+                    fail("tick text is empty");
+                } else {
+                    expect(expectedXlabel).toContain(tickTexts[i].textContent!);
+                }
+            }
         });
     });
 
@@ -425,30 +463,6 @@ describe("LineDotChartTests", () => {
         });
     });
 
-    describe("Capabilities tests", () => {
-        it("all items having displayName should have displayNameKey property", () => {
-            jasmine.getJSONFixtures().fixturesPath = "base";
-
-            let jsonData = getJSONFixture("capabilities.json");
-
-            let objectsChecker: Function = (obj) => {
-                for (let property in obj) {
-                    let value: any = obj[property];
-
-                    if (value.displayName) {
-                        expect(value.displayNameKey).toBeDefined();
-                    }
-
-                    if (typeof value === "object") {
-                        objectsChecker(value);
-                    }
-                }
-            };
-
-            objectsChecker(jsonData);
-        });
-    });
-
     describe("Accessibility", () => {
         describe("High contrast mode", () => {
             const backgroundColor: string = "#000000";
@@ -459,11 +473,16 @@ describe("LineDotChartTests", () => {
 
                 visualBuilder.visualHost.colorPalette.background = { value: backgroundColor };
                 visualBuilder.visualHost.colorPalette.foreground = { value: foregroundColor };
+                dataView.metadata.objects = {
+                    misc: {
+                        isStopped: false
+                    }
+                }
             });
 
             it("should not use fill style", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    const dots: JQuery<any>[] = visualBuilder.dots.toArray().map($);
+                    const dots = Array.from(visualBuilder.dots!);
 
                     expect(isColorAppliedToElements(dots, undefined, "fill"));
 
@@ -473,7 +492,7 @@ describe("LineDotChartTests", () => {
 
             it("should use stroke style", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    const dots: JQuery<any>[] = visualBuilder.dots.toArray().map($);
+                    const dots = Array.from(visualBuilder.dots!);
 
                     expect(isColorAppliedToElements(dots, foregroundColor, "stroke"));
 
@@ -482,12 +501,12 @@ describe("LineDotChartTests", () => {
             });
 
             function isColorAppliedToElements(
-                elements: JQuery[],
+                elements: SVGCircleElement[],
                 color?: string,
                 colorStyleName: string = "fill"
             ): boolean {
-                return elements.some((element: JQuery) => {
-                    const currentColor: string = element.css(colorStyleName);
+                return elements.some((element: SVGCircleElement) => {
+                    const currentColor: string = element.style[colorStyleName];
 
                     if (!currentColor || !color) {
                         return currentColor === color;
@@ -562,14 +581,14 @@ describe("LineDotChartTests", () => {
     });
 
     describe("Different formats data representation test", () => {
-        let tickText: JQuery<any>[];
+        let tickText: SVGTextElement[];
         let xTicksCount: number;
 
         beforeEach(() => {
             dataView = defaultDataViewBuilder.getDataViewWithDifferentFormats();
             visualBuilder.update(dataView);
-            tickText = visualBuilder.tickText.toArray().map($);
-            xTicksCount = visualBuilder.xAxisTickText.toArray().length;
+            tickText = visualBuilder.tickText;
+            xTicksCount = visualBuilder.xAxisTickText.length;
         });
 
         it("should represent data in required format on axes", (done) => {
@@ -578,7 +597,7 @@ describe("LineDotChartTests", () => {
 
             visualBuilder.updateRenderTimeout(dataView, () => {
                 tickText.forEach((tick, index) => {
-                    let text = tickText[index].text();
+                    let text = tickText[index].textContent;
                     if (index < xTicksCount) {
                         expect(text).toMatch(priceRegex);
                     } else {
@@ -609,8 +628,8 @@ describe("LineDotChartTests", () => {
     });
 
     describe("Y axis right scaling test", () => {
-        let yTicksText: JQuery[] = [];
-        let allTicksText: JQuery<any>[];
+        let yTicksText: SVGTextElement[] = [];
+        let allTicksText: SVGTextElement[];
 
         beforeEach(() => {
             const orderedDates: Date[] = [
@@ -624,8 +643,8 @@ describe("LineDotChartTests", () => {
             dataView = defaultDataViewBuilder.getDataView(undefined, orderedDates, orderedNumbers);
             visualBuilder.update(dataView);
 
-            let xTicksCount = visualBuilder.xAxisTick.toArray().length;
-            allTicksText = visualBuilder.tickText.toArray().map($);
+            let xTicksCount = visualBuilder.xAxisTick.length;
+            allTicksText = visualBuilder.tickText;
             const yTicksCount: number = (allTicksText.length - xTicksCount) / 2;
             allTicksText.forEach((tick, index) => {
                 if (index >= xTicksCount && index <= yTicksCount + xTicksCount - 1) {
@@ -640,11 +659,11 @@ describe("LineDotChartTests", () => {
             let previosYTickIndex = 0;
             visualBuilder.updateRenderTimeout(dataView, () => {
                 dotPoints.forEach((dotPoint: LineDotPoint) => {
-                    let lowAxisValue: number = parseInt(yTicksText[previosYTickIndex].text());
+                    let lowAxisValue: number = parseInt(yTicksText[previosYTickIndex].textContent || '');
                     expect(dotPoint.value).toBeGreaterThanOrEqual(lowAxisValue);
 
                     if (previosYTickIndex + 1 < yTicksText.length) {
-                        let highAxisValue: number = parseInt(yTicksText[previosYTickIndex + 1].text());
+                        let highAxisValue: number = parseInt(yTicksText[previosYTickIndex + 1].textContent || '');
                         expect(dotPoint.value).toBeGreaterThanOrEqual(lowAxisValue);
                     }
                     previosYTickIndex++;

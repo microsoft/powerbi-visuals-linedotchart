@@ -39,7 +39,14 @@ process.env.CHROME_BIN = require("playwright-chromium").chromium.executablePath(
 module.exports = (config) => {
     config.set({
         browserNoActivityTimeout: 100000,
-        browsers: ["ChromeHeadless"],
+        browsers: ["ChromeDebugging"],
+        customLaunchers: {
+            ChromeDebugging: {
+                base: "ChromeHeadless",
+                flags: ["--remote-debugging-port=9333"]
+            }
+        },
+        singleRun: true,
         colors: true,
         frameworks: ["jasmine"],
         reporters: [
@@ -51,7 +58,6 @@ module.exports = (config) => {
             outputFile: "TESTS-report.xml",
             useBrowserName: false
         },
-        singleRun: true,
         plugins: [
             "karma-coverage",
             "karma-typescript",
@@ -62,8 +68,6 @@ module.exports = (config) => {
             "karma-junit-reporter",
         ],
         files: [
-            "node_modules/jquery/dist/jquery.min.js",
-            "node_modules/jasmine-jquery/lib/jasmine-jquery.js",
             testRecursivePath,
             {
                 pattern: srcOriginalRecursivePath,

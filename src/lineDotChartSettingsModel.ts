@@ -344,4 +344,44 @@ export class LineDotChartSettingsModel extends Model {
         this.misc,
         this.playButton,
     ];
+
+    /**
+     * Validates values of the settings and corrects them if needed.
+     * Because formatting model options does not force changing the value if it's already set in the invalid range.
+     */
+    public validateAndCorrectSettings(): void {
+        this.dotoptions.dotSizeMin.value = this.getValidValue(
+            this.dotoptions.dotSizeMin.value,
+            this.dotoptions.dotSizeMin.options.minValue.value,
+            this.dotoptions.dotSizeMin.options.maxValue.value
+        );
+
+        this.dotoptions.dotSizeMax.value = this.getValidValue(
+            this.dotoptions.dotSizeMax.value,
+            this.dotoptions.dotSizeMax.options.minValue.value,
+            this.dotoptions.dotSizeMax.options.maxValue.value
+        );
+
+        this.lineoptions.lineThickness.value = this.getValidValue(
+            this.lineoptions.lineThickness.value,
+            this.lineoptions.lineThickness.options.minValue.value,
+            this.lineoptions.lineThickness.options.maxValue.value
+        );
+
+        this.misc.duration.value = this.getValidValue(
+            this.misc.duration.value,
+            this.misc.duration.options.minValue.value,
+            this.misc.duration.options.maxValue.value
+        );
+    }
+
+    private getValidValue(value: number, min: number, max: number): number {
+        if (value < min) {
+            return min;
+        } else if (value > max) {
+            return max;
+        }
+
+        return value;
+    }
 }
