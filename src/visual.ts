@@ -610,12 +610,12 @@ export class LineDotChart implements IVisual {
         return [
             {
                 transform: SVGManipulations.translate((this.layout.viewportIn.width) / 2, (this.layout.viewportIn.height)),
-                text: "", // xAxisTitle
+                text: this.formattingSettings.xAxis.title.value,
                 dx: "1em",
                 dy: "-1em"
             }, {
                 transform: SVGManipulations.translateAndRotate(0, this.layout.viewportIn.height / 2, 0, 0, LineDotChart.rotateAngle),
-                text: "", // yAxisTitle
+                text: this.formattingSettings.yAxis.title.value,
                 dx: "3em"
             }
         ];

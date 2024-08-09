@@ -111,6 +111,14 @@ class XAxisSettingsCard extends Card {
         value: true,
     });
 
+    title = new formattingSettings.TextInput({
+        name: "title",
+        displayName: "Title",
+        displayNameKey: "Visual_Title",
+        value: "",
+        placeholder: "",
+    });
+
     color = new formattingSettings.ColorPicker({
         name: "color",
         displayName: "Color",
@@ -132,7 +140,7 @@ class XAxisSettingsCard extends Card {
     name = "xAxis";
     displayName = "X-Axis";
     displayNameKey = "Visual_XAxis";
-    slices = [this.color, this.textSize]
+    slices = [this.title, this.color, this.textSize]
 }
 
 class YAxisSettingsCard extends Card {
@@ -141,6 +149,14 @@ class YAxisSettingsCard extends Card {
         displayName: "Show",
         displayNameKey: "Visual_Show",
         value: true,
+    });
+
+    title = new formattingSettings.TextInput({
+        name: "title",
+        displayName: "Title",
+        displayNameKey: "Visual_Title",
+        value: "",
+        placeholder: "",
     });
 
     color = new formattingSettings.ColorPicker({
@@ -171,7 +187,7 @@ class YAxisSettingsCard extends Card {
     name = "yAxis";
     displayName = "Y-Axis";
     displayNameKey = "Visual_YAxis";
-    slices = [this.color, this.textSize, this.isDuplicated]
+    slices = [this.title, this.color, this.textSize, this.isDuplicated]
 }
 
 class CounterSettingsCard extends Card {
