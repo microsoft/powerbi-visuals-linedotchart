@@ -323,6 +323,10 @@ export class LineDotChart implements IVisual {
         this.line
             .selectAll(LineDotChart.textSelector)
             .remove();
+
+        this.line
+            .selectAll(LineDotChart.PlayButton.selectorName)
+            .remove();
     }
 
     public setIsStopped(isStopped: boolean): void {
@@ -359,11 +363,11 @@ export class LineDotChart implements IVisual {
             this.formattingSettings.xAxis.color.value.value = foregroundColor;
             this.formattingSettings.yAxis.color.value.value = foregroundColor;
 
-            this.formattingSettings.play.fill = backgroundColor;
-            this.formattingSettings.play.stroke = foregroundColor;
-            this.formattingSettings.play.strokeWidth = 1;
-            this.formattingSettings.play.innerColor = foregroundColor;
-            this.formattingSettings.play.opacity = 1;
+            this.formattingSettings.playButton.fill.value.value = backgroundColor;
+            this.formattingSettings.playButton.stroke.value.value = foregroundColor;
+            this.formattingSettings.playButton.strokeWidth.value = 1;
+            this.formattingSettings.playButton.innerColor.value.value = foregroundColor;
+            this.formattingSettings.playButton.opacity.value = 100;
         }
     }
 
@@ -417,7 +421,13 @@ export class LineDotChart implements IVisual {
 
         if (counterValues && counterValues.length > 0) {
             const fValue: any = counterValues[0];
-            this.formattingSettings.isCounterDateTime.isCounterDateTime = fValue.getDate ? true : false;
+            if (typeof fValue.getMonth === "function") {
+                this.formattingSettings.isCounterDateTime.isCounterDateTime = true;
+            } else if (typeof fValue === "string" && !isNaN(Date.parse(fValue))) {
+                this.formattingSettings.isCounterDateTime.isCounterDateTime = true;
+            } else {
+                this.formattingSettings.isCounterDateTime.isCounterDateTime = false;
+            }
         }
 
         const hasHighlights: boolean = !!(categorical.Values.length > 0 && valuesColumn.highlights);
@@ -752,140 +762,143 @@ export class LineDotChart implements IVisual {
         }
     }
 
-    private static lineDotChartPlayBtn: string = "lineDotChart__playBtn";
-
     private static gLineDotChartPayBtn: string = "g.lineDotChart__playBtn";
     private static playBtnGroupDiameter: number = 34;
     private static playBtnGroupLineValues: string = "M0 2l10 6-10 6z";
     private static playBtnGroupRectWidth: string = "2";
     private static playBtnGroupRectHeight: string = "12";
     private static StopButton: ClassAndSelector = createClassAndSelector("stop");
+    private static PlayButton: ClassAndSelector = createClassAndSelector("lineDotChart__playBtn");
 
     private firstPathSelector: ClassAndSelector = createClassAndSelector("firstPath");
     private secondPathSelector: ClassAndSelector = createClassAndSelector("secondPath");
 
     private drawPlaybackButtons() {
-        const playBtn: Selection<SVGGElement, string, any, any> = this.line
-            .selectAll<SVGGElement, any>(LineDotChart.gLineDotChartPayBtn)
-            .data([""]);
+        if (this.formattingSettings.playButton.show.value) {
+            const playBtn: Selection<SVGGElement, string, any, any> = this.line
+                .selectAll<SVGGElement, any>(LineDotChart.gLineDotChartPayBtn)
+                .data([""]);
 
-        const playBtnGroup: Selection<SVGGElement, string, any, any> = playBtn
-            .enter()
-            .append("g")
-            .merge(playBtn);
+            const playBtnGroup: Selection<SVGGElement, string, any, any> = playBtn
+                .enter()
+                .append("g")
+                .merge(playBtn);
 
-        playBtnGroup
-            .attr("transform", "translate(40, 20)")
-            .classed(LineDotChart.lineDotChartPlayBtn, true);
+            playBtnGroup
+                .attr("transform", "translate(40, 20)")
+                .classed(LineDotChart.PlayButton.className, true);
 
-        playBtnGroup.style("opacity", this.formattingSettings.play.opacity);
+            playBtnGroup.style("opacity", this.formattingSettings.playButton.opacity.value.valueOf() / 100);
 
-        const circleSelection: Selection<SVGCircleElement, any, any, any> = playBtnGroup
-            .selectAll<SVGCircleElement, any>("circle")
-            .data(d => [d]);
+            const circleSelection: Selection<SVGCircleElement, any, any, any> = playBtnGroup
+                .selectAll<SVGCircleElement, any>("circle")
+                .data(d => [d]);
 
-        const circleSelectionMegred = circleSelection
-            .enter()
-            .append("circle")
-            .merge(circleSelection);
+            const circleSelectionMegred = circleSelection
+                .enter()
+                .append("circle")
+                .merge(circleSelection);
 
-        circleSelectionMegred
-            .attr("r", LineDotChart.playBtnGroupDiameter / 2)
-            .on("click", () => this.setIsStopped(!this.formattingSettings.misc.isStopped.value));
+            circleSelectionMegred
+                .attr("r", LineDotChart.playBtnGroupDiameter / 2)
+                .on("click", () => this.setIsStopped(!this.formattingSettings.misc.isStopped.value));
 
-        circleSelectionMegred.style("fill", this.formattingSettings.play.fill)
-            .style("stroke", this.formattingSettings.play.stroke)
-            .style("stroke-width", PixelConverter.toString(this.formattingSettings.play.strokeWidth))
-            .style("opacity", this.formattingSettings.play.opacity);
+            circleSelectionMegred.style("fill", this.formattingSettings.playButton.fill.value.value)
+                .style("stroke", this.formattingSettings.playButton.stroke.value.value)
+                .style("stroke-width", PixelConverter.toString(this.formattingSettings.playButton.strokeWidth.value.valueOf()))
+                .style("opacity", this.formattingSettings.playButton.opacity.value.valueOf() / 100);
 
-        circleSelection
-            .exit()
-            .remove();
+            circleSelection
+                .exit()
+                .remove();
 
-        const firstPathSelection: Selection<SVGPathElement, any, any, any> = playBtnGroup
-            .selectAll<SVGPathElement, any>(this.firstPathSelector.selectorName)
-            .data(d => [d]);
+            const firstPathSelection: Selection<SVGPathElement, any, any, any> = playBtnGroup
+                .selectAll<SVGPathElement, any>(this.firstPathSelector.selectorName)
+                .data(d => [d]);
 
-        const firstPathSelectionMerged = firstPathSelection
-            .enter()
-            .append("path")
-            .merge(firstPathSelection);
+            const firstPathSelectionMerged = firstPathSelection
+                .enter()
+                .append("path")
+                .merge(firstPathSelection);
 
-        firstPathSelectionMerged
-            .classed("play", true)
-            .attr("d", LineDotChart.playBtnGroupLineValues)
-            .attr("transform", "translate(-4, -8)")
-            .style("pointer-events", "none");
+            firstPathSelectionMerged
+                .classed("play", true)
+                .attr("d", LineDotChart.playBtnGroupLineValues)
+                .attr("transform", "translate(-4, -8)")
+                .style("pointer-events", "none");
 
-        firstPathSelectionMerged.style("fill", this.formattingSettings.play.innerColor);
+            firstPathSelectionMerged.style("fill", this.formattingSettings.playButton.innerColor.value.value);
 
-        firstPathSelection
-            .exit()
-            .remove();
+            firstPathSelection
+                .exit()
+                .remove();
 
-        const secondPathSelection: Selection<SVGPathElement, any, any, any> = playBtnGroup
-            .selectAll<SVGPathElement, any>(this.secondPathSelector.selectorName)
-            .data(d => [d]);
+            const secondPathSelection: Selection<SVGPathElement, any, any, any> = playBtnGroup
+                .selectAll<SVGPathElement, any>(this.secondPathSelector.selectorName)
+                .data(d => [d]);
 
-        const secondPathSelectionMerged = secondPathSelection
-            .enter()
-            .append("path")
-            .merge(secondPathSelection);
+            const secondPathSelectionMerged = secondPathSelection
+                .enter()
+                .append("path")
+                .merge(secondPathSelection);
 
-        secondPathSelectionMerged
-            .classed(LineDotChart.StopButton.className, true)
-            .attr("d", LineDotChart.playBtnGroupLineValues)
-            .attr("pointer-events", "none")
-            .attr("transform", "translate(6, 8) rotate(180)");
+            secondPathSelectionMerged
+                .classed(LineDotChart.StopButton.className, true)
+                .attr("d", LineDotChart.playBtnGroupLineValues)
+                .attr("pointer-events", "none")
+                .attr("transform", "translate(6, 8) rotate(180)");
 
-        secondPathSelectionMerged.style("fill", this.formattingSettings.play.innerColor);
+            secondPathSelectionMerged.style("fill", this.formattingSettings.playButton.innerColor.value.value);
 
-        secondPathSelection
-            .exit()
-            .remove();
+            secondPathSelection
+                .exit()
+                .remove();
 
-        const rectSelection: Selection<SVGRectElement, any, any, any> = playBtnGroup
-            .selectAll<SVGRectElement, any>("rect")
-            .data(d => [d]);
+            const rectSelection: Selection<SVGRectElement, any, any, any> = playBtnGroup
+                .selectAll<SVGRectElement, any>("rect")
+                .data(d => [d]);
 
-        const rectSelectionMerged = rectSelection
-            .enter()
-            .append("rect")
-            .merge(rectSelection);
+            const rectSelectionMerged = rectSelection
+                .enter()
+                .append("rect")
+                .merge(rectSelection);
 
-        rectSelectionMerged
-            .classed(LineDotChart.StopButton.className, true)
-            .merge(rectSelection);
+            rectSelectionMerged
+                .classed(LineDotChart.StopButton.className, true)
+                .merge(rectSelection);
 
-        rectSelectionMerged
-            .attr("width", LineDotChart.playBtnGroupRectWidth)
-            .attr("height", LineDotChart.playBtnGroupRectHeight)
-            .attr("pointer-events", "none")
-            .attr("transform", "translate(-7, -6)");
+            rectSelectionMerged
+                .attr("width", LineDotChart.playBtnGroupRectWidth)
+                .attr("height", LineDotChart.playBtnGroupRectHeight)
+                .attr("pointer-events", "none")
+                .attr("transform", "translate(-7, -6)");
 
-        rectSelectionMerged.style("fill", this.formattingSettings.play.innerColor);
+            rectSelectionMerged.style("fill", this.formattingSettings.playButton.innerColor.value.value);
 
-        rectSelection
-            .exit()
-            .remove();
+            rectSelection
+                .exit()
+                .remove();
 
-        playBtnGroup
-            .selectAll("circle")
-            .attr("opacity", () => this.formattingSettings.misc.isAnimated.value ? 1 : 0);
+            playBtnGroup
+                .selectAll("circle")
+                .attr("opacity", () => this.formattingSettings.misc.isAnimated.value ? 1 : 0);
 
-        playBtnGroup
-            .selectAll(".play")
-            .merge(playBtn)
-            .attr("opacity", () => this.formattingSettings.misc.isAnimated.value && this.formattingSettings.misc.isStopped.value ? 1 : 0);
+            playBtnGroup
+                .selectAll(".play")
+                .merge(playBtn)
+                .attr("opacity", () => this.formattingSettings.misc.isAnimated.value && this.formattingSettings.misc.isStopped.value ? 1 : 0);
 
-        playBtnGroup
-            .selectAll(LineDotChart.StopButton.selectorName)
-            .merge(playBtn)
-            .attr("opacity", () => this.formattingSettings.misc.isAnimated.value && !this.formattingSettings.misc.isStopped.value ? 1 : 0);
+            playBtnGroup
+                .selectAll(LineDotChart.StopButton.selectorName)
+                .merge(playBtn)
+                .attr("opacity", () => this.formattingSettings.misc.isAnimated.value && !this.formattingSettings.misc.isStopped.value ? 1 : 0);
 
-        playBtn
-            .exit()
-            .remove();
+            playBtn
+                .exit()
+                .remove();
+        } else {
+            this.line.selectAll(LineDotChart.PlayButton.selectorName).remove()
+        }
     }
 
     private static pathClassName: string = "path";
@@ -1125,7 +1138,7 @@ export class LineDotChart implements IVisual {
 
                         if (d.counter) {
                             text += this.formattingSettings.isCounterDateTime.isCounterDateTime
-                                ? this.data.dateColumnFormatter.format(d.counter)
+                                ? this.data.dateColumnFormatter.format(new Date(d.counter))
                                 : d.counter;
                         } else {
                             text += (i + 1);

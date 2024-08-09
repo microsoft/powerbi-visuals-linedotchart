@@ -243,14 +243,67 @@ class AnimationSettingsCard extends Card {
     slices = [this.isAnimated, this.isStopped, this.duration];
 }
 
-class PlayButtonSettings {
-    public stroke: string = "gray";
-    public fill: string = "white";
-    public strokeWidth: number = 0.5;
-    public innerColor: string = "#000000";
-    public opacity: number = undefined;
+class PlayButtonSettingsCard extends Card {
+    show = new formattingSettings.ToggleSwitch({
+        name: "show",
+        displayName: "Show",
+        displayNameKey: "Visual_Show",
+        value: true
+    });
+
+    fill = new formattingSettings.ColorPicker({
+        name: "fill",
+        displayName: "Fill",
+        displayNameKey: "Visual_Fill",
+        value: { value: "#ffffff" },
+    });
+
+    stroke = new formattingSettings.ColorPicker({
+        name: "stroke",
+        displayName: "Stroke",
+        displayNameKey: "Visual_Stroke",
+        value: { value: "#808080" },
+    });
+
+    innerColor = new formattingSettings.ColorPicker({
+        name: "innerColor",
+        displayName: "Inner color",
+        displayNameKey: "Visual_InnerColor",
+        value: { value: "#000000" },
+    });
+
+    strokeWidth = new formattingSettings.NumUpDown({
+        name: "strokeWidth",
+        displayName: "Stroke width",
+        displayNameKey: "Visual_StrokeWidth",
+        value: 0.5,
+        options: {
+            minValue: { value: 0, type: ValidatorType.Min },
+        }
+    });
+
+    opacity = new formattingSettings.Slider({
+        name: "opacity",
+        displayName: "Opacity",
+        displayNameKey: "Visual_Opacity",
+        value: 100,
+        options: {
+            minValue: { value: 0, type: ValidatorType.Min },
+            maxValue: { value: 100, type: ValidatorType.Max },
+        }
+    });
+
+    topLevelSlice = this.show;
+    name = "playButton";
+    displayName = "Play button";
+    displayNameKey = "Visual_PlayButton";
+    slices = [this.fill, this.stroke, this.innerColor, this.strokeWidth, this.opacity];
 }
 
+/**
+ * Class that is used to identify if "Counter" role data field is a Date or string convertable to Date
+ * If it's a date, then it would be formatted as date.
+ */
 class CounterDateTime {
     public isCounterDateTime: boolean = true;
 }
@@ -262,9 +315,8 @@ export class LineDotChartSettingsModel extends Model {
     yAxis = new YAxisSettingsCard();
     counteroptions = new CounterSettingsCard();
     misc = new AnimationSettingsCard();
+    playButton = new PlayButtonSettingsCard();
 
-    // hidden, not interactive
-    play = new PlayButtonSettings();
     isCounterDateTime: CounterDateTime = new CounterDateTime();
 
     cards = [
@@ -274,5 +326,6 @@ export class LineDotChartSettingsModel extends Model {
         this.yAxis,
         this.counteroptions,
         this.misc,
+        this.playButton,
     ];
 }
