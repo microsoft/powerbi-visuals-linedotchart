@@ -376,6 +376,10 @@ export class LineDotChart implements IVisual {
             this.formattingSettings.counteroptions.counterTitle.value = this.localizationManager.getDisplayName(LineDotChart.counterTitleDefaultKey);
         }
 
+        if (!this.formattingSettings.misc.isAnimated.value) {
+            this.formattingSettings.playButton.visible = false;
+        }
+
         return this.formattingSettingsService.buildFormattingModel(this.formattingSettings);
     }
 
@@ -776,7 +780,7 @@ export class LineDotChart implements IVisual {
     private secondPathSelector: ClassAndSelector = createClassAndSelector("secondPath");
 
     private drawPlaybackButtons() {
-        if (this.formattingSettings.playButton.show.value) {
+        if (this.formattingSettings.playButton.show.value && this.formattingSettings.misc.isAnimated.value) {
             const playBtn: Selection<SVGGElement, string, any, any> = this.line
                 .selectAll<SVGGElement, any>(LineDotChart.gLineDotChartPayBtn)
                 .data([""]);
