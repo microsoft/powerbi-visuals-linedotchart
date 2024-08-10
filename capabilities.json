@@ -70,6 +70,15 @@
         "sorting": {
             "default": {}
         },
+        "tooltips": {
+            "supportedTypes": {
+                "default": true,
+                "canvas": true
+            },
+            "roles": [
+                "tooltips"
+            ]
+        },
         "objects": {
             "lineoptions": {
                 "displayName": "Line",
