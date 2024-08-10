@@ -47,6 +47,7 @@ import VisualObjectInstance = powerbi.VisualObjectInstance;
 
 import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
+import ITooltipService = powerbi.extensibility.ITooltipService;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import IVisual = powerbi.extensibility.visual.IVisual;
@@ -74,7 +75,7 @@ import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-vis
 import { ColorHelper } from "powerbi-visuals-utils-colorutils";
 
 import { VisualLayout } from "./visualLayout";
-import { MyBehavior, MyBehaviorOptions, getFillOpacity } from "./behavior";
+import { Behavior, BehaviorOptions, getFillOpacity } from "./behavior";
 import { LineDotChartColumns } from "./columns";
 import { LineDotChartSettingsModel } from './lineDotChartSettingsModel';
 import {
@@ -120,10 +121,11 @@ export class LineDotChart implements IVisual {
     private yAxisProperties: IAxisProperties;
     private yAxis2Properties: IAxisProperties;
     private layout: VisualLayout;
-    private behavior: MyBehavior;
+    private behavior: Behavior;
     private hostService: IVisualHost;
     private selectionManager: ISelectionManager;
     private localizationManager: ILocalizationManager;
+    private tooltipService: ITooltipService;
     private formattingSettingsService: FormattingSettingsService;
     private events: IVisualEventService;
 
@@ -191,6 +193,7 @@ export class LineDotChart implements IVisual {
             options.host.tooltipService,
             options.element
         );
+        this.tooltipService = options.host.tooltipService;
 
         this.colorHelper = new ColorHelper(options.host.colorPalette);
         this.hostService = options.host;
@@ -202,7 +205,7 @@ export class LineDotChart implements IVisual {
         this.layout = new VisualLayout(null, LineDotChart.viewportMargins);
         this.layout.minViewport = LineDotChart.viewportDimensions;
 
-        this.behavior = new MyBehavior(this.selectionManager);
+        this.behavior = new Behavior(this.selectionManager);
 
         this.root = select(options.element)
             .append("svg")
@@ -1041,6 +1044,8 @@ export class LineDotChart implements IVisual {
 
         dotsSelectionMerged
             .classed(LineDotChart.pointClassName, true)
+            .attr("focusable", true)
+            .attr("tabindex", 0)
             .on("mouseover.point", this.showDataPoint)
             .on("mouseout.point", this.hideDataPoint);
 
@@ -1069,7 +1074,8 @@ export class LineDotChart implements IVisual {
 
         this.tooltipServiceWrapper.addTooltip<LineDotPoint>(
             dotsSelectionMerged,
-            (dataPoint: LineDotPoint) => this.getTooltipDataItems(dataPoint));
+            (dataPoint: LineDotPoint) => this.getTooltipDataItems(dataPoint),
+            (dataPoint: LineDotPoint) => dataPoint.identity);
 
         dotsSelection
             .exit()
@@ -1079,11 +1085,13 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
-        const behaviorOptions: MyBehaviorOptions = {
+        const behaviorOptions: BehaviorOptions = {
             selection: dotsSelectionMerged,
             clearCatcher: this.root,
             hasHighlights: hasHighlights,
             dataPoints: this.data.dotPoints,
+            tooltipService: this.tooltipService,
+            getTooltipInfo: this.getTooltipDataItems.bind(this),
         };
         this.behavior.bindEvents(behaviorOptions);
     }

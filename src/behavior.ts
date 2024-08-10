@@ -28,6 +28,8 @@ import powerbi from "powerbi-visuals-api";
 
 import ISelectionId = powerbi.visuals.ISelectionId;
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
+import ITooltipService = powerbi.extensibility.ITooltipService;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import { LegendDataPoint } from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfaces";
 import { LineDotPoint } from "./dataInterfaces";
@@ -61,16 +63,18 @@ export function getFillOpacity(
     return dot.opacity;
 }
 
-export interface MyBehaviorOptions {
-    selection: Selection<any, SelectableDataPoint, any, any>;
+export interface BehaviorOptions {
+    selection: Selection<any, LineDotPoint, any, any>;
     clearCatcher: Selection<any, any, any, any>;
     dataPoints: LineDotPoint[];
     hasHighlights: boolean;
+    tooltipService: ITooltipService;
+    getTooltipInfo: (dataPoint?: LineDotPoint) => VisualTooltipDataItem[]
 }
 
-export class MyBehavior {
+export class Behavior {
     private selectionManager: ISelectionManager;
-    private options: MyBehaviorOptions;
+    private options: BehaviorOptions;
 
     constructor(selectionManager: ISelectionManager) {
         this.selectionManager = selectionManager;
@@ -86,11 +90,12 @@ export class MyBehavior {
         return selectionIds.length > 0;
     }
 
-    public bindEvents(options: MyBehaviorOptions): void {
+    public bindEvents(options: BehaviorOptions): void {
         this.options = options;
 
         this.bindClickEvents();
         this.bindContextMenuEvents();
+        this.bindKeyboardEvents();
     }
 
     public setSelectedToDataPoints(dataPoints: SelectableDataPoint[] | LegendDataPoint[], ids?: ISelectionId[], hasHighlightsParameter?: boolean): void {
@@ -147,6 +152,29 @@ export class MyBehavior {
         });
     }
 
+    private bindKeyboardEvents(): void {
+        this.options.selection.on("keydown", (event: KeyboardEvent, dataPoint: LineDotPoint) => {
+            if (event.code === "Enter" || event.code === "Space") {
+                event.preventDefault();
+                this.selectDataPoint(dataPoint, event.ctrlKey || event.metaKey || event.shiftKey);
+                this.onSelectCallback();
+
+                this.showTooltip(dataPoint, <SVGCircleElement>event.target);
+            } else {
+                this.options.tooltipService.hide({ immediately: true, isTouchEvent: false });
+            }
+        });
+    }
+
+    private showTooltip(dataPoint: LineDotPoint, domElement: SVGCircleElement): void {
+        const rect = domElement.getBoundingClientRect();
+
+        const tooltipInfo = this.options.getTooltipInfo(dataPoint);
+        const coordinates = [rect.left + rect.width / 2 + window.scrollX, rect.top + rect.height / 2 + window.scrollY];
+
+        this.options.tooltipService.show({ dataItems: tooltipInfo, coordinates: coordinates, identities: [dataPoint.identity], isTouchEvent: false });
+    }
+
     private onSelectCallback(selectionIds?: ISelectionId[]): void {
         const selectedIds: ISelectionId[] = selectionIds || <ISelectionId[]>this.selectionManager.getSelectionIds();
         this.setSelectedToDataPoints(this.options.dataPoints, selectedIds);
@@ -163,6 +191,10 @@ export class MyBehavior {
                 !dotPoint.selected && this.options.hasHighlights
             );
         });
+
+        if (!this.hasSelection) {
+            this.options.tooltipService.hide({ immediately: true, isTouchEvent: false });
+        }
     }
 
     private selectDataPoint(dataPoint: SelectableDataPoint | LegendDataPoint, multiSelect: boolean = false): void {
@@ -183,7 +215,11 @@ export class MyBehavior {
             }
         }
 
-        this.selectionManager.select(selectionIdsToSelect, multiSelect);
+        if (selectionIdsToSelect.length > 0) {
+            this.selectionManager.select(selectionIdsToSelect, multiSelect);
+        } else {
+            this.selectionManager.clear();
+        }
     }
 
     private isDataPointSelected(dataPoint: SelectableDataPoint | LegendDataPoint, selectedIds: ISelectionId[]): boolean {

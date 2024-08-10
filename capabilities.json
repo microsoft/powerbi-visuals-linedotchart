@@ -66,6 +66,7 @@
         }
         }],
         "supportsHighlight": true,
+        "supportsKeyboardFocus": true,
         "privileges": [],
         "sorting": {
             "default": {}

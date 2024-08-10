@@ -9,6 +9,7 @@
 * Migrate to new formatting model
 * Add report page tooltip support
 * Remove interactivity-utils, add context menu
+* Add keyboard navigation
 
 ## 2.0.3
 * Fixed ticks formatting of fractional numbers

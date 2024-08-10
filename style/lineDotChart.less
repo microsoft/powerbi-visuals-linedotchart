@@ -30,6 +30,24 @@
  */
 
 .lineDotChart {
+  .point {
+    & {
+      pointer-events: all;
+      transition: opacity 0.2s ease-out;
+    }
+
+    &:focus, &:focus-visible {
+      outline: none;
+    }
+
+    &:focus-visible {
+      filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+      animation: pulse 1s infinite; 
+    }
+  }
+}
+
+.lineDotChart {
   font-family: helvetica, arial, sans-serif;
 }
 .lineDotChart .axis path,
