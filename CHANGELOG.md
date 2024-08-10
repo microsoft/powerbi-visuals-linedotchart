@@ -8,6 +8,7 @@
 * Fix less-loader options, fix running tests, migrate from puppeteer to playwright-chromium
 * Migrate to new formatting model
 * Add report page tooltip support
+* Remove interactivity-utils, add context menu
 
 ## 2.0.3
 * Fixed ticks formatting of fractional numbers

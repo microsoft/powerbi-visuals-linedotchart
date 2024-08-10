@@ -23,15 +23,24 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-import { Selection } from "d3-selection"
+import { Selection } from "d3-selection";
+import powerbi from "powerbi-visuals-api";
 
-import { interactivityBaseService, interactivitySelectionService } from "powerbi-visuals-utils-interactivityutils";
-import ISelectionHandler = interactivityBaseService.ISelectionHandler;
-import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
-import IBehaviorOptions = interactivityBaseService.IBehaviorOptions;
-import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
+import ISelectionId = powerbi.visuals.ISelectionId;
+import ISelectionManager = powerbi.extensibility.ISelectionManager;
 
+import { LegendDataPoint } from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfaces";
 import { LineDotPoint } from "./dataInterfaces";
+
+export interface BaseDataPoint {
+    selected: boolean;
+}
+
+export interface SelectableDataPoint extends BaseDataPoint {
+    identity: ISelectionId;
+    specificIdentity?: ISelectionId;
+}
+
 
 export const MinOpacity: number = 0.1;
 export const DimmedOpacity: number = 0.4;
@@ -52,49 +61,133 @@ export function getFillOpacity(
     return dot.opacity;
 }
 
-export interface BehaviorOptions extends IBehaviorOptions<LineDotPoint> {
+export interface MyBehaviorOptions {
     selection: Selection<any, SelectableDataPoint, any, any>;
     clearCatcher: Selection<any, any, any, any>;
+    dataPoints: LineDotPoint[];
     hasHighlights: boolean;
 }
 
-export class Behavior implements IInteractiveBehavior {
-    private options: BehaviorOptions;
+export class MyBehavior {
+    private selectionManager: ISelectionManager;
+    private options: MyBehaviorOptions;
 
-    public bindEvents(options: BehaviorOptions, selectionHandler: ISelectionHandler): void {
-        const {
-            selection,
-            clearCatcher,
-        } = options;
+    constructor(selectionManager: ISelectionManager) {
+        this.selectionManager = selectionManager;
+        this.selectionManager.registerOnSelectCallback(this.onSelectCallback.bind(this));
+    }
 
+    public get isInitialized(): boolean {
+        return !!this.options;
+    }
+
+    public get hasSelection(): boolean {
+        const selectionIds = this.selectionManager.getSelectionIds();
+        return selectionIds.length > 0;
+    }
+
+    public bindEvents(options: MyBehaviorOptions): void {
         this.options = options;
 
-        selection.on("click", (event: MouseEvent, dataPoint: SelectableDataPoint) => {
-            event.stopPropagation();
+        this.bindClickEvents();
+        this.bindContextMenuEvents();
+    }
 
-            selectionHandler.handleSelection(dataPoint, event.ctrlKey);
+    public setSelectedToDataPoints(dataPoints: SelectableDataPoint[] | LegendDataPoint[], ids?: ISelectionId[], hasHighlightsParameter?: boolean): void {
+        const hasHighlights: boolean = hasHighlightsParameter || (this.options && this.options.hasHighlights);
+        const selectedIds: ISelectionId[] = ids || <ISelectionId[]>this.selectionManager.getSelectionIds();
+
+        if (hasHighlights && this.hasSelection) {
+            this.selectionManager.clear();
+        }
+
+        for (const dataPoint of dataPoints) { 
+            dataPoint.selected = this.isDataPointSelected(dataPoint, selectedIds);
+        }
+    }
+
+    private bindClickEvents(): void {
+        this.options.selection.on("click", (event: MouseEvent, dataPoint: SelectableDataPoint) => {
+            event.stopPropagation();
+            this.selectDataPoint(dataPoint, event.ctrlKey || event.metaKey || event.shiftKey);
+            this.onSelectCallback();
         });
 
-        clearCatcher.on("click", () => {
-            selectionHandler.handleClearSelection();
+        this.options.clearCatcher.on("click", (event: MouseEvent) => {
+            event.stopPropagation();
+            this.selectionManager.clear();
+            this.onSelectCallback();
         });
     }
 
-    public renderSelection(hasSelection: boolean): void {
-        const {
-            selection,
-            hasHighlights,
-        } = this.options;
+    private bindContextMenuEvents(): void {
+        this.options.selection.on("contextmenu", (event: MouseEvent, dataPoint: SelectableDataPoint) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.selectionManager.showContextMenu(dataPoint.identity, {
+                x: event.clientX,
+                y: event.clientY
+            });
+        });
 
-        selection.style("opacity", (dotPoint: LineDotPoint) => {
+        this.options.clearCatcher.on("contextmenu", (event: MouseEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const emptySelection = {
+                "measures": [],
+                "dataMap": {
+                }
+            };
+
+            this.selectionManager.showContextMenu(emptySelection, {
+                x: event.clientX,
+                y: event.clientY
+            });
+        });
+    }
+
+    private onSelectCallback(selectionIds?: ISelectionId[]): void {
+        const selectedIds: ISelectionId[] = selectionIds || <ISelectionId[]>this.selectionManager.getSelectionIds();
+        this.setSelectedToDataPoints(this.options.dataPoints, selectedIds);
+        this.renderSelection();
+    }
+
+    private renderSelection(): void {
+        this.options.selection.style("opacity", (dotPoint: LineDotPoint) => {
             return getFillOpacity(
                 dotPoint,
                 dotPoint.selected,
                 dotPoint.highlight,
-                !dotPoint.highlight && hasSelection,
-                !dotPoint.selected && hasHighlights
+                !dotPoint.highlight && this.hasSelection,
+                !dotPoint.selected && this.options.hasHighlights
             );
         });
+    }
+
+    private selectDataPoint(dataPoint: SelectableDataPoint | LegendDataPoint, multiSelect: boolean = false): void {
+        if (!dataPoint || !dataPoint.identity) return;        
+
+        const selectedIds: ISelectionId[] = <ISelectionId[]>this.selectionManager.getSelectionIds();
+        const isSelected: boolean = this.isDataPointSelected(dataPoint, selectedIds);
+
+        const selectionIdsToSelect: ISelectionId[] = [];
+        if (!isSelected) {
+            dataPoint.selected = true;
+            selectionIdsToSelect.push(dataPoint.identity);
+        } else {
+            // toggle selected back to false
+            dataPoint.selected = false;
+            if (multiSelect) {
+                selectionIdsToSelect.push(dataPoint.identity);
+            }
+        }
+
+        this.selectionManager.select(selectionIdsToSelect, multiSelect);
+    }
+
+    private isDataPointSelected(dataPoint: SelectableDataPoint | LegendDataPoint, selectedIds: ISelectionId[]): boolean {
+        return selectedIds.some((value: ISelectionId) => value.equals(<ISelectionId>dataPoint.identity));
     }
 }
 

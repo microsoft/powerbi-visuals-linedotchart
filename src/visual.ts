@@ -46,6 +46,7 @@ import VisualObjectInstancesToPersist = powerbi.VisualObjectInstancesToPersist;
 import VisualObjectInstance = powerbi.VisualObjectInstance;
 
 import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
+import ISelectionManager = powerbi.extensibility.ISelectionManager;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import IVisual = powerbi.extensibility.visual.IVisual;
@@ -72,13 +73,8 @@ import valueType = vt.ValueType;
 import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
 import { ColorHelper } from "powerbi-visuals-utils-colorutils";
 
-import { interactivitySelectionService, interactivityBaseService } from 'powerbi-visuals-utils-interactivityutils';
-import createInteractivityService = interactivitySelectionService.createInteractivitySelectionService
-import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
-import IInteractivityService = interactivityBaseService.IInteractivityService;
-
 import { VisualLayout } from "./visualLayout";
-import { Behavior, BehaviorOptions, getFillOpacity } from "./behavior";
+import { MyBehavior, MyBehaviorOptions, getFillOpacity } from "./behavior";
 import { LineDotChartColumns } from "./columns";
 import { LineDotChartSettingsModel } from './lineDotChartSettingsModel';
 import {
@@ -124,9 +120,9 @@ export class LineDotChart implements IVisual {
     private yAxisProperties: IAxisProperties;
     private yAxis2Properties: IAxisProperties;
     private layout: VisualLayout;
-    private interactivityService: IInteractivityService<LineDotPoint>;
-    private behavior: IInteractiveBehavior;
+    private behavior: MyBehavior;
     private hostService: IVisualHost;
+    private selectionManager: ISelectionManager;
     private localizationManager: ILocalizationManager;
     private formattingSettingsService: FormattingSettingsService;
     private events: IVisualEventService;
@@ -198,6 +194,7 @@ export class LineDotChart implements IVisual {
 
         this.colorHelper = new ColorHelper(options.host.colorPalette);
         this.hostService = options.host;
+        this.selectionManager = this.hostService.createSelectionManager();
         this.localizationManager = this.hostService.createLocalizationManager();
         this.formattingSettingsService = new FormattingSettingsService(this.localizationManager);
         this.events = this.hostService.eventService;
@@ -205,8 +202,7 @@ export class LineDotChart implements IVisual {
         this.layout = new VisualLayout(null, LineDotChart.viewportMargins);
         this.layout.minViewport = LineDotChart.viewportDimensions;
 
-        this.interactivityService = createInteractivityService(options.host);
-        this.behavior = new Behavior();
+        this.behavior = new MyBehavior(this.selectionManager);
 
         this.root = select(options.element)
             .append("svg")
@@ -265,9 +261,7 @@ export class LineDotChart implements IVisual {
 
             this.data = data;
 
-            if (this.interactivityService) {
-                this.interactivityService.applySelectionStateToData(this.data.dotPoints);
-            }
+            this.behavior.setSelectedToDataPoints(this.data.dotPoints);
 
             this.resize();
             this.calculateAxes();
@@ -1026,7 +1020,7 @@ export class LineDotChart implements IVisual {
             : 0;
 
         const hasHighlights: boolean = this.data.hasHighlights;
-        const hasSelection: boolean = this.interactivityService && this.interactivityService.hasSelection();
+        const hasSelection: boolean = this.behavior.hasSelection;
 
         // Draw the individual data points that will be shown on hover with a tooltip
 
@@ -1085,17 +1079,13 @@ export class LineDotChart implements IVisual {
             .exit()
             .remove();
 
-        if (this.interactivityService) {
-            const behaviorOptions: BehaviorOptions = {
-                selection: dotsSelectionMerged,
-                clearCatcher: this.root,
-                hasHighlights: hasHighlights,
-                behavior: this.behavior,
-                dataPoints: this.data.dotPoints,
-            };
-
-            this.interactivityService.bind(behaviorOptions);
-        }
+        const behaviorOptions: MyBehaviorOptions = {
+            selection: dotsSelectionMerged,
+            clearCatcher: this.root,
+            hasHighlights: hasHighlights,
+            dataPoints: this.data.dotPoints,
+        };
+        this.behavior.bindEvents(behaviorOptions);
     }
 
     private handleDotsTransformation(dotsSelectionMerged: Selection<SVGCircleElement, LineDotPoint, any, any>, point_time: number) {
