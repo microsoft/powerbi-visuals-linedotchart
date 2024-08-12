@@ -29,6 +29,18 @@
  * We compile it as a less file in order to wrap the external CSS rules.
  */
 
+@keyframes pulse {
+  0% {
+    stroke-width: 2;
+  }
+  50% {
+    stroke-width: 4;
+  }
+  100% {
+    stroke-width: 2;
+  }
+}
+
 .lineDotChart {
   .point {
     & {
