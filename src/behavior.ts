@@ -118,8 +118,7 @@ export class Behavior {
             this.onSelectCallback();
         });
 
-        this.options.clearCatcher.on("click", (event: MouseEvent) => {
-            event.stopPropagation();
+        this.options.clearCatcher.on("click", () => {
             this.selectionManager.clear();
             this.onSelectCallback();
         });
