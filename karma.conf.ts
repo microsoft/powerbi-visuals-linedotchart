@@ -39,7 +39,7 @@ process.env.CHROME_BIN = require("playwright-chromium").chromium.executablePath(
 module.exports = (config) => {
     config.set({
         browserNoActivityTimeout: 100000,
-        browsers: ["ChromeDebugging"],
+        browsers: ["ChromeHeadless"],
         customLaunchers: {
             ChromeDebugging: {
                 base: "ChromeHeadless",

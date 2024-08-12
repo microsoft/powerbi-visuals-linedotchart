@@ -10,6 +10,7 @@
 * Add report page tooltip support
 * Remove interactivity-utils, add context menu
 * Add keyboard navigation
+* Add selection and highlight tests
 
 ## 2.0.3
 * Fixed ticks formatting of fractional numbers

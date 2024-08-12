@@ -41,6 +41,7 @@ import { LineDotChartBuilder } from "./visualBuilder";
 import { LineDotChart } from "./../src/visual";
 import { ColumnNames, LineDotPoint, LineDotChartViewModel } from "./../src/dataInterfaces";
 import { LineDotChartColumns } from "./../src/columns";
+import { select, selectAll, Selection } from "d3-selection";
 
 describe("LineDotChartTests", () => {
     let visualBuilder: LineDotChartBuilder,
@@ -672,5 +673,129 @@ describe("LineDotChartTests", () => {
             });
         });
     });
+
+    describe("selection", () => {
+        beforeEach(() => {
+            dataView.metadata.objects = {
+                misc: {
+                    isStopped: false
+                }
+            };
+            visualBuilder.updateFlushAllD3Transitions(dataView);
+        });
+
+        it("dot should be selected on click", (done) => {
+            const dot = visualBuilder.dots![0];
+            const datum = select(dot).datum() as LineDotPoint;
+
+            expect(datum.selected).toBeFalse();
+            expect(parseFloat(dot.style.opacity)).toBe(1);
+
+            dot.dispatchEvent(new MouseEvent("click"));
+
+            expect(datum.selected).toBeTrue();
+            expect(parseFloat(dot.style.opacity)).toBe(1);
+
+            done();
+        });
+
+        it("dot should not be selected on double click", (done) => {
+            const dot = visualBuilder.dots![0];
+            const datum = select(dot).datum() as LineDotPoint;
+
+            expect(datum.selected).toBeFalse();
+
+            dot.dispatchEvent(new MouseEvent("click"));
+            expect(datum.selected).toBeTrue();
+
+            dot.dispatchEvent(new MouseEvent("click"));
+            expect(datum.selected).toBeFalse();
+
+            done();
+
+        });
+
+        it("when dot is clicked, other dots should not be selected", (done) => {
+            const selection: Selection<SVGCircleElement, LineDotPoint, any, unknown> = selectAll(visualBuilder.dots!);
+            const nodes = selection.nodes();
+            const data = selection.data();
+
+            nodes[0].dispatchEvent(new MouseEvent("click"));
+
+            expect(data[0].selected).toBeTruthy();
+            expect(parseFloat(nodes[0].style.opacity)).toBe(1);
+
+            for (let i = 1; i < data.length; i++) {
+                expect(data[i].selected).toBeFalse();
+                expect(parseFloat(nodes[i].style.opacity)).toBeLessThan(1);
+            }
+
+            done();
+        });
+
+        it("dots should be selected on click with modifier keys", (done) => {
+            testModifierKey(new MouseEvent("click", { ctrlKey: true }));
+            testModifierKey(new MouseEvent("click", { shiftKey: true }));
+            testModifierKey(new MouseEvent("click", { metaKey: true }));
+
+            done();
+
+            function testModifierKey(secondClick: MouseEvent) {
+                const selection: Selection<SVGCircleElement, LineDotPoint, any, unknown> = selectAll(visualBuilder.dots!);
+                const nodes = selection.nodes();
+                const data = selection.data();
+                nodes[0].dispatchEvent(new MouseEvent("click"));
+                nodes[1].dispatchEvent(secondClick);
+
+                expect(data[0].selected).toBeTruthy();
+                expect(data[1].selected).toBeTruthy();
+                expect(parseFloat(nodes[0].style.opacity)).toBe(1);
+                expect(parseFloat(nodes[1].style.opacity)).toBe(1);
+
+                for (let i = 2; i < data.length; i++) {
+                    expect(data[i].selected).toBeFalse();
+                    expect(parseFloat(nodes[i].style.opacity)).toBeLessThan(1);
+                }
+
+                // clear selection
+                visualBuilder.mainElement.dispatchEvent(new MouseEvent("click"));
+            }
+        });
+    });
 });
 
+
+describe("LineDotChart highlight", () => {
+    it("should highlight dots", (done) => {
+        const visualBuilder = new LineDotChartBuilder(1000, 500);
+        const defaultDataViewBuilder = new LineDotChartData();
+        const dataView = defaultDataViewBuilder.getDataView();
+
+        // set highlights
+        dataView.categorical!.values![0].highlights = dataView.categorical!.values![0].values;
+        for (let i = dataView.categorical!.values![0].highlights.length; i < dataView.categorical!.values![0].highlights.length; i++) {
+            dataView.categorical!.values![0].highlights[i] = <any>null;
+        }
+
+        dataView.metadata.objects = {
+            misc: {
+                isStopped: false
+            }
+        };
+        visualBuilder.updateFlushAllD3Transitions(dataView);
+
+        const selection: Selection<SVGCircleElement, LineDotPoint, any, unknown> = selectAll(visualBuilder.dots!);
+        const nodes = selection.nodes();
+        const data = selection.data();
+
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].highlight) {
+                expect(parseFloat(nodes[i].style.opacity)).toBe(1);
+            } else {
+                expect(parseFloat(nodes[i].style.opacity)).toBeLessThan(1);
+            }
+        }
+
+        done();
+    });
+});
