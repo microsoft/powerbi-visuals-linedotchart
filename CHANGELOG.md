@@ -1,16 +1,21 @@
 ## 2.1.0
-* Migrate to eslint from tslint
+### Visual changes
+* Migrate to new formatting model
+* Add keyboard navigation
+* Add Rendering API support
+* Add report page tooltip support
+* Add context menu support
+
+### Code improvements
 * Update API to 5.11.0, tools to 5.5.1 and other packages
+* Migrate to eslint from tslint
 * Update to latest d3, split d3 into submodules
 * Remove core-js, .travis.yml, azure-pipelines.yml
 * Add CI/CD and CodeQL
-* Add Rendering API support
 * Fix less-loader options, fix running tests, migrate from puppeteer to playwright-chromium
-* Migrate to new formatting model
-* Add report page tooltip support
-* Remove interactivity-utils, add context menu
-* Add keyboard navigation
+* Remove interactivity-utils
 * Add selection and highlight tests
+* Remove "coveralls" package
 
 ## 2.0.3
 * Fixed ticks formatting of fractional numbers
