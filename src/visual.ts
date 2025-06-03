@@ -425,11 +425,11 @@ export class LineDotChart implements IVisual {
         if (counterValues && counterValues.length > 0) {
             const fValue: any = counterValues[0];
             if (typeof fValue.getMonth === "function") {
-                this.formattingSettings.isCounterDateTime.isCounterDateTime = true;
+                this.formattingSettings.isCounterDateTime = true;
             } else if (typeof fValue === "string" && !isNaN(Date.parse(fValue))) {
-                this.formattingSettings.isCounterDateTime.isCounterDateTime = true;
+                this.formattingSettings.isCounterDateTime = true;
             } else {
-                this.formattingSettings.isCounterDateTime.isCounterDateTime = false;
+                this.formattingSettings.isCounterDateTime = false;
             }
         }
 
@@ -1141,7 +1141,7 @@ export class LineDotChart implements IVisual {
                         let text: string = `${this.formattingSettings.counteroptions.counterTitle.value.valueOf()} `;
 
                         if (d.counter) {
-                            text += this.formattingSettings.isCounterDateTime.isCounterDateTime
+                            text += this.formattingSettings.isCounterDateTime
                                 ? this.data.dateColumnFormatter.format(new Date(d.counter))
                                 : d.counter;
                         } else {

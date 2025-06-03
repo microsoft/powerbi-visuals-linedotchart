@@ -76,27 +76,6 @@ class DotSettingsCard extends Card {
     public strokeOpacity: number = 0.7;
     public strokeWidth: number = 0.5;
 
-    // stroke = new formattingSettings.ColorPicker({
-    //     name: "stroke",
-    //     displayName: "Stroke",
-    //     displayNameKey: "Visual_Stroke",
-    //     value: { value: "#ffffff" },
-    // });
-
-    // strokeOpacity = new formattingSettings.NumUpDown({
-    //     name: "strokeOpacity",
-    //     displayName: "Stroke Opacity",
-    //     displayNameKey: "Visual_StrokeOpacity",
-    //     value: 0.7,
-    // });
-
-    // strokeWidth = new formattingSettings.NumUpDown({
-    //     name: "strokeWidth",
-    //     displayName: "Stroke Width",
-    //     displayNameKey: "Visual_StrokeWidth",
-    //     value: 0.5,
-    // });
-
     name = "dotoptions";
     displayName = "Dot";
     displayNameKey = "Visual_Dot";
@@ -316,14 +295,6 @@ class PlayButtonSettingsCard extends Card {
     slices = [this.fill, this.stroke, this.innerColor, this.strokeWidth, this.opacity];
 }
 
-/**
- * Class that is used to identify if "Counter" role data field is a Date or string convertable to Date
- * If it's a date, then it would be formatted as date.
- */
-class CounterDateTime {
-    public isCounterDateTime: boolean = true;
-}
-
 export class LineDotChartSettingsModel extends Model {
     lineoptions = new LineSettingsCard();
     dotoptions = new DotSettingsCard();
@@ -333,7 +304,7 @@ export class LineDotChartSettingsModel extends Model {
     misc = new AnimationSettingsCard();
     playButton = new PlayButtonSettingsCard();
 
-    isCounterDateTime: CounterDateTime = new CounterDateTime();
+    isCounterDateTime: boolean = true;
 
     cards = [
         this.lineoptions,
