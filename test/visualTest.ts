@@ -25,7 +25,6 @@
  */
 
 import powerbi from "powerbi-visuals-api";
-import * as _ from "lodash";
 
 import DataView = powerbi.DataView;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
@@ -408,8 +407,9 @@ describe("LineDotChartTests", () => {
 
         it("date values provided as string should be converted to Date type", () => {
             const categoricalValues: LineDotChartColumns<any[]> = LineDotChartColumns.getCategoricalValues(dataViewForCategoricalColumn);
+            const date: any = categoricalValues.Date[0];
 
-            expect(_.isDate(categoricalValues.Date[0])).toBeTruthy();
+            expect(!isNaN(date) && date instanceof Date).toBeTruthy();
         });
 
         it("date values provided as string and being as custom strings must be displayed correctly", () => {

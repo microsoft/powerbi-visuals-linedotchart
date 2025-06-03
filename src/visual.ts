@@ -33,7 +33,6 @@ import { axisRight, AxisDomain } from "d3-axis";
 import { line, Line } from "d3-shape";
 import { easeLinear, easeElastic } from "d3-ease";
 import { timerFlush } from "d3-timer";
-import * as _ from "lodash";
 import powerbi from "powerbi-visuals-api";
 
 import DataView = powerbi.DataView;
@@ -257,7 +256,7 @@ export class LineDotChart implements IVisual {
 
             const data: LineDotChartViewModel = this.converter(this.dataView, this.hostService);
 
-            if (!data || _.isEmpty(data.dotPoints)) {
+            if (!data || !data.dotPoints || data.dotPoints.length === 0) {
                 this.clear();
                 return;
             }
@@ -399,11 +398,13 @@ export class LineDotChart implements IVisual {
         if (!categorical
             || !categorical.Date
             || !categorical.Date.source
-            || _.isEmpty(categorical.Date.values)
+            || !categorical.Date.values
+            || categorical.Date.values.length === 0
             || !categorical.Values
             || !categorical.Values[0]
             || !categorical.Values[0].source
-            || _.isEmpty(categorical.Values[0].values)) {
+            || !categorical.Values[0].values
+            || categorical.Values[0].values.length === 0) {
             return null;
         }
 
@@ -969,8 +970,11 @@ export class LineDotChart implements IVisual {
             .attr("y", LineDotChart.zeroY)
             .attr("height", this.layout.viewportIn.height);
 
-        const line_left: any = this.xAxisProperties.scale(_.first(this.data.dotPoints).dateValue.value);
-        const line_right: any = this.xAxisProperties.scale(_.last(this.data.dotPoints).dateValue.value);
+        const firstDataPoint = this.data.dotPoints[0];
+        const lastDataPoint = this.data.dotPoints[this.data.dotPoints.length - 1];
+
+        const line_left: any = this.xAxisProperties.scale(firstDataPoint.dateValue.value);
+        const line_right: any = this.xAxisProperties.scale(lastDataPoint.dateValue.value);
 
         const rectSettings: LineAnimationSettings = this.getRectAnimationSettings(line_left, line_right);
 

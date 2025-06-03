@@ -26,7 +26,7 @@
 
 
 import powerbi from "powerbi-visuals-api";
-import * as _ from "lodash";
+import mapValues from "lodash.mapvalues";
 
 import DataView = powerbi.DataView;
 import DataViewCategorical = powerbi.DataViewCategorical;
@@ -46,13 +46,12 @@ export class LineDotChartColumns<T> {
 
         const series: any = categorical && values.source && this.getSeriesValues(dataView);
 
-        return categorical && _.mapValues(new this<any[]>(), (n, i) =>
-            (<(DataViewCategoryColumn | DataViewValueColumn)[]>_
-                .toArray(categories))
-                .concat(_.toArray(values))
+        return categorical && mapValues(new this<any[]>(), (n, i) =>
+            (<(DataViewCategoryColumn | DataViewValueColumn)[]>categories)
+                .concat(values)
                 .filter(x => x.source.roles && x.source.roles[i])
                 .map(x => x.values.map(y => {
-                    if (_.isString(y)) {
+                    if (typeof y === 'string') {
                         const date: Date = new Date(y);
                         if (isNaN(date.getTime())) {
                             return y;
@@ -79,7 +78,7 @@ export class LineDotChartColumns<T> {
         const categories: DataViewCategoryColumn[] = categorical && categorical.categories || [];
         const values: DataViewValueColumns = categorical && categorical.values || <DataViewValueColumns>[];
 
-        return categorical && _.mapValues(
+        return categorical && mapValues(
             new this<DataViewCategoryColumn & DataViewValueColumn[] & DataViewValueColumns>(),
             (n, i) => {
                 let result: any = categories.filter(x => x.source.roles && x.source.roles[i])[0];
@@ -90,7 +89,7 @@ export class LineDotChartColumns<T> {
 
                 if (!result) {
                     result = values.filter(x => x.source.roles && x.source.roles[i]);
-                    if (_.isEmpty(result)) {
+                    if (!result || result.length === 0) {
                         result = undefined;
                     }
                 }
