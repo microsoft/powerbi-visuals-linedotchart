@@ -63,7 +63,7 @@
     "less": "3.8.1",
     "less-loader": "4.1.0",
     "powerbi-visuals-api": "^2.3.2",
-    "powerbi-visuals-tools": "3.0.9",
+    "powerbi-visuals-tools": "6.1.2",
     "powerbi-visuals-utils-testutils": "^2.1.4",
     "puppeteer": "^1.13.0",
     "style-loader": "0.23.1",
