@@ -132,7 +132,6 @@ export class LineDotChart implements IVisual {
     public data: LineDotChartViewModel;
     private formattingSettings: LineDotChartSettingsModel;
 
-    private static counterTitleDefaultKey: string = "Visual_CounterTitle";
     private static axesDefaultColor: string = "black";
     private static axesDefaultFontSize: number = 10.5;
 
@@ -368,10 +367,6 @@ export class LineDotChart implements IVisual {
     }
 
     public getFormattingModel(): powerbi.visuals.FormattingModel {
-        if (!this.formattingSettings.counteroptions.counterTitle.value) {
-            this.formattingSettings.counteroptions.counterTitle.value = this.localizationManager.getDisplayName(LineDotChart.counterTitleDefaultKey);
-        }
-
         if (!this.formattingSettings.misc.isAnimated.value) {
             this.formattingSettings.playButton.visible = false;
         }
@@ -421,7 +416,7 @@ export class LineDotChart implements IVisual {
 
         const categoricalValues: LineDotChartColumns<any[]> = LineDotChartColumns.getCategoricalValues(dataView);
 
-        this.formattingSettings.validateAndCorrectSettings();
+        this.formattingSettings.validateAndCorrectSettings(this.localizationManager);
 
         if (counterValues && counterValues.length > 0) {
             const fValue: any = counterValues[0];
@@ -732,9 +727,9 @@ export class LineDotChart implements IVisual {
             .remove();
 
         const linePathSelectionMerged = this.drawLine(linePathSelection);
-        this.drawClipPath(linePathSelectionMerged);
+        const isRightToLeft = this.drawClipPath(linePathSelectionMerged);
 
-        this.drawDots(lineTipSelection);
+        this.drawDots(lineTipSelection, isRightToLeft);
     }
 
     public applyAxisSettings(): void {
@@ -940,10 +935,15 @@ export class LineDotChart implements IVisual {
                 return this.yAxisProperties.scale(dataPoint.value);
             });
 
+        // Sort points by X coordinate for proper line connection order
+        const sortedPoints = [...this.data.dotPoints].sort((a, b) => {
+            return this.xAxisProperties.scale(a.dateValue.value) - this.xAxisProperties.scale(b.dateValue.value);
+        });
+
         pathPlotMerged
             .attr("stroke", () => this.formattingSettings.lineoptions.fill.value.value)
             .attr("stroke-width", this.formattingSettings.lineoptions.lineThickness.value.valueOf())
-            .attr("d", drawLine)
+            .attr("d", drawLine(sortedPoints))
             .attr("clip-path", "url(" + location.href + "#" + LineDotChart.lineClip + ")");
 
         return linePathSelectionMerged;
@@ -970,13 +970,21 @@ export class LineDotChart implements IVisual {
             .attr("y", LineDotChart.zeroY)
             .attr("height", this.layout.viewportIn.height);
 
+        // Determine animation direction based on original data order
         const firstDataPoint = this.data.dotPoints[0];
         const lastDataPoint = this.data.dotPoints[this.data.dotPoints.length - 1];
+        const firstX = this.xAxisProperties.scale(firstDataPoint.dateValue.value);
+        const lastX = this.xAxisProperties.scale(lastDataPoint.dateValue.value);
+        const isRightToLeft = lastX < firstX;
 
-        const line_left: any = this.xAxisProperties.scale(firstDataPoint.dateValue.value);
-        const line_right: any = this.xAxisProperties.scale(lastDataPoint.dateValue.value);
+        // For line drawing - always sort by X coordinate
+        const sortedForLine = [...this.data.dotPoints].sort((a, b) => {
+            return this.xAxisProperties.scale(a.dateValue.value) - this.xAxisProperties.scale(b.dateValue.value);
+        });
 
-        const rectSettings: LineAnimationSettings = this.getRectAnimationSettings(line_left, line_right);
+        const line_left = this.xAxisProperties.scale(sortedForLine[0].dateValue.value);
+        const line_right = this.xAxisProperties.scale(sortedForLine[sortedForLine.length - 1].dateValue.value);
+        const rectSettings: LineAnimationSettings = this.getRectAnimationSettings(line_left, line_right, isRightToLeft);
 
         if (this.formattingSettings.misc.isAnimated.value) {
             clipPathMerged
@@ -993,16 +1001,15 @@ export class LineDotChart implements IVisual {
         } else {
             linePathSelection.selectAll("clipPath").remove();
         }
+        return isRightToLeft;
     }
 
-    public getRectAnimationSettings(firstValue: number, secondValue: number): LineAnimationSettings {
-        const isReverted: boolean = secondValue - firstValue < 0;
-
+    public getRectAnimationSettings(firstValue: number, secondValue: number, isReverted: boolean): LineAnimationSettings {
         if (isReverted) {
             return {
-                startX: firstValue,
-                endX: secondValue,
-                endWidth: firstValue - secondValue
+                startX: secondValue,
+                endX: firstValue,
+                endWidth: secondValue - firstValue
             };
         }
 
@@ -1021,7 +1028,7 @@ export class LineDotChart implements IVisual {
     private static pointTransformScaleValue: number = 3.4;
     private static pointDelayCoefficient: number = 1000;
 
-    private drawDots(lineTipSelection: Selection<SVGPathElement, LineDotPoint[], any, any>) {
+    private drawDots(lineTipSelection: Selection<SVGPathElement, LineDotPoint[], any, any>, isRightToLeft: boolean) {
         const point_time: number = this.formattingSettings.misc.isAnimated.value && !this.formattingSettings.misc.isStopped.value
             ? LineDotChart.pointTime
             : 0;
@@ -1074,7 +1081,7 @@ export class LineDotChart implements IVisual {
                     + dotPoint.dot * (this.formattingSettings.dotoptions.dotSizeMax.value - this.formattingSettings.dotoptions.dotSizeMin.value);
             });
 
-        this.handleDotsTransformation(dotsSelectionMerged, point_time);
+        this.handleDotsTransformation(dotsSelectionMerged, point_time, isRightToLeft);
 
         this.tooltipServiceWrapper.addTooltip<LineDotPoint>(
             dotsSelectionMerged,
@@ -1100,7 +1107,7 @@ export class LineDotChart implements IVisual {
         this.behavior.bindEvents(behaviorOptions);
     }
 
-    private handleDotsTransformation(dotsSelectionMerged: Selection<SVGCircleElement, LineDotPoint, any, any>, point_time: number) {
+    private handleDotsTransformation(dotsSelectionMerged: Selection<SVGCircleElement, LineDotPoint, any, any>, point_time: number, isRightToLeft: boolean) {
         if (this.formattingSettings.misc.isAnimated.value) {
             const maxTextLength: number = Math.min(
                 350,
@@ -1131,6 +1138,14 @@ export class LineDotChart implements IVisual {
                 .exit()
                 .remove();
 
+            // Sort points for animation according to direction
+            const sortedPointsForAnimation = [...this.data.dotPoints].sort((a, b) => {
+                const aX = this.xAxisProperties.scale(a.dateValue.value);
+                const bX = this.xAxisProperties.scale(b.dateValue.value);
+                
+                return isRightToLeft ? bX - aX : aX - bX;
+            });
+
             dotsSelectionMerged
                 .interrupt()
                 .attr("transform", (dataPoint: LineDotPoint) => {
@@ -1142,7 +1157,7 @@ export class LineDotChart implements IVisual {
                 .transition()
                 .on("start", (d: LineDotPoint, i: number) => {
                     if (this.formattingSettings.counteroptions.show.value) {
-                        let text: string = `${this.formattingSettings.counteroptions.counterTitle.value.valueOf()} `;
+                        let text: string = `${this.formattingSettings.counteroptions.counterTitle.value} `;
 
                         if (d.counter) {
                             text += this.formattingSettings.isCounterDateTime
@@ -1157,7 +1172,13 @@ export class LineDotChart implements IVisual {
                     }
                 })
                 .duration(point_time)
-                .delay((_, i: number) => this.pointDelay(this.data.dotPoints, i, this.animationDuration))
+                .delay((dataPoint: LineDotPoint) => {
+                    // Find the index of this point in the sorted array for synchronized timing
+                    const sortedIndex = sortedPointsForAnimation.findIndex(p => 
+                        p.dateValue.value === dataPoint.dateValue.value
+                    );
+                    return this.pointDelay(sortedPointsForAnimation, sortedIndex, this.animationDuration);
+                })
                 .ease(easeLinear)
                 .attr("transform", (dataPoint: LineDotPoint) => {
                     return SVGManipulations.translateAndScale(
@@ -1167,8 +1188,11 @@ export class LineDotChart implements IVisual {
                 })
                 .transition()
                 .duration(point_time)
-                .delay((_, i: number) => {
-                    return (this.pointDelay(this.data.dotPoints, i, this.animationDuration) + point_time) / LineDotChart.pointDelayCoefficient;
+                .delay((dataPoint: LineDotPoint) => {
+                    const sortedIndex = sortedPointsForAnimation.findIndex(p => 
+                        p.dateValue.value === dataPoint.dateValue.value
+                    );
+                    return (this.pointDelay(sortedPointsForAnimation, sortedIndex, this.animationDuration) + point_time) / LineDotChart.pointDelayCoefficient;
                 })
                 .ease(easeElastic)
                 .attr("transform", (dataPoint: LineDotPoint) => {

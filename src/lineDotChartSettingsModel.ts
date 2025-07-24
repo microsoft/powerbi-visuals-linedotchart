@@ -1,6 +1,8 @@
 import powerbi from "powerbi-visuals-api";
 import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
 
+import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
+
 import ValidatorType = powerbi.visuals.ValidatorType;
 import Card = formattingSettings.SimpleCard;
 import Model = formattingSettings.Model;
@@ -170,6 +172,8 @@ class YAxisSettingsCard extends Card {
 }
 
 class CounterSettingsCard extends Card {
+    public static counterTitleDefaultKey: string = "Visual_CounterTitle";
+
     show = new formattingSettings.ToggleSwitch({
         name: "show",
         displayName: "Show",
@@ -320,7 +324,7 @@ export class LineDotChartSettingsModel extends Model {
      * Validates values of the settings and corrects them if needed.
      * Because formatting model options does not force changing the value if it's already set in the invalid range.
      */
-    public validateAndCorrectSettings(): void {
+    public validateAndCorrectSettings(localizationManager: ILocalizationManager): void {
         this.dotoptions.dotSizeMin.value = this.getValidValue(
             this.dotoptions.dotSizeMin.value,
             this.dotoptions.dotSizeMin.options.minValue.value,
@@ -344,6 +348,10 @@ export class LineDotChartSettingsModel extends Model {
             this.misc.duration.options.minValue.value,
             this.misc.duration.options.maxValue.value
         );
+
+        if (!this.counteroptions.counterTitle.value) {
+            this.counteroptions.counterTitle.value = localizationManager.getDisplayName(CounterSettingsCard.counterTitleDefaultKey);
+        }
     }
 
     private getValidValue(value: number, min: number, max: number): number {
