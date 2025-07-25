@@ -13,6 +13,7 @@
     "lint": "npx eslint .",
     "pretest": "pbiviz package --resources --no-minify --no-pbiviz",
     "test": "karma start",
+    "debug": "karma start --browsers=Chrome --single-run=false",
     "cert": "pbiviz --create-cert",
     "installcert": "pbiviz --install-cert"
   },

@@ -440,7 +440,7 @@ describe("LineDotChartTests", () => {
             const firstValue: number = 10,
                 lastValue: number = 100;
 
-            const settings = visualBuilder.visualInstance.getRectAnimationSettings(firstValue, lastValue);
+            const settings = visualBuilder.visualInstance.getRectAnimationSettings(firstValue, lastValue, false);
 
             // for ascending order X value always the same
             expect(settings.startX).toBe(firstValue);
@@ -451,13 +451,13 @@ describe("LineDotChartTests", () => {
         });
 
         it("should return correct rect coordinates and width for reversed data", () => {
-            const firstValue: number = 100,
-                lastValue: number = 10;
+            const firstValue: number = 10,
+                lastValue: number = 100;
 
-            const settings = visualBuilder.visualInstance.getRectAnimationSettings(firstValue, lastValue);
+            const settings = visualBuilder.visualInstance.getRectAnimationSettings(firstValue, lastValue, true);
             // for descending order X value moves from right to left
-            expect(settings.startX).toBe(firstValue);
-            expect(settings.endX).toBe(lastValue);
+            expect(settings.startX).toBe(lastValue);
+            expect(settings.endX).toBe(firstValue);
 
             // width should be always positive
             expect(settings.endWidth).toBeGreaterThanOrEqual(0);
