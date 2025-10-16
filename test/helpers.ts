@@ -24,8 +24,7 @@
  *  THE SOFTWARE.
  */
 
-import * as powerbi from "powerbi-visuals-api";
-import * as _ from "lodash";
+import range from "lodash.range";
 
 import { RgbColor, parseColorString } from "powerbi-visuals-utils-colorutils";
 import { getRandomNumber } from "powerbi-visuals-utils-testutils";
@@ -41,7 +40,7 @@ export function areColorsEqual(firstColor: string, secondColor: string): boolean
 
 export function getHexColorFromNumber(value: number) {
     let hex: string = value.toString(16).toUpperCase();
-    return "#" + (hex.length === 6 ? hex : _.range(0, 6 - hex.length, 0).join("") + hex);
+    return "#" + (hex.length === 6 ? hex : range(0, 6 - hex.length, 0).join("") + hex);
 }
 
 export function getRandomInteger(min: number, max: number, exceptionList?: number[]): number {
@@ -53,5 +52,5 @@ export function getRandomHexColor(): string {
 }
 
 export function getRandomHexColors(count: number): string[] {
-    return _.range(count).map(x => getRandomHexColor());
+    return range(count).map(x => getRandomHexColor());
 }

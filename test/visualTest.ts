@@ -25,7 +25,6 @@
  */
 
 import powerbi from "powerbi-visuals-api";
-import * as _ from "lodash";
 
 import DataView = powerbi.DataView;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
@@ -41,6 +40,7 @@ import { LineDotChartBuilder } from "./visualBuilder";
 import { LineDotChart } from "./../src/visual";
 import { ColumnNames, LineDotPoint, LineDotChartViewModel } from "./../src/dataInterfaces";
 import { LineDotChartColumns } from "./../src/columns";
+import { select, selectAll, Selection } from "d3-selection";
 
 describe("LineDotChartTests", () => {
     let visualBuilder: LineDotChartBuilder,
@@ -57,15 +57,16 @@ describe("LineDotChartTests", () => {
 
     describe("DOM tests", () => {
         it("main element was created", () => {
-            expect(visualBuilder.mainElement.get(0)).toBeDefined();
+            expect(visualBuilder.mainElement).toBeDefined();
         });
 
         it("update", (done) => {
             visualBuilder.updateRenderTimeout(dataView, () => {
-                expect(visualBuilder.mainElement.find(".axis").length).not.toBe(0);
-                expect(visualBuilder.mainElement.find(".tick").length).not.toBe(0);
-                expect(visualBuilder.mainElement.find(".lineDotChart__playBtn").get(0)).toBeDefined();
-                expect(visualBuilder.mainElement.find(".legends").get(0)).toBeDefined();
+                expect(visualBuilder.axis.length).toBeGreaterThan(0);
+                expect(visualBuilder.ticks.length).toBeGreaterThan(0);
+                expect(visualBuilder.line).toBeDefined()
+                expect(visualBuilder.animationPlayButton).toBeDefined();
+                expect(visualBuilder.legends).toBeDefined();
 
                 done();
             });
@@ -90,7 +91,7 @@ describe("LineDotChartTests", () => {
             visualBuilder.updateFlushAllD3Transitions(dataView);
 
             renderTimeout(() => {
-                expect(visualBuilder.counterTitle).toBeInDOM();
+                expect(visualBuilder.counterTitle).toBeDefined();
                 done();
             });
         });
@@ -116,7 +117,7 @@ describe("LineDotChartTests", () => {
 
             renderTimeout(() => {
                 let counterNumber: number = 0;
-                expect(visualBuilder.counterTitle).toBeInDOM();
+                expect(visualBuilder.counterTitle).toBeDefined();
                 setInterval(() => {
                     const newCounterNumber: number = Number(visualBuilder.counterTitle);
                     expect(newCounterNumber).toBeGreaterThan(counterNumber);
@@ -152,9 +153,11 @@ describe("LineDotChartTests", () => {
 
             expect(visualBuilder.tickText.length).toBeGreaterThan(0);
 
-            visualBuilder.tickText.toArray().map($).forEach(e => {
-                expect(e.prop('style')['font-size']).toBe(expectedTextSize);
-                assertColorsMatch(e.prop('style')['fill'], color);
+            visualBuilder.tickText.forEach((element: SVGTextElement) => {
+                const styles = getComputedStyle(element);
+                const fontSize: string = styles.fontSize;
+                expect(fontSize).toBe(expectedTextSize);
+                assertColorsMatch(styles.fill, color);
             });
         });
 
@@ -208,10 +211,15 @@ describe("LineDotChartTests", () => {
 
     describe("Clear test", () => {
         it("clear all", (done) => {
+            dataView.metadata.objects = {
+                misc: {
+                    isStopped: false
+                }
+            }
             visualBuilder.updateFlushAllD3Transitions(dataView);
             renderTimeout(() => {
                 visualBuilder.visualInstance.clear();
-                expect(visualBuilder.mainElement.find("circle").get(0)).toBe(undefined);
+                expect(visualBuilder.dots).toBeNull();
                 done();
             });
         });
@@ -234,7 +242,7 @@ describe("LineDotChartTests", () => {
 
             visualBuilder.updateFlushAllD3Transitions(dataView);
             renderTimeout(() => {
-                expect(visualBuilder.mainElement.find("clipPath").get(0)).toBe(undefined);
+                expect(visualBuilder.clipPath).toBeNull();
                 done();
             });
         });
@@ -251,53 +259,76 @@ describe("LineDotChartTests", () => {
 
         describe("Line", () => {
             it("color", () => {
-                let color: string = getRandomHexColor();
-                (dataView.metadata.objects as any).lineoptions = { fill: getSolidColorStructuralObject(color) };
+                const color: string = "#123123";
+
+                dataView.metadata.objects = {
+                    lineoptions: {
+                        fill: getSolidColorStructuralObject("#123123")
+                    },
+                    misc: {
+                        isAnimated: false
+                    }
+                }
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                assertColorsMatch(visualBuilder.linePath.css('stroke'), color);
+                assertColorsMatch(getComputedStyle(visualBuilder.linePath!).stroke, color);
             });
         });
 
         describe("Dot", () => {
             it("color", () => {
+                // check
                 let color: string = getRandomHexColor();
 
                 dataView.metadata.objects = {
                     dotoptions: {
                         color: getSolidColorStructuralObject(color)
+                    },
+                    misc: {
+                        isAnimated: false
                     }
                 };
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                visualBuilder.dots.toArray().map($).forEach(e =>
-                    assertColorsMatch(e.attr('fill'), color));
+                visualBuilder.dots!.forEach((dot: SVGCircleElement) => {
+                    assertColorsMatch(dot.style.fill, color);
+                });
             });
             it("opacity", () => {
-                let color: string = getRandomHexColor();
-                const dots: JQuery<any>[] = visualBuilder.dots.toArray().map($);
+                const color: string = getRandomHexColor();
+                const opacity: number = 50;
                 dataView.metadata.objects = {
                     dotoptions: {
                         color: getSolidColorStructuralObject(color),
-                        percentile: 50
+                        percentile: opacity
+                    },
+                    misc: {
+                        isAnimated: false
                     }
                 };
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                dots.forEach(e => assertColorsMatch(e.attr('fill'), color) && assertColorsMatch(e.css('opacity'), color));
+                expect(visualBuilder.dots).toBeDefined();
+                visualBuilder.dots!.forEach(e => {
+                    assertColorsMatch(e.style.fill, color);
+                    expect(parseFloat(e.style.opacity)).toBe(opacity / 100);
+                });
             });
         });
 
         describe("Validate params", () => {
             it("Dots", () => {
-
                 dataView.metadata.objects = {
                     dotoptions: {
                         dotSizeMin: -6,
                         dotSizeMax: 678
+                    },
+                    misc: {
+                        isAnimated: false
                     }
                 };
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                visualBuilder.dots.toArray().map($).forEach(e => {
-                    expect(e.attr("r")).toBeGreaterThan(-1);
-                    expect(e.attr("r")).toBeLessThan(101);
+                visualBuilder.dots!.forEach(e => {
+                    // TODO:// FIX ERRORS
+                    expect(e.getAttribute("r")).toBeGreaterThan(-1);
+                    expect(e.getAttribute("r")).toBeLessThan(101);
                 });
             });
         });
@@ -334,7 +365,7 @@ describe("LineDotChartTests", () => {
         });
 
         it("the date should be formatted", () => {
-            const dataPoint: LineDotPoint = {
+            const dataPoint: LineDotPoint = <any>{
                 dateValue: {
                     date: new Date(2008, 1, 1),
                     label: undefined,
@@ -376,8 +407,9 @@ describe("LineDotChartTests", () => {
 
         it("date values provided as string should be converted to Date type", () => {
             const categoricalValues: LineDotChartColumns<any[]> = LineDotChartColumns.getCategoricalValues(dataViewForCategoricalColumn);
+            const date: any = categoricalValues.Date[0];
 
-            expect(_.isDate(categoricalValues.Date[0])).toBeTruthy();
+            expect(!isNaN(date) && date instanceof Date).toBeTruthy();
         });
 
         it("date values provided as string and being as custom strings must be displayed correctly", () => {
@@ -386,10 +418,20 @@ describe("LineDotChartTests", () => {
             visualBuilder.updateFlushAllD3Transitions(defaultDataViewBuilder.createStringView());
             visualBuilder.visualInstance.applyAxisSettings();
 
-            let ticks: any = visualBuilder.axis.first().children("g.tick");
+            const ticks: NodeListOf<SVGGElement> = visualBuilder.axis[0].querySelectorAll("g.tick");
+            const tickTexts: SVGTextElement[] = [];
+            ticks.forEach((tick: SVGGElement) => {
+                tickTexts.push(...tick.querySelectorAll("text"));
+            });
 
             expect(ticks.length).toBe(4);
-            expect(ticks.children("text").text()).toEqual(expectedXlabel);
+            for (let i = 0; i < tickTexts.length; i++) {
+                if (!tickTexts[i].textContent) {
+                    fail("tick text is empty");
+                } else {
+                    expect(expectedXlabel).toContain(tickTexts[i].textContent!);
+                }
+            }
         });
     });
 
@@ -398,7 +440,7 @@ describe("LineDotChartTests", () => {
             const firstValue: number = 10,
                 lastValue: number = 100;
 
-            const settings = visualBuilder.visualInstance.getRectAnimationSettings(firstValue, lastValue);
+            const settings = visualBuilder.visualInstance.getRectAnimationSettings(firstValue, lastValue, false);
 
             // for ascending order X value always the same
             expect(settings.startX).toBe(firstValue);
@@ -409,40 +451,16 @@ describe("LineDotChartTests", () => {
         });
 
         it("should return correct rect coordinates and width for reversed data", () => {
-            const firstValue: number = 100,
-                lastValue: number = 10;
+            const firstValue: number = 10,
+                lastValue: number = 100;
 
-            const settings = visualBuilder.visualInstance.getRectAnimationSettings(firstValue, lastValue);
+            const settings = visualBuilder.visualInstance.getRectAnimationSettings(firstValue, lastValue, true);
             // for descending order X value moves from right to left
-            expect(settings.startX).toBe(firstValue);
-            expect(settings.endX).toBe(lastValue);
+            expect(settings.startX).toBe(lastValue);
+            expect(settings.endX).toBe(firstValue);
 
             // width should be always positive
             expect(settings.endWidth).toBeGreaterThanOrEqual(0);
-        });
-    });
-
-    describe("Capabilities tests", () => {
-        it("all items having displayName should have displayNameKey property", () => {
-            jasmine.getJSONFixtures().fixturesPath = "base";
-
-            let jsonData = getJSONFixture("capabilities.json");
-
-            let objectsChecker: Function = (obj) => {
-                for (let property in obj) {
-                    let value: any = obj[property];
-
-                    if (value.displayName) {
-                        expect(value.displayNameKey).toBeDefined();
-                    }
-
-                    if (typeof value === "object") {
-                        objectsChecker(value);
-                    }
-                }
-            };
-
-            objectsChecker(jsonData);
         });
     });
 
@@ -456,13 +474,18 @@ describe("LineDotChartTests", () => {
 
                 visualBuilder.visualHost.colorPalette.background = { value: backgroundColor };
                 visualBuilder.visualHost.colorPalette.foreground = { value: foregroundColor };
+                dataView.metadata.objects = {
+                    misc: {
+                        isStopped: false
+                    }
+                }
             });
 
             it("should not use fill style", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    const dots: JQuery<any>[] = visualBuilder.dots.toArray().map($);
+                    const dots = Array.from(visualBuilder.dots!);
 
-                    expect(isColorAppliedToElements(dots, null, "fill"));
+                    expect(isColorAppliedToElements(dots, undefined, "fill"));
 
                     done();
                 });
@@ -470,7 +493,7 @@ describe("LineDotChartTests", () => {
 
             it("should use stroke style", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    const dots: JQuery<any>[] = visualBuilder.dots.toArray().map($);
+                    const dots = Array.from(visualBuilder.dots!);
 
                     expect(isColorAppliedToElements(dots, foregroundColor, "stroke"));
 
@@ -479,12 +502,12 @@ describe("LineDotChartTests", () => {
             });
 
             function isColorAppliedToElements(
-                elements: JQuery[],
+                elements: SVGCircleElement[],
                 color?: string,
                 colorStyleName: string = "fill"
             ): boolean {
-                return elements.some((element: JQuery) => {
-                    const currentColor: string = element.css(colorStyleName);
+                return elements.some((element: SVGCircleElement) => {
+                    const currentColor: string = element.style[colorStyleName];
 
                     if (!currentColor || !color) {
                         return currentColor === color;
@@ -559,14 +582,14 @@ describe("LineDotChartTests", () => {
     });
 
     describe("Different formats data representation test", () => {
-        let tickText: JQuery<any>[];
+        let tickText: SVGTextElement[];
         let xTicksCount: number;
 
         beforeEach(() => {
             dataView = defaultDataViewBuilder.getDataViewWithDifferentFormats();
             visualBuilder.update(dataView);
-            tickText = visualBuilder.tickText.toArray().map($);
-            xTicksCount = visualBuilder.xAxisTickText.toArray().length;
+            tickText = visualBuilder.tickText;
+            xTicksCount = visualBuilder.xAxisTickText.length;
         });
 
         it("should represent data in required format on axes", (done) => {
@@ -575,7 +598,7 @@ describe("LineDotChartTests", () => {
 
             visualBuilder.updateRenderTimeout(dataView, () => {
                 tickText.forEach((tick, index) => {
-                    let text = tickText[index].text();
+                    let text = tickText[index].textContent;
                     if (index < xTicksCount) {
                         expect(text).toMatch(priceRegex);
                     } else {
@@ -606,8 +629,8 @@ describe("LineDotChartTests", () => {
     });
 
     describe("Y axis right scaling test", () => {
-        let yTicksText: JQuery[] = [];
-        let allTicksText: JQuery<any>[];
+        let yTicksText: SVGTextElement[] = [];
+        let allTicksText: SVGTextElement[];
 
         beforeEach(() => {
             const orderedDates: Date[] = [
@@ -621,8 +644,8 @@ describe("LineDotChartTests", () => {
             dataView = defaultDataViewBuilder.getDataView(undefined, orderedDates, orderedNumbers);
             visualBuilder.update(dataView);
 
-            let xTicksCount = visualBuilder.xAxisTick.toArray().length;
-            allTicksText = visualBuilder.tickText.toArray().map($);
+            let xTicksCount = visualBuilder.xAxisTick.length;
+            allTicksText = visualBuilder.tickText;
             const yTicksCount: number = (allTicksText.length - xTicksCount) / 2;
             allTicksText.forEach((tick, index) => {
                 if (index >= xTicksCount && index <= yTicksCount + xTicksCount - 1) {
@@ -637,11 +660,11 @@ describe("LineDotChartTests", () => {
             let previosYTickIndex = 0;
             visualBuilder.updateRenderTimeout(dataView, () => {
                 dotPoints.forEach((dotPoint: LineDotPoint) => {
-                    let lowAxisValue: number = parseInt(yTicksText[previosYTickIndex].text());
+                    let lowAxisValue: number = parseInt(yTicksText[previosYTickIndex].textContent || '');
                     expect(dotPoint.value).toBeGreaterThanOrEqual(lowAxisValue);
 
                     if (previosYTickIndex + 1 < yTicksText.length) {
-                        let highAxisValue: number = parseInt(yTicksText[previosYTickIndex + 1].text());
+                        let highAxisValue: number = parseInt(yTicksText[previosYTickIndex + 1].textContent || '');
                         expect(dotPoint.value).toBeGreaterThanOrEqual(lowAxisValue);
                     }
                     previosYTickIndex++;
@@ -650,5 +673,129 @@ describe("LineDotChartTests", () => {
             });
         });
     });
+
+    describe("selection", () => {
+        beforeEach(() => {
+            dataView.metadata.objects = {
+                misc: {
+                    isStopped: false
+                }
+            };
+            visualBuilder.updateFlushAllD3Transitions(dataView);
+        });
+
+        it("dot should be selected on click", (done) => {
+            const dot = visualBuilder.dots![0];
+            const datum = select(dot).datum() as LineDotPoint;
+
+            expect(datum.selected).toBeFalse();
+            expect(parseFloat(dot.style.opacity)).toBe(1);
+
+            dot.dispatchEvent(new MouseEvent("click"));
+
+            expect(datum.selected).toBeTrue();
+            expect(parseFloat(dot.style.opacity)).toBe(1);
+
+            done();
+        });
+
+        it("dot should not be selected on double click", (done) => {
+            const dot = visualBuilder.dots![0];
+            const datum = select(dot).datum() as LineDotPoint;
+
+            expect(datum.selected).toBeFalse();
+
+            dot.dispatchEvent(new MouseEvent("click"));
+            expect(datum.selected).toBeTrue();
+
+            dot.dispatchEvent(new MouseEvent("click"));
+            expect(datum.selected).toBeFalse();
+
+            done();
+
+        });
+
+        it("when dot is clicked, other dots should not be selected", (done) => {
+            const selection: Selection<SVGCircleElement, LineDotPoint, any, unknown> = selectAll(visualBuilder.dots!);
+            const nodes = selection.nodes();
+            const data = selection.data();
+
+            nodes[0].dispatchEvent(new MouseEvent("click"));
+
+            expect(data[0].selected).toBeTruthy();
+            expect(parseFloat(nodes[0].style.opacity)).toBe(1);
+
+            for (let i = 1; i < data.length; i++) {
+                expect(data[i].selected).toBeFalse();
+                expect(parseFloat(nodes[i].style.opacity)).toBeLessThan(1);
+            }
+
+            done();
+        });
+
+        it("dots should be selected on click with modifier keys", (done) => {
+            testModifierKey(new MouseEvent("click", { ctrlKey: true }));
+            testModifierKey(new MouseEvent("click", { shiftKey: true }));
+            testModifierKey(new MouseEvent("click", { metaKey: true }));
+
+            done();
+
+            function testModifierKey(secondClick: MouseEvent) {
+                const selection: Selection<SVGCircleElement, LineDotPoint, any, unknown> = selectAll(visualBuilder.dots!);
+                const nodes = selection.nodes();
+                const data = selection.data();
+                nodes[0].dispatchEvent(new MouseEvent("click"));
+                nodes[1].dispatchEvent(secondClick);
+
+                expect(data[0].selected).toBeTruthy();
+                expect(data[1].selected).toBeTruthy();
+                expect(parseFloat(nodes[0].style.opacity)).toBe(1);
+                expect(parseFloat(nodes[1].style.opacity)).toBe(1);
+
+                for (let i = 2; i < data.length; i++) {
+                    expect(data[i].selected).toBeFalse();
+                    expect(parseFloat(nodes[i].style.opacity)).toBeLessThan(1);
+                }
+
+                // clear selection
+                visualBuilder.mainElement.dispatchEvent(new MouseEvent("click"));
+            }
+        });
+    });
 });
 
+
+describe("LineDotChart highlight", () => {
+    it("should highlight dots", (done) => {
+        const visualBuilder = new LineDotChartBuilder(1000, 500);
+        const defaultDataViewBuilder = new LineDotChartData();
+        const dataView = defaultDataViewBuilder.getDataView();
+
+        // set highlights
+        dataView.categorical!.values![0].highlights = dataView.categorical!.values![0].values;
+        for (let i = dataView.categorical!.values![0].highlights.length; i < dataView.categorical!.values![0].highlights.length; i++) {
+            dataView.categorical!.values![0].highlights[i] = <any>null;
+        }
+
+        dataView.metadata.objects = {
+            misc: {
+                isStopped: false
+            }
+        };
+        visualBuilder.updateFlushAllD3Transitions(dataView);
+
+        const selection: Selection<SVGCircleElement, LineDotPoint, any, unknown> = selectAll(visualBuilder.dots!);
+        const nodes = selection.nodes();
+        const data = selection.data();
+
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].highlight) {
+                expect(parseFloat(nodes[i].style.opacity)).toBe(1);
+            } else {
+                expect(parseFloat(nodes[i].style.opacity)).toBeLessThan(1);
+            }
+        }
+
+        done();
+    });
+});

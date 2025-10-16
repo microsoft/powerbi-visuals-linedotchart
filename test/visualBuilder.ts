@@ -44,69 +44,92 @@ export class LineDotChartBuilder extends VisualBuilderBase<VisualClass> {
         return this.visual;
     }
 
-    public get mainElement(): JQuery {
-        return this.element.children(".lineDotChart");
+    public get mainElement(): SVGSVGElement {
+        return this.element.querySelector<SVGSVGElement>("svg.lineDotChart")!;
     }
 
-    public get line() {
+    public get line(): SVGGElement {
         return this.mainElement
-            .children("g")
-            .children("g.line");
+            .querySelector("g")!
+            .querySelector("g.line")!;
     }
 
-    public get linePath() {
+    public get linePath(): SVGPathElement | null {
         return this.line
-            .children("g.path")
-            .children("path.plot");
+            .querySelector("g.path")
+            ?.querySelector("path.plot") || null;
     }
 
-    public get dots() {
+    public get clipPath(): SVGClipPathElement | null {
         return this.line
-            .children("g.dot-points")
-            .children("circle.point");
+            .querySelector("g.path")!
+            .querySelector("clipPath#lineClip");
     }
 
-    public get axes() {
+    public get dots(): NodeListOf<SVGCircleElement> | null {
+        return this.line
+            .querySelector("g.dot-points")
+            ?.querySelectorAll<SVGCircleElement>("circle.point") || null;
+    }
+
+    public get axes(): SVGGElement {
         return this.mainElement
-            .children("g")
-            .children("g.axes");
+            .querySelector("g")!
+            .querySelector("g.axes")!;
     }
 
-    public get axis() {
-        return this.axes
-            .children("g.axis");
+    public get axis(): NodeListOf<SVGGElement> {
+        return this.axes.querySelectorAll("g.axis");
     }
 
-    public get emptyAxis() {
-        return this.axes.children("g.axis:empty");
+    public get emptyAxis(): NodeListOf<SVGGElement> {
+        return this.axes.querySelectorAll("g.axis:empty");
     }
 
-    public get ticks() {
+    public get ticks(): SVGGElement[] {
+        const ticks: SVGGElement[] = [];
+
+        this.axis
+            .forEach((element: SVGGElement) => {
+                const tickElements: NodeListOf<SVGGElement> = element.querySelectorAll("g.tick");
+                ticks.push(...tickElements);
+            });
+
+        return ticks;
+    }
+
+    public get xAxisTick(): NodeListOf<SVGGElement> {
         return this.axis
-            .children("g.tick");
+            [0]
+            .querySelectorAll("g.tick");
     }
 
-    public get xAxisTick() {
-        return this.axis.first()
-            .children("g.tick");
+    public get tickText(): SVGTextElement[] {
+        const tickTexts: SVGTextElement[] = [];
+        this.ticks.forEach((tick: SVGGElement) => {
+            tickTexts.push(tick.querySelector("text")!);
+        });
+        return tickTexts;
     }
 
-    public get tickText() {
-        return this.ticks.children("text");
+    public get xAxisTickText(): SVGTextElement[] {
+        const tickTexts: SVGTextElement[] = [];
+        this.xAxisTick.forEach((tick: SVGGElement) => {
+            tickTexts.push(tick.querySelector("text")!);
+        });
+        return tickTexts;
     }
 
-    public get xAxisTickText() {
-        return this.xAxisTick.children("text");
+    public get animationPlayButton(): SVGGElement | null {
+        return this.mainElement.querySelector("g.lineDotChart__playBtn");
     }
 
-    public get animationPlay(): JQuery {
-        return this.mainElement
-            .find("g.lineDotChart__playBtn");
+    public get legends(): SVGGElement {
+        return this.mainElement.querySelector("g.legends")!;
     }
 
-    public get counterTitle(): JQuery {
-        return this.line
-            .children("text.text");
+    public get counterTitle(): SVGTextElement | null {
+        return this.line.querySelector("text.text");
     }
 
 }
