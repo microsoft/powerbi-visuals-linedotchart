@@ -5,13 +5,12 @@ name: build
 
 on:
   push:
-    branches: [ main, dev, certification ]
+    branches: [main, dev, certification]
   pull_request:
-    branches: [ main, dev, certification ]
+    branches: [main, dev, certification]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -19,26 +18,24 @@ jobs:
         node-version: [18.x, 20.x]
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: Cache Node.js modules
-      uses: actions/cache@v3
-      with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-${{ matrix.node-version }}
-    - run: npm audit
-      continue-on-error: true
-    - run: npm ci
-    - run: npm outdated
-      continue-on-error: true
-    - run: npm run eslint --if-present
-    - run: npm run lint --if-present
-    - run: npm run package
-    - run: npm test
-      env:
-        CI: true
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.node-version }}
+      - run: npm ci
+      - run: npm audit
+        continue-on-error: true
+      - run: npm outdated
+        continue-on-error: true
+      - run: npm run eslint
+      - run: npm test
+        env:
+          CI: true
