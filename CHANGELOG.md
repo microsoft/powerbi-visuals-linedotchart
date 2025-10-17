@@ -1,3 +1,8 @@
+## 2.1.1
+### Code improvements
+* Update packages
+* Fix npm vulnerabilities
+
 ## 2.1.0
 ### Visual changes
 * Migrate to new formatting model
