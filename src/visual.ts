@@ -29,7 +29,7 @@ import "./../style/lineDotChart.less";
 import "d3-transition";
 import { Selection, select, BaseType } from "d3-selection";
 import { extent } from "d3-array";
-import { axisRight, AxisDomain } from "d3-axis";
+import { axisRight, Axis, AxisDomain } from "d3-axis";
 import { line, Line } from "d3-shape";
 import { easeLinear, easeElastic } from "d3-ease";
 import { timerFlush } from "d3-timer";
@@ -57,8 +57,10 @@ import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructor
 
 import { axis as AxisHelper, axisInterfaces } from "powerbi-visuals-utils-chartutils";
 import IAxisProperties = axisInterfaces.IAxisProperties;
+import IMargin = axisInterfaces.IMargin;
 
-import { valueFormatter as valueFormatter, textMeasurementService } from "powerbi-visuals-utils-formattingutils";
+import { valueFormatter as valueFormatter, textMeasurementService, interfaces } from "powerbi-visuals-utils-formattingutils";
+import TextProperties = interfaces.TextProperties;
 
 import IValueFormatter = valueFormatter.IValueFormatter;
 
@@ -107,6 +109,29 @@ export class LineDotChart implements IVisual {
 
     private static LegendSize: number = 50;
     private static AxisSize: number = 30;
+
+    private static fontFamily: string = "helvetica, arial, sans-serif";
+    /** Matches the .legends text rule in lineDotChart.less. */
+    private static titleFontSize: string = "16px";
+    /** d3 tickSize(6) plus the default tickPadding(3). */
+    private static tickLabelPadding: number = 9;
+    private static titleGap: number = 8;
+    private static maxBandRatio: number = 0.6;
+    /** d3 aligns a tick label's cap top to y, but its box reaches the whole ascent above the baseline. */
+    private static tickLabelBoxOverhang: number = 0.21;
+
+    private axisBands: IMargin;
+    private yLabelBudget: number;
+    private y2LabelBudget: number;
+    private xTickOffset: number;
+    private xTitleOffset: number;
+    private yTitleOffset: number;
+    private forcedXTickCount: number;
+    private forcedYTickCount: number;
+    private renderXTickLabels: boolean;
+    private renderYTickLabels: boolean;
+    private renderXTitle: boolean;
+    private renderYTitle: boolean;
 
     private root: Selection<SVGElement, any, any, any>;
     private main: Selection<SVGGElement, any, any, any>;
@@ -264,8 +289,16 @@ export class LineDotChart implements IVisual {
 
             this.behavior.setSelectedToDataPoints(this.data.dotPoints);
 
-            this.resize();
+            // Tick labels are only known after the axes exist, and their display units can change
+            // once the axes are recomputed, so the bands are measured until they settle.
+            this.resetAxisBands();
             this.calculateAxes();
+
+            for (let pass: number = 0; pass < LineDotChart.maxMeasurePasses && this.measureAxisBands(); pass++) {
+                this.calculateAxes();
+            }
+
+            this.resize();
             this.draw();
 
             this.events.renderingFinished(options);
@@ -519,12 +552,167 @@ export class LineDotChart implements IVisual {
 
     private static outerPadding: number = 0;
     private static forcedTickSize: number = 150;
-    private static xLabelMaxWidth: number = 160;
-    private static xLabelTickSize: number = 3.2;
+
+    private get effectiveWidth(): number {
+        return Math.max(0, this.layout.viewportIn.width - this.axisBands.left - this.axisBands.right);
+    }
+
+    private get effectiveHeight(): number {
+        return Math.max(0, this.layout.viewportIn.height - this.axisBands.top - this.axisBands.bottom);
+    }
+
+    private resetAxisBands(): void {
+        this.axisBands = {
+            top: 0,
+            left: LineDotChart.LegendSize,
+            right: LineDotChart.AxisSize,
+            bottom: LineDotChart.LegendSize
+        };
+
+        this.yLabelBudget = Number.MAX_VALUE;
+        this.y2LabelBudget = Number.MAX_VALUE;
+        this.xTickOffset = LineDotChart.tickLabelPadding;
+        this.forcedXTickCount = undefined;
+        this.forcedYTickCount = undefined;
+        this.renderXTickLabels = this.formattingSettings.xAxis.show.value;
+        this.renderYTickLabels = this.formattingSettings.yAxis.show.value;
+        this.renderXTitle = false;
+        this.renderYTitle = false;
+    }
+
+    private static textProperties(fontSize: string, text?: string): TextProperties {
+        return { fontFamily: LineDotChart.fontFamily, fontSize, text };
+    }
+
+    private static maxLabelWidth(labels: string[], properties: TextProperties): number {
+        return (labels || []).reduce(
+            (widest: number, label: string) => Math.max(widest, textMeasurementService.measureSvgTextWidth(properties, label)),
+            0);
+    }
+
+    private measureAxisBands(): boolean {
+        const xSettings = this.formattingSettings.xAxis;
+        const ySettings = this.formattingSettings.yAxis;
+
+        const xLabelProperties: TextProperties = LineDotChart.textProperties(PixelConverter.fromPoint(xSettings.textSize.value));
+        const yLabelProperties: TextProperties = LineDotChart.textProperties(PixelConverter.fromPoint(ySettings.textSize.value));
+        const titleProperties: TextProperties = LineDotChart.textProperties(LineDotChart.titleFontSize);
+
+        const showX: boolean = xSettings.show.value;
+        const showY: boolean = ySettings.show.value;
+
+        const titleHeight: number = textMeasurementService.measureSvgTextHeight(titleProperties, "0");
+        const titleBand: number = titleHeight + LineDotChart.titleGap;
+
+        const horizontalLimit: number = this.layout.viewportIn.width * LineDotChart.maxBandRatio;
+        const verticalLimit: number = this.layout.viewportIn.height * LineDotChart.maxBandRatio;
+
+        let yLabelHeight: number = showY ? textMeasurementService.measureSvgTextHeight(yLabelProperties, "0") : 0;
+        const xLabelHeight: number = showX ? textMeasurementService.measureSvgTextHeight(xLabelProperties, "0") : 0;
+        const xLabelOverhang: number = showX
+            ? PixelConverter.fromPointToPixel(xSettings.textSize.value) * LineDotChart.tickLabelBoxOverhang
+            : 0;
+
+        // Y labels cannot be shortened out of a collision, so they are dropped when even the two
+        // outermost ones would not clear each other in the plot that is left for them.
+        const provisionalPlotHeight: number = this.layout.viewportIn.height
+            - Math.min(verticalLimit, yLabelHeight / 2)
+            - Math.min(verticalLimit, Math.max(
+                LineDotChart.LegendSize,
+                LineDotChart.tickLabelPadding + xLabelOverhang + yLabelHeight / 2 + xLabelHeight + (showX && xSettings.title.value ? titleBand : 0)));
+
+        this.renderYTickLabels = showY && provisionalPlotHeight >= yLabelHeight + LineDotChart.tickLabelPadding;
+
+        if (!this.renderYTickLabels) {
+            yLabelHeight = 0;
+        }
+
+        const showY2: boolean = this.renderYTickLabels && ySettings.isDuplicated.value;
+        const yLabelWidth: number = this.renderYTickLabels ? LineDotChart.maxLabelWidth(this.yAxisProperties.values, yLabelProperties) : 0;
+        const y2LabelWidth: number = showY2 ? LineDotChart.maxLabelWidth(this.yAxis2Properties.values, yLabelProperties) : 0;
+
+        // The outermost Y labels are centred on the axis ends, so the X labels start below them.
+        this.xTickOffset = LineDotChart.tickLabelPadding + xLabelOverhang + yLabelHeight / 2;
+
+        // A band is allocated to its tick labels first; the title only gets what is left over.
+        let xLabelBand: number = showX ? this.xTickOffset + xLabelHeight : 0;
+        const xTitleRequest: number = showX && xSettings.title.value ? titleBand : 0;
+        const bottomBudget: number = Math.min(verticalLimit, Math.max(LineDotChart.LegendSize, xLabelBand + xTitleRequest));
+
+        this.renderXTickLabels = showX && bottomBudget >= xLabelBand;
+
+        if (!this.renderXTickLabels) {
+            xLabelBand = 0;
+        }
+
+        this.renderXTitle = xTitleRequest > 0 && bottomBudget >= xLabelBand + xTitleRequest;
+
+        const minLabelWidth: number = textMeasurementService.measureSvgTextWidth(yLabelProperties, LineDotChart.minLabelSample);
+        const yTitleRequest: number = this.renderYTickLabels && ySettings.title.value ? titleBand : 0;
+        const leftBudget: number = Math.min(
+            horizontalLimit,
+            Math.max(LineDotChart.LegendSize, yLabelWidth + LineDotChart.labelMeasureSlack + LineDotChart.tickLabelPadding + yTitleRequest));
+
+        this.renderYTitle = yTitleRequest > 0
+            && leftBudget - yTitleRequest - LineDotChart.tickLabelPadding >= Math.min(yLabelWidth, minLabelWidth);
+
+        const xTitleBand: number = this.renderXTitle ? xTitleRequest : 0;
+        const yTitleBand: number = this.renderYTitle ? yTitleRequest : 0;
+
+        const previousBands: IMargin = this.axisBands;
+
+        this.axisBands = {
+            top: Math.min(verticalLimit, yLabelHeight / 2),
+            left: Math.min(horizontalLimit, Math.max(LineDotChart.LegendSize, yLabelWidth + LineDotChart.labelMeasureSlack + LineDotChart.tickLabelPadding + yTitleBand)),
+            right: Math.min(horizontalLimit, Math.max(LineDotChart.AxisSize, y2LabelWidth + LineDotChart.labelMeasureSlack + LineDotChart.tickLabelPadding)),
+            bottom: Math.min(verticalLimit, Math.max(LineDotChart.LegendSize, xLabelBand + xTitleBand))
+        };
+
+        // A clamped band no longer fits its widest label, so the labels are ellipsised to what is left.
+        this.yLabelBudget = Math.max(0, this.axisBands.left - LineDotChart.tickLabelPadding - yTitleBand);
+        this.y2LabelBudget = Math.max(0, this.axisBands.right - LineDotChart.tickLabelPadding);
+
+        this.xTitleOffset = this.effectiveHeight
+            + Math.max(xLabelBand, LineDotChart.tickLabelPadding)
+            + LineDotChart.titleGap
+            + titleHeight * LineDotChart.titleAscentRatio
+            + this.axisBands.top
+            - this.layout.margin.top;
+
+        this.yTitleOffset = titleHeight * LineDotChart.titleAscentRatio;
+
+        // X labels are ellipsised to their own tick slot, so density only has to keep that slot legible.
+        const minXLabelSlot: number = textMeasurementService.measureSvgTextWidth(xLabelProperties, LineDotChart.minLabelSample)
+            + LineDotChart.tickLabelPadding;
+
+        this.forcedXTickCount = Math.max(
+            LineDotChart.minTickCount,
+            Math.min(
+                this.layout.viewport.width / LineDotChart.forcedTickSize,
+                Math.floor(this.effectiveWidth / minXLabelSlot)));
+
+        // Y labels cannot be shortened out of a collision, so their density is capped by label height.
+        this.forcedYTickCount = Math.max(
+            LineDotChart.minTickCount,
+            Math.min(
+                AxisHelper.getRecommendedNumberOfTicksForYAxis(this.effectiveHeight),
+                Math.floor(this.effectiveHeight / (yLabelHeight + LineDotChart.tickLabelPadding))));
+
+        return (["top", "left", "right", "bottom"] as (keyof IMargin)[])
+            .some((side: keyof IMargin) => Math.abs(this.axisBands[side] - previousBands[side]) > LineDotChart.bandConvergence);
+    }
+
+    private static minTickCount: number = 2;
+    /** A slot narrower than a few characters plus the ellipsis carries no information. */
+    private static minLabelSample: string = "0000...";
+    private static titleAscentRatio: number = 0.75;
+    private static labelMeasureSlack: number = 1;
+    private static bandConvergence: number = 1;
+    private static maxMeasurePasses: number = 3;
 
     private calculateAxes() {
-        const effectiveWidth: number = Math.max(0, this.layout.viewportIn.width - LineDotChart.LegendSize - LineDotChart.AxisSize);
-        const effectiveHeight: number = Math.max(0, this.layout.viewportIn.height - LineDotChart.LegendSize);
+        const effectiveWidth: number = this.effectiveWidth;
+        const effectiveHeight: number = this.effectiveHeight;
 
         const extentDate: [number, number] = extent(
             this.data.dateValues,
@@ -545,16 +733,13 @@ export class LineDotChart implements IVisual {
             isCategoryAxis: true,
             isScalar: !this.data.isOrdinal,
             isVertical: false,
-            forcedTickCount: Math.max(this.layout.viewport.width / LineDotChart.forcedTickSize, 0),
+            forcedTickCount: this.forcedXTickCount !== undefined
+                ? this.forcedXTickCount
+                : Math.max(this.layout.viewport.width / LineDotChart.forcedTickSize, 0),
             useTickIntervalForDisplayUnits: false,
             shouldClamp: true,
             getValueFn: LineDotChart.getColumnFormattingCallback(this.data)
         });
-
-        this.xAxisProperties.xLabelMaxWidth = Math.min(
-            LineDotChart.xLabelMaxWidth,
-            this.layout.viewportIn.width / LineDotChart.xLabelTickSize
-        );
 
         this.xAxisProperties.formatter = this.data.dateColumnFormatter;
         let yMin = this.data.yMinValue;
@@ -583,6 +768,7 @@ export class LineDotChart implements IVisual {
             isCategoryAxis: false,
             isScalar: true,
             isVertical: true,
+            forcedTickCount: this.forcedYTickCount,
             useTickIntervalForDisplayUnits: true,
             getValueFn: LineDotChart.getValueFormattingCallback(this.data)
         });
@@ -596,26 +782,66 @@ export class LineDotChart implements IVisual {
             isCategoryAxis: false,
             isScalar: true,
             isVertical: true,
+            forcedTickCount: this.forcedYTickCount,
             useTickIntervalForDisplayUnits: true,
             getValueFn: LineDotChart.getValueFormattingCallback(this.data)
         });
 
         this.yAxis2Properties.formatter = this.data.dataValueFormatter;
+
+        if (this.forcedYTickCount !== undefined) {
+            LineDotChart.decimateTicks(this.yAxisProperties, this.forcedYTickCount);
+            LineDotChart.decimateTicks(this.yAxis2Properties, this.forcedYTickCount);
+        }
+    }
+
+    // createAxis only *requests* a tick count, and d3 can still hand back more, so the surplus is dropped here.
+    private static decimateTicks(properties: IAxisProperties, maxTicks: number): void {
+        const tickValues: any[] = properties.axis.tickValues();
+
+        if (!tickValues || tickValues.length <= maxTicks) {
+            return;
+        }
+
+        const labels: any[] = properties.values;
+        const keepLabels: boolean = labels && labels.length === tickValues.length;
+        const step: number = Math.ceil(tickValues.length / maxTicks);
+        const keptValues: any[] = [];
+        const keptLabels: any[] = [];
+
+        for (let index: number = 0; index < tickValues.length; index += step) {
+            keptValues.push(tickValues[index]);
+
+            if (keepLabels) {
+                keptLabels.push(labels[index]);
+            }
+        }
+
+        properties.axis.tickValues(keptValues);
+
+        if (keepLabels) {
+            properties.values = keptLabels;
+        }
     }
 
     private static rotateAngle: number = 270;
 
+    // The legends group is offset by the margin only, so band-relative positions add the left band back.
     private generateAxisLabels(): Legend[] {
         return [
             {
-                transform: SVGManipulations.translate((this.layout.viewportIn.width) / 2, (this.layout.viewportIn.height)),
-                text: this.formattingSettings.xAxis.title.value,
-                dx: "1em",
-                dy: "-1em"
+                transform: SVGManipulations.translate(
+                    this.axisBands.left + this.effectiveWidth / 2,
+                    this.xTitleOffset),
+                text: this.renderXTitle ? this.formattingSettings.xAxis.title.value : ""
             }, {
-                transform: SVGManipulations.translateAndRotate(0, this.layout.viewportIn.height / 2, 0, 0, LineDotChart.rotateAngle),
-                text: this.formattingSettings.yAxis.title.value,
-                dx: "3em"
+                transform: SVGManipulations.translateAndRotate(
+                    this.yTitleOffset,
+                    this.axisBands.top + this.effectiveHeight / 2 - this.layout.margin.top,
+                    0,
+                    0,
+                    LineDotChart.rotateAngle),
+                text: this.renderYTitle ? this.formattingSettings.yAxis.title.value : ""
             }
         ];
     }
@@ -637,22 +863,22 @@ export class LineDotChart implements IVisual {
 
         this.line.attr(
             "transform",
-            SVGManipulations.translate(this.layout.margin.left + LineDotChart.LegendSize, 0)
+            SVGManipulations.translate(this.layout.margin.left + this.axisBands.left, this.axisBands.top)
         );
 
         this.axes.attr(
             "transform",
-            SVGManipulations.translate(this.layout.margin.left + LineDotChart.LegendSize, 0)
+            SVGManipulations.translate(this.layout.margin.left + this.axisBands.left, this.axisBands.top)
         );
 
         this.axisX.attr(
             "transform",
-            SVGManipulations.translate(0, this.layout.viewportIn.height - LineDotChart.LegendSize)
+            SVGManipulations.translate(0, this.effectiveHeight)
         );
 
         this.axisY2.attr(
             "transform",
-            SVGManipulations.translate(this.layout.viewportIn.width - LineDotChart.LegendSize - LineDotChart.AxisSize, 0)
+            SVGManipulations.translate(this.effectiveWidth, 0)
         );
     }
 
@@ -665,22 +891,18 @@ export class LineDotChart implements IVisual {
         this.renderLegends();
         this.drawPlaybackButtons();
 
-        if (this.formattingSettings.xAxis.show.value === true) {
+        if (this.renderXTickLabels) {
             this.axisX.call(this.xAxisProperties.axis);
+            this.axisX.selectAll(LineDotChart.tickText).attr("y", this.xTickOffset);
         } else {
             this.clearElement(this.axisX);
         }
 
-        if (this.formattingSettings.yAxis.show.value === true) {
+        if (this.renderYTickLabels) {
             this.axisY.call(this.yAxisProperties.axis);
 
             if (this.formattingSettings.yAxis.isDuplicated.value) {
-                const scale: any = this.yAxis2Properties.scale;
-                const ticksCount: number = this.yAxis2Properties.values.length;
-                const format: any = (domainValue: AxisDomain, value: any) => this.yAxis2Properties.values[value];
-
-                const axis = axisRight(scale);
-                this.axisY2.call(axis.tickArguments([ticksCount]).tickFormat(format));
+                this.axisY2.call(LineDotChart.mirrorAxisToRight(this.yAxis2Properties));
             } else {
                 this.clearElement(this.axisY2);
             }
@@ -689,11 +911,9 @@ export class LineDotChart implements IVisual {
             this.clearElement(this.axisY2);
         }
 
-        this.axisX.selectAll(LineDotChart.tickText).call(
-            AxisHelper.LabelLayoutStrategy.clip,
-            this.xAxisProperties.xLabelMaxWidth,
-            textMeasurementService.svgEllipsis
-        );
+        // The ellipsis budget is meaningless until the configured font size is on the tick text.
+        this.applyAxisSettings();
+        this.clipAxisLabels();
 
         if (this.formattingSettings.misc.isAnimated.value && this.formattingSettings.misc.isStopped.value) {
             this.main
@@ -707,8 +927,6 @@ export class LineDotChart implements IVisual {
 
             return;
         }
-
-        this.applyAxisSettings();
 
         const linePathSelection: Selection<SVGGElement, LineDotPoint[], any, any> = this.line
             .selectAll<SVGGElement, any>(LineDotChart.dotPathText)
@@ -730,6 +948,48 @@ export class LineDotChart implements IVisual {
         const isRightToLeft = this.drawClipPath(linePathSelectionMerged);
 
         this.drawDots(lineTipSelection, isRightToLeft);
+    }
+
+    // Re-deriving the right axis ticks from the scale can desync them from the labels, so the left axis is mirrored.
+    private static mirrorAxisToRight(properties: IAxisProperties): Axis<AxisDomain> {
+        const source: Axis<AxisDomain> = properties.axis;
+        const axis: Axis<AxisDomain> = axisRight(<any>properties.scale).tickValues(source.tickValues());
+        const format = source.tickFormat();
+
+        return format ? axis.tickFormat(format) : axis;
+    }
+
+    private clipAxisLabels(): void {
+        const rootWidth: number = this.layout.viewport.width;
+        // Absolute x of the axes origin: main and axes each apply margin.left.
+        const axesOffset: number = this.layout.margin.left * 2 + this.axisBands.left;
+        const maxWidth: number = this.xAxisProperties.xLabelMaxWidth;
+        const xScale = this.xAxisProperties.scale;
+
+        this.axisX
+            .selectAll<SVGTextElement, any>(LineDotChart.tickText)
+            .each(function (tickValue: any) {
+                const tickX: number = axesOffset + xScale(tickValue);
+                // A middle-anchored label may only use twice the room left to the nearest edge.
+                const available: number = 2 * Math.min(tickX, rootWidth - tickX);
+
+                textMeasurementService.svgEllipsis(this, Math.max(0, Math.min(maxWidth, available)));
+            });
+
+        const yBudget: number = this.yLabelBudget;
+        const y2Budget: number = this.y2LabelBudget;
+
+        this.axisY
+            .selectAll<SVGTextElement, any>(LineDotChart.tickText)
+            .each(function () {
+                textMeasurementService.svgEllipsis(this, yBudget);
+            });
+
+        this.axisY2
+            .selectAll<SVGTextElement, any>(LineDotChart.tickText)
+            .each(function () {
+                textMeasurementService.svgEllipsis(this, y2Budget);
+            });
     }
 
     public applyAxisSettings(): void {
@@ -968,7 +1228,7 @@ export class LineDotChart implements IVisual {
             .append("rect")
             .attr("x", LineDotChart.zeroX)
             .attr("y", LineDotChart.zeroY)
-            .attr("height", this.layout.viewportIn.height);
+            .attr("height", this.effectiveHeight);
 
         // Determine animation direction based on original data order
         const firstDataPoint = this.data.dotPoints[0];
@@ -991,7 +1251,7 @@ export class LineDotChart implements IVisual {
                 .selectAll("rect")
                 .attr("x", rectSettings.startX)
                 .attr("width", 0)
-                .attr("height", this.layout.viewportIn.height)
+                .attr("height", this.effectiveHeight)
                 .interrupt()
                 .transition()
                 .ease(easeLinear)
@@ -1128,7 +1388,7 @@ export class LineDotChart implements IVisual {
                 .classed("text", true);
 
             lineTextMerged
-                .attr("x", this.layout.viewportIn.width - LineDotChart.widthMargin)
+                .attr("x", this.effectiveWidth - LineDotChart.widthMargin)
                 .attr("y", LineDotChart.yPosition)
                 .style("fill", this.formattingSettings.counteroptions.color.value.value)
                 .style("font-size", PixelConverter.toString(PixelConverter.fromPointToPixel(this.formattingSettings.counteroptions.textSize.value)))
@@ -1303,6 +1563,8 @@ export class LineDotChart implements IVisual {
             .append("svg:text")
             .merge(legendSelection);
 
+        const titleBudgets: number[] = [this.effectiveWidth, this.effectiveHeight];
+
         legendSelectionMerged
             .attr("x", 0)
             .attr("y", 0)
@@ -1310,7 +1572,10 @@ export class LineDotChart implements IVisual {
             .attr("dy", (legend: Legend) => legend.dy)
             .attr("transform", (legend: Legend) => legend.transform)
             .text((legend: Legend) => legend.text)
-            .classed(LineDotChart.Legend.className, true);
+            .classed(LineDotChart.Legend.className, true)
+            .each(function (legend: Legend, index: number) {
+                textMeasurementService.svgEllipsis(this as SVGTextElement, titleBudgets[index]);
+            });
 
         legendSelection
             .exit()

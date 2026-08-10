@@ -1,3 +1,13 @@
+## 2.1.2
+### Visual changes
+* Reserve the axis space from the measured tick label and title sizes, so axis titles no longer overlap the tick labels at large text sizes
+* Keep the tick labels inside the visual bounds by ellipsising them to the space that is actually available
+* Ellipsise the X-axis tick labels to the space between ticks, so they stop colliding without dropping the labels in between
+* Reduce the Y-axis tick density, because vertical labels cannot be shortened to avoid a collision
+* Hide the axis title, and then the tick labels, when the visual is too small to show them without overlapping
+* Fix the second Y-axis, which could pair its labels with the wrong tick positions
+* Limit the axis text size to 60pt
+
 ## 2.1.1
 ### Code improvements
 * Update packages
