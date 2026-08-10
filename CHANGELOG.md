@@ -6,6 +6,7 @@
 * Reduce the Y-axis tick density, because vertical labels cannot be shortened to avoid a collision
 * Hide the axis title, and then the tick labels, when the visual is too small to show them without overlapping
 * Fix the second Y-axis, which could pair its labels with the wrong tick positions
+* Apply the axis color and text size to the tick labels even before the animation is played
 * Limit the axis text size to 60pt
 
 ## 2.1.1
