@@ -126,8 +126,8 @@ export class LineDotChart implements IVisual {
     private xTickOffset: number;
     private xTitleOffset: number;
     private yTitleOffset: number;
-    private forcedXTickCount: number;
-    private forcedYTickCount: number;
+    private forcedXTickCount: number | undefined;
+    private forcedYTickCount: number | undefined;
     private renderXTickLabels: boolean;
     private renderYTickLabels: boolean;
     private renderXTitle: boolean;

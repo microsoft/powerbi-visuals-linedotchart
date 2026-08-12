@@ -145,18 +145,18 @@ export class LineDotChartData extends TestDataViewBuilder {
 }
 
 export const deterministicDates: Date[] = [
-    new Date(2015, 0, 15),
-    new Date(2015, 1, 15),
-    new Date(2015, 2, 15),
-    new Date(2015, 3, 15),
-    new Date(2015, 4, 15),
-    new Date(2015, 5, 15),
-    new Date(2015, 6, 15),
-    new Date(2015, 7, 15),
-    new Date(2015, 8, 15),
-    new Date(2015, 9, 15),
-    new Date(2015, 10, 15),
-    new Date(2015, 11, 15)
+    new Date(Date.UTC(2015, 0, 15)),
+    new Date(Date.UTC(2015, 1, 15)),
+    new Date(Date.UTC(2015, 2, 15)),
+    new Date(Date.UTC(2015, 3, 15)),
+    new Date(Date.UTC(2015, 4, 15)),
+    new Date(Date.UTC(2015, 5, 15)),
+    new Date(Date.UTC(2015, 6, 15)),
+    new Date(Date.UTC(2015, 7, 15)),
+    new Date(Date.UTC(2015, 8, 15)),
+    new Date(Date.UTC(2015, 9, 15)),
+    new Date(Date.UTC(2015, 10, 15)),
+    new Date(Date.UTC(2015, 11, 15))
 ];
 
 export const deterministicValues: number[] = [3200, 4100, 2750, 5300, 4800, 6100, 3900, 7200, 5600, 4300, 6800, 5100];
