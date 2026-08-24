@@ -19,7 +19,7 @@ jobs:
   snyk:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Run Snyk to check dependencies for security issues
         uses: snyk/actions/node@master
         env:
@@ -28,6 +28,6 @@ jobs:
           # Check package.json and package-lock.json
           command: test
       - name: Upload result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@231aa2c8a89117b126725a0e11897209b7118144 # v1.1.39
+        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         with:
           sarif_file: snyk.sarif
