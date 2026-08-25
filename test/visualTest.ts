@@ -33,8 +33,8 @@ import { renderTimeout, assertColorsMatch, getSolidColorStructuralObject } from 
 import { valueFormatter as vf } from "powerbi-visuals-utils-formattingutils";
 import IValueFormatter = vf.IValueFormatter;
 
-import { areColorsEqual, getRandomHexColor } from "./helpers";
-import { LineDotChartData } from "./visualData";
+import { areColorsEqual, getRandomHexColor, countOverlaps, countSelfOverlaps, getClippedTexts, rectWithin, readableTextLength } from "./helpers";
+import { LineDotChartData, DeterministicLineDotChartData } from "./visualData";
 import { LineDotChartBuilder } from "./visualBuilder";
 
 import { LineDotChart } from "./../src/visual";
@@ -206,6 +206,234 @@ describe("LineDotChartTests", () => {
             visualBuilder.visualInstance.applyAxisSettings();
 
             expect(visualBuilder.emptyAxis.length).toBe(3);
+        });
+    });
+
+    describe("Axis layout at large text size", () => {
+        const largeTextSize: number = 30;
+        const defaultTextSize: number = 9;
+        const maxTextSize: number = 60;
+        const largeTickFontSize: string = "40px";
+        const defaultTickFontSize: string = "12px";
+        const maxTickFontSize: string = "80px";
+        const longTitles: [string, string] = ["Test Title Test Title Test Title", "Test Title Test Title"];
+        const shortTitles: [string, string] = ["Test Title", "Test Title"];
+        const noTitles: [string, string] = ["", ""];
+        const minLargeTextXTicks: number = 4;
+        const minDefaultTextXTicks: number = 5;
+        const minReadableTickChars: number = 5;
+        const minYTicks: number = 2;
+
+        let layoutDataView: DataView;
+
+        beforeEach(() => {
+            layoutDataView = new DeterministicLineDotChartData().getDataView();
+        });
+
+        function applyAxisObjects(textSize: number, titles: [string, string] = longTitles): void {
+            layoutDataView.metadata.objects = {
+                misc: {
+                    isAnimated: false
+                },
+                xAxis: {
+                    show: true,
+                    title: titles[0],
+                    textSize: textSize
+                },
+                yAxis: {
+                    show: true,
+                    isDuplicated: true,
+                    title: titles[1],
+                    textSize: textSize
+                }
+            };
+        }
+
+        function tickFontSize(builder: LineDotChartBuilder): string {
+            return getComputedStyle(builder.tickText[0]).fontSize;
+        }
+
+        it("axis titles do not overlap tick labels", () => {
+            applyAxisObjects(largeTextSize);
+            visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            expect(visualBuilder.axisTitles.length).toBe(2);
+            expect(tickFontSize(visualBuilder)).toBe(largeTickFontSize);
+            expect(countOverlaps(visualBuilder.tickText, visualBuilder.axisTitles)).toBe(0);
+        });
+
+        it("tick labels stay inside the visual bounds", () => {
+            applyAxisObjects(largeTextSize);
+            visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            const rootRect: DOMRect = visualBuilder.mainElement.getBoundingClientRect();
+
+            expect(tickFontSize(visualBuilder)).toBe(largeTickFontSize);
+            expect(getClippedTexts(visualBuilder.tickText, rootRect)).toEqual([]);
+        });
+
+        it("X axis tick labels do not overlap each other", () => {
+            applyAxisObjects(largeTextSize, noTitles);
+            visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            expect(tickFontSize(visualBuilder)).toBe(largeTickFontSize);
+            expect(countSelfOverlaps(visualBuilder.xAxisTickText)).toBe(0);
+        });
+
+        it("X axis keeps its interior tick labels at large text size", () => {
+            applyAxisObjects(largeTextSize, noTitles);
+            visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            expect(visualBuilder.xAxisTickText.length).toBeGreaterThanOrEqual(minLargeTextXTicks);
+            expect(countSelfOverlaps(visualBuilder.xAxisTickText)).toBe(0);
+        });
+
+        it("X axis tick labels keep readable content at large text size", () => {
+            applyAxisObjects(largeTextSize, noTitles);
+            visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            const shortestLabel: number = Math.min(
+                ...visualBuilder.xAxisTickText.map((text: SVGTextElement) => readableTextLength(text.textContent ?? "")));
+
+            expect(shortestLabel).toBeGreaterThanOrEqual(minReadableTickChars);
+        });
+
+        it("default text size keeps the full tick density", () => {
+            applyAxisObjects(defaultTextSize, noTitles);
+            visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            expect(visualBuilder.xAxisTickText.length).toBeGreaterThanOrEqual(minDefaultTextXTicks);
+            expect(countSelfOverlaps(visualBuilder.xAxisTickText)).toBe(0);
+        });
+
+        it("layout stays readable in a reduced viewport", () => {
+            const smallBuilder: LineDotChartBuilder = new LineDotChartBuilder(320, 240);
+
+            applyAxisObjects(largeTextSize, shortTitles);
+            smallBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            const rootRect: DOMRect = smallBuilder.mainElement.getBoundingClientRect();
+
+            expect(smallBuilder.dots!.length).toBe(12);
+            expect(smallBuilder.axisTitles.length).toBe(2);
+            expect(countOverlaps(smallBuilder.tickText, smallBuilder.axisTitles)).toBe(0);
+            expect(smallBuilder.axisTitles.every((title: SVGTextElement) => rectWithin(title.getBoundingClientRect(), rootRect))).toBeTrue();
+            expect(getClippedTexts(smallBuilder.tickText, rootRect)).toEqual([]);
+        });
+
+        it("legacy saved axis settings use the default text size", () => {
+            const legacyDataView: DataView = new DeterministicLineDotChartData().getDataViewFromLegacyAxisSettings();
+            visualBuilder.updateFlushAllD3Transitions(legacyDataView);
+
+            const rootRect: DOMRect = visualBuilder.mainElement.getBoundingClientRect();
+
+            expect(visualBuilder.tickText.every((text: SVGTextElement) => getComputedStyle(text).fontSize === defaultTickFontSize)).toBeTrue();
+            expect(visualBuilder.axisTitles.length).toBe(2);
+            expect(countOverlaps(visualBuilder.tickText, visualBuilder.axisTitles)).toBe(0);
+            expect(visualBuilder.axisTitles.every((title: SVGTextElement) => rectWithin(title.getBoundingClientRect(), rootRect))).toBeTrue();
+            expect(getClippedTexts(visualBuilder.tickText, rootRect)).toEqual([]);
+        });
+
+        it("persisted axis text sizes above the limit are clamped", () => {
+            const persistedDataView: DataView = new DeterministicLineDotChartData().getDataViewWithPersistedAxisTextSizeAboveLimit();
+            visualBuilder.updateFlushAllD3Transitions(persistedDataView);
+
+            const rootRect: DOMRect = visualBuilder.mainElement.getBoundingClientRect();
+
+            expect(visualBuilder.tickText.every((text: SVGTextElement) => getComputedStyle(text).fontSize === maxTickFontSize)).toBeTrue();
+            expect(visualBuilder.axisTitles.length).toBe(2);
+            expect(countOverlaps(visualBuilder.tickText, visualBuilder.axisTitles)).toBe(0);
+            expect(visualBuilder.axisTitles.every((title: SVGTextElement) => rectWithin(title.getBoundingClientRect(), rootRect))).toBeTrue();
+            expect(getClippedTexts(visualBuilder.tickText, rootRect)).toEqual([]);
+        });
+
+        it("default text size keeps a clean layout", () => {
+            applyAxisObjects(defaultTextSize);
+            visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            const rootRect: DOMRect = visualBuilder.mainElement.getBoundingClientRect();
+
+            expect(visualBuilder.axisTitles.length).toBe(2);
+            expect(tickFontSize(visualBuilder)).toBe(defaultTickFontSize);
+            expect(countOverlaps(visualBuilder.tickText, visualBuilder.axisTitles)).toBe(0);
+            expect(countSelfOverlaps(visualBuilder.xAxisTickText)).toBe(0);
+            expect(visualBuilder.tickText.every((text: SVGTextElement) => rectWithin(text.getBoundingClientRect(), rootRect))).toBeTrue();
+        });
+
+        it("restoring the default text size restores a clean layout", () => {
+            applyAxisObjects(largeTextSize);
+            visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            applyAxisObjects(defaultTextSize);
+            visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            const rootRect: DOMRect = visualBuilder.mainElement.getBoundingClientRect();
+
+            expect(tickFontSize(visualBuilder)).toBe(defaultTickFontSize);
+            expect(visualBuilder.axisTitles.length).toBe(2);
+            expect(countOverlaps(visualBuilder.tickText, visualBuilder.axisTitles)).toBe(0);
+            expect(countSelfOverlaps(visualBuilder.xAxisTickText)).toBe(0);
+            expect(visualBuilder.axisTitles.every((title: SVGTextElement) => rectWithin(title.getBoundingClientRect(), rootRect))).toBeTrue();
+            expect(getClippedTexts(visualBuilder.tickText, rootRect)).toEqual([]);
+        });
+
+        it("Y axis tick labels do not overlap each other at the maximum text size", () => {
+            applyAxisObjects(maxTextSize, noTitles);
+            visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            expect(tickFontSize(visualBuilder)).toBe(maxTickFontSize);
+            expect(visualBuilder.yAxisTickText.length).toBeGreaterThanOrEqual(minYTicks);
+            expect(countSelfOverlaps(visualBuilder.yAxisTickText)).toBe(0);
+            expect(countSelfOverlaps(visualBuilder.secondYAxisTickText)).toBe(0);
+        });
+
+        it("the second Y axis repeats the first at every text size", () => {
+            [defaultTextSize, largeTextSize, maxTextSize].forEach((textSize: number) => {
+                applyAxisObjects(textSize, noTitles);
+                visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+                const primary: (string | null)[] = visualBuilder.yAxisTickText.map((text: SVGTextElement) => text.textContent);
+                const secondary: (string | null)[] = visualBuilder.secondYAxisTickText.map((text: SVGTextElement) => text.textContent);
+
+                expect(secondary).toEqual(primary);
+            });
+        });
+
+        it("axis decoration that does not fit is dropped instead of overflowing", () => {
+            const tinyBuilder: LineDotChartBuilder = new LineDotChartBuilder(300, 200);
+
+            applyAxisObjects(maxTextSize, shortTitles);
+            tinyBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            const rootRect: DOMRect = tinyBuilder.mainElement.getBoundingClientRect();
+
+            expect(getClippedTexts(tinyBuilder.tickText, rootRect)).toEqual([]);
+            expect(countSelfOverlaps(tinyBuilder.tickText)).toBe(0);
+            expect(countOverlaps(tinyBuilder.tickText, tinyBuilder.axisTitles)).toBe(0);
+            expect(tinyBuilder.axisTitles.every((title: SVGTextElement) => rectWithin(title.getBoundingClientRect(), rootRect))).toBeTrue();
+        });
+
+        it("the plot survives when axis decoration is dropped", () => {
+            const tinyBuilder: LineDotChartBuilder = new LineDotChartBuilder(300, 200);
+
+            applyAxisObjects(maxTextSize, shortTitles);
+            tinyBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            expect(tinyBuilder.dots!.length).toBe(12);
+            expect(tinyBuilder.linePath).not.toBeNull();
+        });
+
+        it("repeating an update keeps the same layout", () => {
+            applyAxisObjects(maxTextSize);
+            visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            const firstTickCount: number = visualBuilder.tickText.length;
+            const firstTitleCount: number = visualBuilder.axisTitles.length;
+
+            visualBuilder.updateFlushAllD3Transitions(layoutDataView);
+
+            expect(visualBuilder.tickText.length).toBe(firstTickCount);
+            expect(visualBuilder.axisTitles.length).toBe(firstTitleCount);
         });
     });
 

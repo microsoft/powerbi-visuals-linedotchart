@@ -114,6 +114,7 @@ class XAxisSettingsCard extends Card {
         value: 9,
         options: {
             minValue: { value: 0, type: ValidatorType.Min },
+            maxValue: { value: 60, type: ValidatorType.Max },
         }
     });
 
@@ -154,6 +155,7 @@ class YAxisSettingsCard extends Card {
         value: 9,
         options: {
             minValue: { value: 0, type: ValidatorType.Min },
+            maxValue: { value: 60, type: ValidatorType.Max },
         }
     });
 
@@ -341,6 +343,18 @@ export class LineDotChartSettingsModel extends Model {
             this.lineoptions.lineThickness.value,
             this.lineoptions.lineThickness.options.minValue.value,
             this.lineoptions.lineThickness.options.maxValue.value
+        );
+
+        this.xAxis.textSize.value = this.getValidValue(
+            this.xAxis.textSize.value,
+            this.xAxis.textSize.options.minValue.value,
+            this.xAxis.textSize.options.maxValue.value
+        );
+
+        this.yAxis.textSize.value = this.getValidValue(
+            this.yAxis.textSize.value,
+            this.yAxis.textSize.options.minValue.value,
+            this.yAxis.textSize.options.maxValue.value
         );
 
         this.misc.duration.value = this.getValidValue(

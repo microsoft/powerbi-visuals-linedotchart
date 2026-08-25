@@ -143,3 +143,58 @@ export class LineDotChartData extends TestDataViewBuilder {
         );
     }
 }
+
+export const deterministicDates: Date[] = [
+    new Date(Date.UTC(2015, 0, 15)),
+    new Date(Date.UTC(2015, 1, 15)),
+    new Date(Date.UTC(2015, 2, 15)),
+    new Date(Date.UTC(2015, 3, 15)),
+    new Date(Date.UTC(2015, 4, 15)),
+    new Date(Date.UTC(2015, 5, 15)),
+    new Date(Date.UTC(2015, 6, 15)),
+    new Date(Date.UTC(2015, 7, 15)),
+    new Date(Date.UTC(2015, 8, 15)),
+    new Date(Date.UTC(2015, 9, 15)),
+    new Date(Date.UTC(2015, 10, 15)),
+    new Date(Date.UTC(2015, 11, 15))
+];
+
+export const deterministicValues: number[] = [3200, 4100, 2750, 5300, 4800, 6100, 3900, 7200, 5600, 4300, 6800, 5100];
+
+export const deterministicPercentValues: number[] = [12, 34, 21, 55, 48, 63, 39, 72, 56, 43, 68, 51];
+
+export class DeterministicLineDotChartData extends LineDotChartData {
+    public valuesDate: Date[] = deterministicDates;
+    public valuesValue: number[] = deterministicValues;
+    public valuesForPercentFormat: number[] = deterministicPercentValues;
+    public valuesDateAsString: string[] = deterministicDates.map(date => date.toISOString());
+
+    public getDataViewFromLegacyAxisSettings(): DataView {
+        const dataView: DataView = this.getDataView();
+        dataView.metadata.objects = {
+            misc: {
+                isAnimated: false
+            },
+            xAxis: {
+                show: true,
+                title: "Test Title Test Title Test Title"
+            },
+            yAxis: {
+                show: true,
+                isDuplicated: true,
+                title: "Test Title Test Title"
+            }
+        };
+
+        return dataView;
+    }
+
+    public getDataViewWithPersistedAxisTextSizeAboveLimit(): DataView {
+        const dataView: DataView = this.getDataViewFromLegacyAxisSettings();
+        const objects: powerbi.DataViewObjects = dataView.metadata.objects!;
+        objects.xAxis.textSize = 100;
+        objects.yAxis.textSize = 100;
+
+        return dataView;
+    }
+}

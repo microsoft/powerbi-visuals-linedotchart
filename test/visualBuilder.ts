@@ -120,12 +120,32 @@ export class LineDotChartBuilder extends VisualBuilderBase<VisualClass> {
         return tickTexts;
     }
 
+    public get yAxisTickText(): SVGTextElement[] {
+        return this.axisTickText(1);
+    }
+
+    public get secondYAxisTickText(): SVGTextElement[] {
+        return this.axisTickText(2);
+    }
+
+    private axisTickText(axisIndex: number): SVGTextElement[] {
+        return Array
+            .from(this.axis[axisIndex].querySelectorAll("g.tick"))
+            .map((tick: Element) => tick.querySelector("text")!);
+    }
+
     public get animationPlayButton(): SVGGElement | null {
         return this.mainElement.querySelector("g.lineDotChart__playBtn");
     }
 
     public get legends(): SVGGElement {
         return this.mainElement.querySelector("g.legends")!;
+    }
+
+    public get axisTitles(): SVGTextElement[] {
+        return Array
+            .from(this.legends.querySelectorAll<SVGTextElement>("text.legend"))
+            .filter((title: SVGTextElement) => (title.textContent ?? "").length > 0);
     }
 
     public get counterTitle(): SVGTextElement | null {
