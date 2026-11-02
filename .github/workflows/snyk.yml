@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
       - name: Run Snyk to check dependencies for security issues
-        uses: snyk/actions/node@master
+        uses: snyk/actions/node@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:

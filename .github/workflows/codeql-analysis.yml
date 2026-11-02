@@ -2,9 +2,9 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [main, dev, certification]
+    branches: [master, main, dev, certification]
   pull_request:
-    branches: [main, dev, certification]
+    branches: [master, main, dev, certification]
   schedule:
     # Run at 14:28 UTC on Wednesdays to avoid peak CI usage and stagger with other scheduled jobs.
     - cron: '28 14 * * 3'
